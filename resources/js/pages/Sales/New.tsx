@@ -141,14 +141,20 @@ export default function SalesCreate() {
             );
           }
         })
-        .catch(() => {
+        .catch((error) => {
+          console.error('Error checking quantity:', error);
+          setItems((prev2) =>
+              recalcAll(prev2.map((r) =>
+                r.tempId === tempId ? { ...newRow, qty: 0 } : r
+              ))
+            );
           toast("حدث خطأ أثناء التحقق من المخزون");
         });
 
       return prev.map((r) => r.tempId === tempId ? newRow : r);
     });
   };
-  // ...existing code...
+  
 
   const handleCustomerChange = (customerId: string) => {
     if (!customerId) return;

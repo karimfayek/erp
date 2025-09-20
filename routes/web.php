@@ -9,6 +9,11 @@ use App\Http\Controllers\SalesController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\WarehouseController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\RoleController;
+use App\Http\Controllers\CustomerBranchController;
+use App\Http\Controllers\UserRoleController;
+use App\Http\Controllers\UserPermissionController;
+use App\Http\Controllers\TaxInvoiceController;
 use Inertia\Inertia;
 
 Route::get('/', function () {
@@ -21,16 +26,29 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->name('dashboard');
     Route::resource('users', UserController::class);
     Route::resource('products', ProductController::class);
+    Route::post('/products/{product}/inventories', [InventoryTransferController::class, 'update']);
     Route::resource('customers', CustomerController::class);
+    Route::resource('customer-branches', CustomerBranchController::class);
+    Route::resource('representatives', \App\Http\Controllers\RepresentativeController::class);
     Route::resource('sales', SalesController::class);
     Route::get('/invoices', [SalesController::class, 'invoices'])->name('invoices.index');
+      Route::post('/inventory/qtyCheck', [SalesController::class, 'qtyCheck'])->name('inventory.qtyCheck');
+    Route::get('/invoice/{id}', [SalesController::class, 'show'])->name('invoice.show');
     
 
     Route::resource('inventory-transfers', InventoryTransferController::class);
     Route::resource('warehouses', WarehouseController::class);
     Route::resource('branches', BranchController::class);
+    Route::resource('roles', RoleController::class);
+Route::get('/users/roles/set', [UserRoleController::class, 'index'])->name('users.roles.index')->middleware('permission:super');
+Route::put('/users/{user}/roles', [UserRoleController::class, 'update'])->name('users.roles.update')->middleware('permission:super');
+Route::get('/access-control', [UserRoleController::class, 'AccessControl'])->name('access.control')->middleware('permission:super');
 
+Route::put('/roles/{user}/permissions', [UserPermissionController::class, 'update'])
+    ->name('users.permissions.update')->middleware('permission:super');
 
+Route::post('/invoices/{id}/send-to-eta', [TaxInvoiceController::class, 'sendToETA'])
+    ->name('invoices.sendToETA')->middleware('permission:Invoice send');
     // للحصول على الرصيد المتاح
     Route::get('/api/inventory/available-quantity', function (Request $request) {
     $quantity = App\Models\ProductInventory::where('product_id', $request->product_id)
@@ -39,8 +57,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         
     return response()->json(['quantity' => $quantity]);
     });
-
-
+//reports
+Route::get('/reports/dashboard', [\App\Http\Controllers\ReportController::class, 'index'])->name('reports.dashboard')->middleware('permission:Reports view');
+Route::get('/reports', [\App\Http\Controllers\ReportController::class, 'index'])->name('reports.index');
 });
 
 require __DIR__.'/settings.php';

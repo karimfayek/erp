@@ -3,15 +3,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import InputError from '@/components/input-error';
 
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from '@/components/ui/button';
 import { FormEventHandler } from 'react';
 import { LoaderCircle  } from 'lucide-react';
 import { useForm } from '@inertiajs/react';
 
-export default function NewUser({ onSuccess }){
+export default function NewUser({ onSuccess , warehouses}){
       const { data, setData, post, processing, errors, reset } = useForm<Required<RegisterForm>>({
           name: '',
           email: '',
+          warehouse_id :'',
           password: '',
           password_confirmation: '',
       });
@@ -20,9 +22,9 @@ export default function NewUser({ onSuccess }){
         e.preventDefault();
         post(route('register'), {
             onSuccess: () => {
-                reset();           // يمسح الفورم كله
+                reset();          
                 if (onSuccess) {
-                    onSuccess();   // يقفل الـ dialog
+                    onSuccess();  
                 }
             },
             onFinish: () => reset('password', 'password_confirmation'),
@@ -63,7 +65,18 @@ export default function NewUser({ onSuccess }){
                                    />
                                    <InputError message={errors.email} />
                                </div>
-           
+             <div>
+                <Label>مخزن المستخدم</Label> 
+                
+                <Select value={String(data.warehouse_id || "")} onValueChange={(e)=>setData('warehouse_id' , e)} >
+                  <SelectTrigger className="w-full"><SelectValue placeholder="اختر المخزن" /></SelectTrigger>
+                  <SelectContent>
+                    {warehouses.map((wh) => (
+                      <SelectItem key={wh.id} value={String(wh.id)}>{wh.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                </div>
                                <div className="grid gap-2">
                                    <Label htmlFor="password">Password</Label>
                                    <Input

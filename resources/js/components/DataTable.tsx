@@ -41,7 +41,6 @@ interface DataTableProps<TData, TValue> {
 export function DataTable<TData, TValue>({ columns, data }: DataTableProps<TData, TValue>) {
     console.log(data , 'data')
     const [sorting, setSorting] = React.useState<SortingState>([])
-     const [filtering, setFiltering] = React.useState("")
      const [globalFilter, setGlobalFilter] = React.useState("")
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
@@ -57,6 +56,12 @@ export function DataTable<TData, TValue>({ columns, data }: DataTableProps<TData
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
+    initialState: {
+      pagination: {
+        pageIndex: 0,
+        pageSize: 50, 
+      },
+    },
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,

@@ -44,8 +44,13 @@ class HandleInertiaRequests extends Middleware
             'name' => config('app.name'),
             'quote' => ['message' => trim($message), 'author' => trim($author)],
             'auth' => [
-                'user' => $request->user(),
-            ],
+            'user' => fn () => auth()->check() ? [
+                'id'          => auth()->id(),
+                'name'        => auth()->user()->name,
+                'role'        => auth()->user()->roles->first()?->slug, 
+                'permissions' => auth()->user()->allPermissions()->pluck('name'),
+            ] : null,
+        ],
             'ziggy' => fn (): array => [
                 ...(new Ziggy)->toArray(),
                 'location' => $request->url(),
@@ -53,7 +58,7 @@ class HandleInertiaRequests extends Middleware
             'flash' =>[
                 'message' => $request->session()->get('success'),
                 'type' => $request->session()->get('type' , 'success'),
-                  'customer' =>  $request->session()->get('customer'),
+                'customer' =>  $request->session()->get('customer'),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];

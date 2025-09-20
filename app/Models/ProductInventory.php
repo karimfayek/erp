@@ -9,7 +9,11 @@ class ProductInventory extends Pivot
     
    // إضافة إذا كنت تحتاج Timestamps
    public $timestamps = false;
-   
+   protected $primaryKey = 'id';  
+
+    public $incrementing = true;   
+
+    protected $keyType = 'int';   
    // إضافة السمات القابلة للتعبئة إذا لزم الأمر
    protected $fillable = [
        'quantity',
@@ -17,4 +21,8 @@ class ProductInventory extends Pivot
        'warehouse_id',
        'min_quantity'
    ];
+   public function warehouse()
+{
+    return $this->belongsTo(Warehouse::class);
+}
 }

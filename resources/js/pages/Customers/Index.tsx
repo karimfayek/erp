@@ -1,38 +1,190 @@
-import React, { useState } from 'react';
-import { Head, useForm, usePage } from '@inertiajs/react';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { LoaderCircle, Plus } from 'lucide-react';
+
+import { ArrowUpDown, ChevronDown, MoreHorizontal } from "lucide-react"
+import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog.js";
+import { can } from "@/utils/permissions";
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Customers',
-        href: '/customers',
+        title: 'العملاء',
+        href: '#',
     },
 ];
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+    DropdownMenu,
+    DropdownMenuCheckboxItem,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
+    AlertDialog,
+    AlertDialogTrigger,
+    AlertDialogContent,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogCancel,
+    AlertDialogAction,
+} from "@/components/ui/alert-dialog"
+import { useState } from 'react';
+import NewUser from './New';
+import NewCustomer from './New';
+import { DataTable } from '@/components/DataTable';
+import Delete from '@/components/includes/Delete';
+import { ColumnDef } from '@tanstack/react-table';
+import { Checkbox } from '@/components/ui/checkbox';
+
+type Customer = {
+    id: number
+    name: string
+    sku: number
+    price: number
+    stock: number
+}
 
 export default function Customers() {
-    const { customers, flash , errors } = usePage().props;
-    const { data, setData, post, reset } = useForm({
-        name: '',
-        email: '',
-        phone: '',
-        address: '',
-        discount_percentage: '',
-        company_name : ''
-    });
-console.log(errors , 'errors')
-    const submit = (e: any) => {
-        e.preventDefault();
-        post(route('customers.store'), {
-            onSuccess: () => reset()
-        });
-    };
+    const { customers, flash, errors } = usePage().props;
+    const [open, setOpen] = useState(false);
+    
+
+    
+ const columns: ColumnDef<Customer>[] = [
+    {
+        id: "select",
+        header: ({ table }) => (
+            <Checkbox
+                checked={
+                    table.getIsAllPageRowsSelected() ||
+                    (table.getIsSomePageRowsSelected() && "indeterminate")
+                }
+                onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                aria-label="Select all"
+            />
+        ),
+        cell: ({ row }) => (
+            <Checkbox
+                checked={row.getIsSelected()}
+                onCheckedChange={(value) => row.toggleSelected(!!value)}
+                aria-label="Select row"
+            />
+        ),
+        enableSorting: false,
+        enableHiding: false,
+    },
+       {
+    accessorKey: "name",
+    header: "الاسم",
+    cell: info => <span className="font-medium">{info.getValue()}</span>,
+  },
+  {
+        accessorKey: "company_name",
+        header: ({ column }) => {
+            return (
+                <Button
+                    variant="ghost"
+                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                >
+                    اسم الشركة
+                    <ArrowUpDown />
+                </Button>
+            )
+        },
+        cell: ({ row }) => <div>{row.getValue("company_name")}</div>,
+    },
+     {
+        accessorKey: "discount_percentage",
+        header: ({ column }) => {
+            return (
+                <Button
+                    variant="ghost"
+                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                >
+                   نسبة الخصم
+                    <ArrowUpDown />
+                </Button>
+            )
+        },
+        cell: ({ row }) => <div>{row.getValue("discount_percentage")}</div>,
+    },
+    {
+        accessorKey: "phone",
+        header: ({ column }) => {
+            return (
+                <Button
+                    variant="ghost"
+                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                >
+                   رقم التليفون
+                    <ArrowUpDown />
+                </Button>
+            )
+        },
+        cell: ({ row }) => <div>{row.getValue("phone")}</div>,
+    },
+    {
+        accessorKey: "user.name",
+        header: ({ column }) => {
+            return (
+                <Button
+                    variant="ghost"
+                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                >
+                  بواسطة
+                    <ArrowUpDown />
+                </Button>
+            )
+        },
+         cell: ({ row }) => <div>{row.original.user?.name}</div>,
+    },
+     {
+        id: "actions",
+        enableHiding: false,
+        cell: ({ row }) => {
+            const customer = row.original
+            return (
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                            <span className="sr-only">Open menu</span>
+                            <MoreHorizontal />
+                        </Button>
+                    </DropdownMenuTrigger>
+
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+
+                        {can('Products edit') &&
+
+                            <DropdownMenuItem asChild>
+                                <Link href={route("customers.edit", customer.id)}>
+                                    تعديل
+                                </Link>
+                            </DropdownMenuItem>
+                        }
+
+
+                        <DropdownMenuSeparator />
+                        {can('Products delete') &&
+                            <Delete id={customer.id} routeName={"customers.destroy"} />
+                        }
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            )
+        },
+    },
+]
 
     return (
-       
+
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="العملاء" />
 
@@ -40,40 +192,33 @@ console.log(errors , 'errors')
                 <div className="bg-green-100 text-green-700 p-2 rounded ">{flash.success}</div>
             )}
 
-            <form onSubmit={submit} className="space-y-2 bg-white p-4 rounded shadow md:grid grid-cols-2  gap-2">
-                <Input placeholder="اسم العميل" value={data.name} onChange={e => setData('name', e.target.value)} required />
-                <Input placeholder="اسم الشركة" value={data.company_name} onChange={e => setData('company_name', e.target.value)} />
-                <Input type="number" placeholder="نسبة الخصم" value={data.discount_percentage} onChange={e => setData('discount_percentage', e.target.value)} />
-                <Input placeholder="الايميل" value={data.email} onChange={e => setData('email', e.target.value)} />
-                <Input type="text" placeholder="التليفون" value={data.phone} onChange={e => setData('phone', e.target.value)} required/>
-                <Input type="text" placeholder="العنوان" value={data.address} onChange={e => setData('address', e.target.value)} />
-                <Button type="submit" colSpan={2}>إضافة عميل</Button>
-            </form>
 
-            <div className="mt-6 bg-white p-4 rounded shadow">
-                <Table>
-                    <TableHeader>
-                        <TableRow className="text-right">
-                            <TableHead className="text-right">الاسم</TableHead>
-                            <TableHead className="text-right">الشركة</TableHead>
-                            <TableHead className="text-right">الايميل</TableHead>
-                            <TableHead className="text-right">التليفون</TableHead>
-                            <TableHead className="text-right">نسبة الخصم</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {customers?.data.map(product => (
-                            <TableRow key={product.id}>
-                                <TableCell>{product.name}</TableCell>
-                                <TableCell>{product.company_name}</TableCell>
-                                <TableCell>{product.email}</TableCell>
-                                <TableCell>{product.phone}</TableCell>
-                                <TableCell>{product.discount_percentage} %</TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
+
+            <div className="mt-6  p-4 rounded shadow">
+                <div className='mb-4'>
+                    {can('Users create') &&
+                    
+                    <Button variant="outline" size="sm">
+                        <Plus />
+                        <span className="hidden lg:inline" onClick={() => setOpen(true)}>Add Customer</span>
+                    </Button>
+                    }
+                </div>
+                
+                                <DataTable columns={columns} data={customers} />
             </div>
-            </AppLayout>
+
+            <Dialog open={open} onOpenChange={setOpen}>
+                 <DialogContent className='sm:max-w-[90vw] lg:max-w-[1400px] w-full h-auto max-h-[90vh] overflow-y-auto p-6' dir='rtl'>
+                      <DialogHeader>
+                        <DialogTitle>إضافة عميل جديد</DialogTitle>
+                    </DialogHeader>
+
+                    <NewCustomer onCreated={() => setOpen(false)} />
+
+                </DialogContent>
+            </Dialog>
+
+        </AppLayout>
     );
 }

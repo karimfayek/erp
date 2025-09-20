@@ -64,7 +64,12 @@ class WarehouseController extends Controller
      */
     public function edit(string $id)
     {
-        //
+        $warehouse = Warehouse::find($id);
+        $branches = Branch::all();
+        return Inertia::render('Warehouse/Edit', [
+            'warehouse' => $warehouse,
+            'branches' => $branches,
+        ]);
     }
 
     /**
@@ -72,7 +77,9 @@ class WarehouseController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        $warehouse = Warehouse::find($id);
+        $warehouse->update($request->all());
+          return redirect()->back()->with('success', 'تم التعديل ');
     }
 
     /**
@@ -80,6 +87,7 @@ class WarehouseController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        $warehouse = Warehouse::find($id)->delete();
+          return redirect()->back()->with('success', 'تم الحذف ');
     }
 }

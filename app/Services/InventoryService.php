@@ -14,60 +14,115 @@ class InventoryService
     public function recordMovement(array $data)
     {
        
-        return DB::transaction(function () use ($data) {
-            try{
-                $movement = InventoryMovement::create([
-                    'product_id'         => $data['product_id'],
-                    'user_id'            => $data['user_id'] ?? auth()->id(),
-                    'type'               => $data['type'], // in | out | adjust
-                    'quantity'           => $data['quantity'],
-                    'movement_date'      => $data['movement_date'] ?? now(),
-                    'from_warehouse_id'  => $data['from_warehouse_id'] ?? null,
-                    'to_warehouse_id'    => $data['to_warehouse_id'] ?? null,
-                    'movement_type'      => $data['movement_type'], // addition | deduction | transfer | adjustment
+      return DB::transaction(function () use ($data) {
+        if ($data['movement_type'] === 'transfer') {
+            try {
+                $prevQtyOut = \App\Models\ProductInventory::where('warehouse_id', $data['from_warehouse_id'])->first() ;
+                $qtyOut = $prevQtyOut->quantity ?? 0 ;
+                $outMovement = InventoryMovement::create([
+                    'product_id'        => $data['product_id'],
+                    'user_id'           => $data['user_id'] ?? auth()->id(),
+                    'type'              => 'out',
+                    'quantity'          => $data['quantity'],
+                    'movement_date'     => now(),
+                    'prev_quantity'     =>$qtyOut,
+                    'from_warehouse_id' => $data['from_warehouse_id'],
+                    'to_warehouse_id'   => $data['to_warehouse_id'],
+                    'movement_type'     => 'transfer',
                 ]);
-                if ($data['movement_type'] === 'transfer') {
-                    // خصم من المصدر
-                    $this->updateInventory($data['product_id'], $data['from_warehouse_id'], -$data['quantity']);
-                    // إضافة للهدف
-                    $this->updateInventory($data['product_id'], $data['to_warehouse_id'], +$data['quantity']);
-                } else {
-                    if ($data['type'] === 'in') {
-                        $this->updateInventory($data['product_id'], $data['to_warehouse_id'], $data['quantity']);
-                    } elseif ($data['type'] === 'out') {
-                        $this->updateInventory($data['product_id'], $data['from_warehouse_id'], -$data['quantity']);
-                    } elseif ($data['type'] === 'adjust') {
-                        $this->updateInventory($data['product_id'], $data['from_warehouse_id'], $data['quantity']);
-                    }
-                }
-            return $movement;
+    
+            $this->updateInventory($data['product_id'], $data['from_warehouse_id'], -$data['quantity']);
+                 // ✅ حركة IN للهدف
+                  $wh = \App\Models\ProductInventory::where('warehouse_id', $data['to_warehouse_id'])->first() ;
+                $prevQtyIn = $wh->quantity ?? 0 ;
+            $inMovement = InventoryMovement::create([
+                'product_id'        => $data['product_id'],
+                'user_id'           => $data['user_id'] ?? auth()->id(),
+                'type'              => 'in',
+                'quantity'          => $data['quantity'],
+                'movement_date'     => now(),
+                'prev_quantity'     =>$prevQtyIn,
+                'from_warehouse_id' => $data['from_warehouse_id'],
+                'to_warehouse_id'   => $data['to_warehouse_id'],
+                'movement_type'     => 'transfer',
+            ]);
 
-            }catch (\Exception $e) {
-            return  $e->getMessage();
+            $this->updateInventory($data['product_id'], $data['to_warehouse_id'], +$data['quantity']);
+
+            return [$outMovement, $inMovement];
+
+            } catch (\Exception $e){
+                dd($e);
+            }
+
+           
         }
-           
-           
-            
-           
-        });
+
+        // غير كده (إضافة/خصم/تسوية)
+        try {
+            $movement = InventoryMovement::create([
+                'product_id'        => $data['product_id'],
+                'user_id'           => $data['user_id'] ?? auth()->id(),
+                'type'              => $data['type'], // in | out | adjust
+                'quantity'          => $data['quantity'],                
+                'prev_quantity'     =>$data['prev_quantity'],
+                'movement_date'     => $data['movement_date'] ?? now(),
+                'from_warehouse_id' => $data['from_warehouse_id'] ?? null,
+                'to_warehouse_id' => match ($data['type']) {
+                'adjust' => $data['from_warehouse_id'],
+                'sale'   => null,
+                default  => $data['from_warehouse_id'],
+            },
+                'movement_type'     => $data['movement_type'],
+            ]);
+        } catch (\Exception $e){
+            dd($e);
+        }
+
+        if ($data['type'] === 'in') {
+            $this->updateInventory($data['product_id'], $data['to_warehouse_id'], $data['quantity']);
+        } elseif ($data['type'] === 'out') {
+            $this->updateInventory($data['product_id'], $data['from_warehouse_id'], -$data['quantity']);
+        } elseif ($data['type'] === 'adjust') {
+            $this->updateInventory($data['product_id'], $data['from_warehouse_id'], $data['quantity'] , 'adjust');
+        } elseif ($data['type'] === 'sale') {
+            $this->updateInventory($data['product_id'], $data['from_warehouse_id'], $data['quantity'] , 'sale');
+        }
+
+        return $movement;
+    });
     }
 
     /**
      * تحديث الكمية الفعلية في جدول product_inventories
      */
-    protected function updateInventory($productId, $warehouseId, $quantityChange)
+    protected function updateInventory($productId, $warehouseId, $quantityChange , $type = null)
     {
-        //dd($quantityChange);
-        $inventory = ProductInventory::firstOrCreate([
-            'product_id'   => $productId,
-            'warehouse_id' => $warehouseId,
-        ], [
-            'quantity' => 0,
-        ]);
-        
-        $inventory->quantity += $quantityChange;
-        $inventory->save();
+       try{
 
+           $inventory = ProductInventory::firstOrCreate([
+               'product_id'   => $productId,
+               'warehouse_id' => $warehouseId,
+           ], [
+               'quantity' => 0,
+           ]);
+          if($type === 'adjust'){
+            $inventory->quantity = $quantityChange;
+          } elseif($type === 'sale'){
+            $inventory->quantity -= $quantityChange;
+          } else{
+
+              $inventory->quantity += $quantityChange;
+          }
+           $inventory->save();
         return $inventory;
+        }catch (\Exception $e) {
+    dd([
+        'inventory' => $inventory ?? null,
+        'error' => $e->getMessage(),
+        'trace' => $e->getTraceAsString()
+    ]);
+}
+ 
     }
 }

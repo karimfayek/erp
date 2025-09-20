@@ -4,11 +4,16 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { BookOpen, Folder, LayoutGrid ,Bandage , Users , ArrowLeftRight , Receipt, Store , MapPinned ,Contact} from 'lucide-react';
+import { BookOpen, Folder, LayoutGrid ,Bandage , Users , ArrowLeftRight , Receipt, Store , MapPinned ,Contact, KeySquare, BarChart2} from 'lucide-react';
 
 import AppLogo from './app-logo';
 import { NavCollabse } from './nav-collabse.js';
+import { can } from '@/utils/permissions';
+import { title } from 'process';
 
+
+export function AppSidebar() {
+    
 const mainNavItems: NavItem[] = [
     {
         title: 'Dashboard',
@@ -16,12 +21,8 @@ const mainNavItems: NavItem[] = [
         icon: LayoutGrid,
         
     },
-     {
-        title: 'Users',
-        href: '/users',
-        icon: Users,
-    },
-    {
+    
+    can("Branches view") &&  {
         title: 'Branches',
         href: '/branches',
         icon: MapPinned,
@@ -31,26 +32,25 @@ const mainNavItems: NavItem[] = [
         href: '/warehouses',
         icon: Store,
     },
-    {
+  can('Products view') &&{
         title: 'Products',
         href: '/products',
         icon: Bandage,
     },
-    {
-        title: 'Customers',
-        href: '/customers',
-        icon: Contact,
-    },
-    {
+   can('Clients view') &&{
+            title: 'العملاء',
+            href: '/customers',
+            icon: Contact,
+        },
+   can('Stock transfer') && {
         title: 'Transfer',
         href: '/inventory-transfers',
         icon: ArrowLeftRight,
     },
-];
+].filter(Boolean) as NavItem[];
 const CollabseNavItems: NavItem[] = [
-    
-    
-    {
+       
+   can('Invoices view')&& {
         title: 'Sales',
         href: '/sales',
         icon: Receipt,
@@ -66,22 +66,64 @@ const CollabseNavItems: NavItem[] = [
               
         ]
     },
-];
+  
+     can('Users view') &&   {
+        title: 'المستخدمين و الصلاحيات',
+        href: '/roles',
+        icon: KeySquare,
+        items :[
+             can("Users view") && {
+            title: "المتستخدمين",
+            url: "/users",
+            icon: Users,
+            },
+           can("super") &&  {
+                title: "الأدوار",
+                 url: '/roles',
+              },
+          can("super") && {
+                title: "أدوار المستخدمين",
+                url: '/users/roles/set',
+              },
+           can("super") &&  {
+                title: " صلاحيات المستخدمين",
+                url: '/access-control',
+              },
+           
+              
+        ]
+    },
+        can('Super Admin') &&   {
+        title: 'التقارير',
+        href: '/reports',
+        //what icon to use for reports
+
+        icon: BarChart2,
+        items :[
+             can("Reports view") && {
+            title: "المبيعات",
+            url: "/reports/dashboard",
+            icon: Users,
+            },
+          
+           
+              
+        ]
+    },
+].filter(Boolean) as NavItem[];
 
 const footerNavItems: NavItem[] = [
     {
         title: 'Repository',
-        href: 'https://github.com/laravel/react-starter-kit',
+        href: '#',
         icon: Folder,
     },
     {
         title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#react',
+        href: '#',
         icon: BookOpen,
     },
 ];
-
-export function AppSidebar() {
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>

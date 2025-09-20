@@ -1,11 +1,18 @@
-import React, { useState } from 'react';
-import { Head, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import AppLayout from '@/layouts/app-layout';
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { type BreadcrumbItem } from '@/types';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -14,6 +21,8 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { MoreHorizontal } from 'lucide-react';
+import Delete from '@/components/includes/Delete';
 
 export default function Index() {
     const { warehouses , flash ,  errors = {} , branches} = usePage().props;
@@ -44,7 +53,7 @@ export default function Index() {
                 <div className="bg-green-100 text-green-700 p-2 rounded ">{flash.success}</div>
             )}
 
-            <form onSubmit={submit} className="space-y-2 bg-white p-4 rounded shadow md:grid grid-cols-2  gap-2">
+            <form onSubmit={submit} className="space-y-2  p-4 rounded shadow md:grid grid-cols-2  gap-2">
                  <div>
                 <Label>اسم</Label>
                 <Input placeholder="اسم المخزن" value={data.name} onChange={e => setData('name', e.target.value)} />
@@ -69,10 +78,10 @@ export default function Index() {
                 <Input type="number" placeholder="كود" value={data.code} onChange={e => setData('code', e.target.value)} />
                 </div>
                 
-                <Button type="submit" colSpan={2}>إضافة مخزن</Button>
+                <Button type="submit"className='col-span-2'>إضافة مخزن</Button>
             </form>
 
-            <div className="mt-6 bg-white p-4 rounded shadow">
+            <div className="mt-6  p-4 rounded shadow">
                 <Table>
                     <TableHeader>
                         <TableRow >
@@ -87,6 +96,35 @@ export default function Index() {
                                 <TableCell>{warehouse.name}</TableCell>
                                 <TableCell>{warehouse.code}</TableCell>
                                 <TableCell>{warehouse.branch?.name}</TableCell>
+                                  <TableCell className="text-right">
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" className="h-8 w-8 p-0">
+                                                <span className="sr-only">Open menu</span>
+                                                <MoreHorizontal />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+
+                                            <DropdownMenuItem asChild>
+                                                <Link href={route("warehouses.show", warehouse.id)}>
+                                                    عرض فواتير المستخدم
+                                                </Link>
+                                            </DropdownMenuItem>
+
+                                            <DropdownMenuItem asChild>
+                                                <Link href={route("warehouses.edit", warehouse.id)}>
+                                                    تعديل
+                                                </Link>
+                                            </DropdownMenuItem>
+
+                                            <DropdownMenuSeparator />
+<Delete id={warehouse.id} routeName={"warehouses.destroy"} />
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </TableCell>
                             </TableRow>
                         ))}
                     </TableBody>

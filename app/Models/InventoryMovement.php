@@ -13,7 +13,7 @@ class InventoryMovement extends Model
         'type',
         'quantity',
         'movement_date',
-        'remaining_quantity',
+        'prev_quantity',
         'from_warehouse_id',
         'to_warehouse_id',
         'movement_type',

@@ -10,14 +10,18 @@ class Sale extends Model
     use HasFactory;
 
     protected $fillable = [
-        'date','customer_id','user_id','collected','subtotal','discount_percent','tax','postponed','expenses','notes','invoice_number'
+      'issued_at' ,'internal_id' , 'date','customer_id','user_id','collected','subtotal','discount_percent',
+      'tax','postponed','expenses','notes','invoice_number' ,'eta_status' ,'eta_uuid', 'representative_id','customer_branch_id'
     ];
 
-    protected $casts = [ 'date' => 'date' ];
+    protected $casts = [
+         'date' => 'date' ,
+           'issued_at' => 'datetime',
+        ];
 
     public function customer()
     {
-         return $this->belongsTo(Customer::class);
+        return $this->belongsTo(Customer::class);
     }
 
     public function items()

@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { toast   } from "sonner";
+import { toast } from "sonner";
 import AppLayout from "@/layouts/app-layout";
 
 /**
@@ -19,18 +19,30 @@ import AppLayout from "@/layouts/app-layout";
  * - user: current auth user (optional)
  */
 import { type BreadcrumbItem } from '@/types';
-import { Dialog , DialogContent , DialogHeader , DialogTitle  } from "@/components/ui/dialog.js";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog.js";
 import NewCustomer from "../Customers/New";
+import { can } from "@/utils/permissions";
 
 const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'Sales',
-        href: '/sales',
-    },
+  {
+    title: 'Sales',
+    href: '/sales',
+  },
 ];
 export default function SalesCreate() {
+  if (!can('Invoices create')) {
+    return null
+  }
 
-  const { customers = [], products = [], errors = {}, flash = {} } = usePage().props;
+  const { customers = [], products = [], warehouses = [], errors = {}, flash = {}, inventory = {} } = usePage().props as {
+    customers: any[],
+    products: any[],
+    warehouses: { id: string | number, name: string }[],
+    errors: Record<string, any>,
+    flash: Record<string, any>,
+    inventory: any,
+  };
+  
 
   const productMap = useMemo(() => {
     const map = new Map();
@@ -40,9 +52,9 @@ export default function SalesCreate() {
 
   const generateId = () => `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const [items, setItems] = useState([
-    { tempId: generateId(), product_id: "", product_code: "", serial_number: "", description: "", qty: 1, unit_price: 0, total: 0 },
+    { tempId: generateId(), product_id: "", product_code: "", serial_number: "", description: "", qty: 1, inv: inventory.id, unit_price: 0, total: 0 },
   ]);
- 
+
   const { data, setData, post, processing, reset } = useForm({
     date: new Date().toISOString().slice(0, 10),
     customer_id: "",
@@ -54,31 +66,107 @@ export default function SalesCreate() {
     tax: 0,
     expenses: 0,
     unknown_f: "",
-    invoice_number: "",
+
     notes: "",
     items: [],
   });
-  const [customersList, setCustomersList] = useState(customers); 
-  const [open, setOpen] = useState(false); 
-  
+  const [customersList, setCustomersList] = useState(customers);
+  const [open, setOpen] = useState(false);
+  // ...existing code...
+  const checkQtyAndUpdate = (tempId, patch = {}) => {
+    setItems((prev) => {
+      const row = prev.find((r) => r.tempId === tempId);
+      if (!row) return prev;
 
-const handleCustomerChange = (customerId: string) => {
-  if (!customerId) return;
-  if (customerId === 'new') {
-    setOpen(true);
-  } else {
-    setData((prev) => {
-      const selected = customersList.find((c) => String(c.id) === String(customerId));
-      customersList.map((cu) => console.log('cu' ,  String(cu.id) , String(customerId) ))
-console.log('selected' , selected)
-      return {
-        ...prev,
-        customer_id: String(customerId), 
-        discount_percentage: selected ? selected.discount_percentage || 0 : prev.discount_percentage
-      };
+      let newRow = { ...row, ...patch };
+
+      // إذا تم تغيير المنتج، املأ باقي الحقول تلقائياً
+      if (patch.product_id) {
+        const p = productMap.get(String(patch.product_id));
+        if (p) {
+          newRow = {
+            ...newRow,
+            unit_price: p.price ?? 0,
+            product_code: p.internal_code ?? "",
+            description: p.name ?? "",
+          };
+        }
+      }
+
+      // يجب توفر منتج ومخزن وكمية
+      if (!newRow.product_id || !newRow.inv || !newRow.qty) return prev.map((r) => r.tempId === tempId ? newRow : r);
+
+      fetch('/inventory/qtyCheck', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+        },
+        body: JSON.stringify({
+          product_id: newRow.product_id,
+          qty: newRow.qty,
+          warehouse_id: newRow.inv,
+        }),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.available_qty >= newRow.qty) {
+            
+            setItems((prev2) => recalcAll(prev2.map((r) => r.tempId === tempId ? { ...newRow } : r)));
+          } else {
+            console.log('data', data);
+            //show user available qty in other warehouses for that product
+            let otherWarehousesInfo = '';
+            //edit the folowing because all_quantities is an object not an array
+            Object.entries(data.all_quantities ?? {}).forEach(([warehouseId, qty]) => {
+              if (warehouseId !== newRow.inv) {
+                const warehouse = warehouses.find((w) => w.id === warehouseId);
+                console.log('warehouse', warehouse);
+                otherWarehousesInfo += ` ${warehouse?.name ?? warehouseId}: ${qty} \n`;
+              }
+            });
+              toast(` ${data.available_qty ?? 0}الكمية غير متوفرة في هذا المخزن. المتاح:`, {
+                description: `${otherWarehousesInfo}`,
+                action: {
+                  label: "OK",
+                  onClick: () => {},
+                },
+              })
+            
+            
+            setItems((prev2) =>
+              recalcAll(prev2.map((r) =>
+                r.tempId === tempId ? { ...newRow, qty: data.available_qty } : r
+              ))
+            );
+          }
+        })
+        .catch(() => {
+          toast("حدث خطأ أثناء التحقق من المخزون");
+        });
+
+      return prev.map((r) => r.tempId === tempId ? newRow : r);
     });
-  }
-};
+  };
+  // ...existing code...
+
+  const handleCustomerChange = (customerId: string) => {
+    if (!customerId) return;
+    if (customerId === 'new') {
+      setOpen(true);
+    } else {
+      setData((prev) => {
+        const selected = customersList.find((c) => String(c.id) === String(customerId));
+        customersList.map((cu) => console.log('cu', String(cu.id), String(customerId)))
+        console.log('selected', selected)
+        return {
+          ...prev,
+          customer_id: String(customerId),
+          discount_percentage: selected ? selected.discount_percentage || 0 : prev.discount_percentage
+        };
+      });
+    }
+  };
 
 
   // helpers
@@ -98,7 +186,7 @@ console.log('selected' , selected)
   const addRow = () => {
     setItems((prev) => [
       ...prev,
-      { tempId: generateId(), product_id: "", product_code: "", serial_number: "", description: "", qty: 1, unit_price: 0, total: 0 },
+      { tempId: generateId(), product_id: "", product_code: "", serial_number: "", description: "", qty: 1, inv: inventory.id, unit_price: 0, total: 0 },
     ]);
   };
 
@@ -109,18 +197,7 @@ console.log('selected' , selected)
   const updateRow = (tempId, patch) => {
     setItems((prev) => recalcAll(prev.map((r) => (r.tempId === tempId ? { ...r, ...patch } : r))));
   };
-
-  const onProductChange = (tempId, product_id) => {
-    const p = productMap.get(String(product_id));
-    if (!p) return updateRow(tempId, { product_id, unit_price: 0, product_code: "", description: "" });
-    updateRow(tempId, {
-      product_id,
-      unit_price: p.price ?? 0,
-      product_code: p.code ?? "",
-      description: p.name ?? "",
-    });
-  };
-
+  // compute available quantity for selected product in selected from_warehouse
   // totals
   const subtotal = useMemo(() => items.reduce((s, r) => s + toNumber(r.total), 0), [items]);
   const discountValue = useMemo(() => (subtotal * toNumber(data.discount_percentage)) / 100, [subtotal, data.discount_percentage]);
@@ -147,7 +224,13 @@ console.log('selected' , selected)
       tax: +taxAmount.toFixed(2),
       subtotal: +subtotal.toFixed(2),
       postponed: +postponed.toFixed(2),
-      items: items.map(({ tempId, ...r }) => ({ ...r, qty: toNumber(r.qty), unit_price: toNumber(r.unit_price), total: toNumber(r.total) })),
+      items: items.map(({ tempId, ...r }) => ({
+        ...r,
+        qty: toNumber(r.qty),
+        inv: toNumber(r.inv),
+        unit_price: toNumber(r.unit_price),
+        
+      })),
     };
 
     if (payload.items.length === 0 || payload.items.every((r) => !r.product_id && !r.description)) {
@@ -162,7 +245,7 @@ console.log('selected' , selected)
       onSuccess: () => {
         toast("تم حفظ عملية البيع بنجاح");
         reset();
-        setItems([{ tempId: generateId(), product_id: "", product_code: "", serial_number: "", description: "", qty: 1, unit_price: 0, total: 0 }]);
+        setItems([{ tempId: generateId(), product_id: "", product_code: "", serial_number: "", description: "", qty: 1, inv: inventory.id, unit_price: 0, total: 0 }]);
       },
     });
   };
@@ -170,190 +253,195 @@ console.log('selected' , selected)
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
 
-   
-    <div dir="rtl" className="p-6 space-y-6">
-      <Head title="إضافة عملية بيع" />
 
-      <Card className="shadow-sm">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-xl">بيانات عملية البيع</CardTitle>
-        </CardHeader>
-        <Separator />
-        <CardContent className="pt-4 space-y-4">
-          <form onSubmit={submit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div dir="rtl" className="p-6 space-y-6">
+        <Head title="إضافة عملية بيع" />
+
+        <Card className="shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xl">بيانات عملية البيع</CardTitle>
+          </CardHeader>
+          <Separator />
+          <CardContent className="pt-4 space-y-4">
+            <form onSubmit={submit} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="date">التاريخ</Label>
+                  <Input id="date" type="date" value={data.date} onChange={(e) => setData("date", e.target.value)} />
+                  {errors.date && <p className="text-red-600 text-sm mt-1">{errors.date}</p>}
+                </div>
+
+                <div>
+                  <Label>العميل</Label>
+                  <Select value={String(data.customer_id || "")} onValueChange={(v) => handleCustomerChange(v)}>
+                    <SelectTrigger className="w-full"><SelectValue placeholder="اختر العميل" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="new" className="text-blue-600">+ إضافة عميل جديد</SelectItem>
+                      {customersList.map((c) => (
+                        <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
+                      ))}
+
+                    </SelectContent>
+                  </Select>
+                  {errors.customer_id && <p className="text-red-600 text-sm mt-1">{errors.customer_id}</p>}
+                </div>
+
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                  <Label htmlFor="discount_percentage">نسبة الخصم %</Label>
+                  <Input id="discount_percentage" type="number" step="0.01" value={data.discount_percentage}
+                    onChange={(e) => setData((prev) => ({ ...prev, discount_percentage: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="tax_percent">الضريبة %</Label>
+                  <Input id="tax_percent" type="number" step="0.01" value={data.tax_percent} onChange={(e) => setData("tax_percent", e.target.value)} />
+                </div>
+                <div>
+                  <Label htmlFor="expenses">مصروفات</Label>
+                  <Input id="expenses" type="number" step="0.01" value={data.expenses} onChange={(e) => setData("expenses", e.target.value)} />
+                </div>
+                <div>
+                  <Label htmlFor="unknown_f">ف</Label>
+                  <Input id="unknown_f" value={data.unknown_f} onChange={(e) => setData("unknown_f", e.target.value)} placeholder="(حقل مؤقت حتى يوضحه العميل)" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="collected">محصل (ما تم تحصيله)</Label>
+                  <Input id="collected" type="number" step="0.01" value={data.collected} onChange={(e) => setData("collected", e.target.value)} />
+                </div>
+                <div>
+                  <Label>مؤجل (يُحسب تلقائيًا)</Label>
+                  <Input readOnly value={postponed.toFixed(2)} />
+                </div>
+              </div>
+
               <div>
-                <Label htmlFor="date">التاريخ</Label>
-                <Input id="date" type="date" value={data.date} onChange={(e) => setData("date", e.target.value)} />
-                {errors.date && <p className="text-red-600 text-sm mt-1">{errors.date}</p>}
+                <Label htmlFor="notes">ملاحظات</Label>
+                <Textarea id="notes" value={data.notes} onChange={(e) => setData("notes", e.target.value)} />
               </div>
 
-              <div>
-                <Label>العميل</Label>
-                <Select value={String(data.customer_id || "")} onValueChange={(v)=>handleCustomerChange(v)}>
-                <SelectTrigger className="w-full"><SelectValue placeholder="اختر العميل" /></SelectTrigger>
-                <SelectContent>
-                   <SelectItem value="new" className="text-blue-600">+ إضافة عميل جديد</SelectItem>
-                  {customersList.map((c) => (
-                    <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
-                  ))}
-                 
-                </SelectContent>
-              </Select>
-                {errors.customer_id && <p className="text-red-600 text-sm mt-1">{errors.customer_id}</p>}
-              </div>
-
-              <div>
-                <Label htmlFor="invoice_number">رقم الفاتورة</Label>
-                <Input id="invoice_number" value={data.invoice_number} onChange={(e) => setData("invoice_number", e.target.value)} />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div>
-                <Label htmlFor="discount_percentage">نسبة الخصم %</Label>
-                <Input id="discount_percentage" type="number" step="0.01" value={data.discount_percentage} 
-              onChange={(e) => setData((prev) => ({ ...prev, discount_percentage: e.target.value }))}
-                 />
-              </div>
-              <div>
-                <Label htmlFor="tax_percent">الضريبة %</Label>
-                <Input id="tax_percent" type="number" step="0.01" value={data.tax_percent} onChange={(e) => setData("tax_percent", e.target.value)} />
-              </div>
-              <div>
-                <Label htmlFor="expenses">مصروفات</Label>
-                <Input id="expenses" type="number" step="0.01" value={data.expenses} onChange={(e) => setData("expenses", e.target.value)} />
-              </div>
-              <div>
-                <Label htmlFor="unknown_f">ف</Label>
-                <Input id="unknown_f" value={data.unknown_f} onChange={(e) => setData("unknown_f", e.target.value)} placeholder="(حقل مؤقت حتى يوضحه العميل)" />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="collected">محصل (ما تم تحصيله)</Label>
-                <Input id="collected" type="number" step="0.01" value={data.collected} onChange={(e) => setData("collected", e.target.value)} />
-              </div>
-              <div>
-                <Label>مؤجل (يُحسب تلقائيًا)</Label>
-                <Input readOnly value={postponed.toFixed(2)} />
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="notes">ملاحظات</Label>
-              <Textarea id="notes" value={data.notes} onChange={(e) => setData("notes", e.target.value)} />
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <h3 className="font-semibold">الأصناف (Sales Items)</h3>
-                <Button type="button" variant="secondary" onClick={addRow}>إضافة صنف</Button>
-              </div>
-
-              <div className="overflow-x-auto border rounded-md">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="min-w-[220px]">المنتج</TableHead>
-                      <TableHead>الكود</TableHead>
-                      <TableHead>S/N</TableHead>
-                      <TableHead>الوصف</TableHead>
-                      <TableHead>الكمية</TableHead>
-                      <TableHead>سعر الوحدة</TableHead>
-                      <TableHead>الإجمالي</TableHead>
-                      <TableHead>إجراء</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {items.map((row) => (
-                      <TableRow key={row.tempId}>
-                        <TableCell>
-                          <Select value={String(row.product_id || "")} onValueChange={(v) => onProductChange(row.tempId, v)}>
-                            <SelectTrigger className="w-[220px]"><SelectValue placeholder="اختر المنتج" /></SelectTrigger>
-                            <SelectContent>
-                              {products.map((p) => (
-                                <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </TableCell>
-                        <TableCell>
-                          <Input value={row.product_code || ""} onChange={(e) => updateRow(row.tempId, { product_code: e.target.value })} />
-                        </TableCell>
-                        <TableCell>
-                          <Input value={row.serial_number || ""} onChange={(e) => updateRow(row.tempId, { serial_number: e.target.value })} />
-                        </TableCell>
-                        <TableCell>
-                          <Input value={row.description || ""} onChange={(e) => updateRow(row.tempId, { description: e.target.value })} />
-                        </TableCell>
-                        <TableCell>
-                          <Input type="number" step="1" min="0" value={row.qty} onChange={(e) => updateRow(row.tempId, { qty: e.target.value })} />
-                        </TableCell>
-                        <TableCell>
-                          <Input type="number" step="0.01" value={row.unit_price} onChange={(e) => updateRow(row.tempId, { unit_price: e.target.value })} />
-                        </TableCell>
-                        <TableCell>
-                          <Input readOnly value={Number(row.total).toFixed(2)} />
-                        </TableCell>
-                        <TableCell>
-                          <Button type="button" variant="destructive" onClick={() => removeRow(row.tempId)}>حذف</Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </div>
-
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Badge variant="outline">ملخص</Badge>
-                <div className="flex items-center justify-between"><span>الإجمالي (قبل الخصم):</span><span>{subtotal.toFixed(2)}</span></div>
-                <div className="flex items-center justify-between"><span>قيمة الخصم:</span><span>{discountValue.toFixed(2)}</span></div>
-                <div className="flex items-center justify-between"><span>بعد الخصم:</span><span>{afterDiscount.toFixed(2)}</span></div>
-                <div className="flex items-center justify-between"><span>الضريبة:</span><span>{taxAmount.toFixed(2)}</span></div>
-                <div className="flex items-center justify-between"><span>مصروفات:</span><span>{toNumber(data.expenses).toFixed(2)}</span></div>
-                <Separator className="my-2" />
-                <div className="flex items-center justify-between font-semibold text-lg"><span>الإجمالي النهائي:</span><span>{grandTotal.toFixed(2)}</span></div>
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold">الأصناف (Sales Items)</h3>
+                  <Button type="button" variant="secondary" onClick={addRow}>إضافة صنف</Button>
+                </div>
+
+                <div className="overflow-x-auto border rounded-md">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="min-w-[220px]">المنتج</TableHead>
+                        <TableHead>الكود</TableHead>
+                        <TableHead>الوصف</TableHead>
+                        <TableHead>الكمية</TableHead>
+                        <TableHead>المخزن</TableHead>
+                        <TableHead>سعر الوحدة</TableHead>
+                        <TableHead>الإجمالي</TableHead>
+                        <TableHead>إجراء</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {items.map((row) => (
+                        <TableRow key={row.tempId}>
+                          <TableCell>
+                            <Select value={String(row.product_id || "")} onValueChange={(v) => checkQtyAndUpdate(row.tempId, { product_id: v })} >
+                              <SelectTrigger className="w-[220px]"><SelectValue placeholder="اختر المنتج" /></SelectTrigger>
+                              <SelectContent>
+                                {products.map((p) => (
+                                  <SelectItem key={p.id} value={String(p.id)}> {p.name} - ({p.internal_code}) - {p.brand_id}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                          <TableCell>
+                            <Input value={row.product_code || ""} onChange={(e) => updateRow(row.tempId, { product_code: e.target.value })} />
+                          </TableCell>
+
+                          <TableCell>
+                            <Input value={row.description || ""} onChange={(e) => updateRow(row.tempId, { description: e.target.value })} />
+                          </TableCell>
+                          <TableCell>
+                            <Input type="number" step="1" min="0" value={row.qty} onChange={(e) => checkQtyAndUpdate(row.tempId, { qty: e.target.value })} />
+
+                          </TableCell>
+                          <TableCell>
+                            <Select value={String(row.inv || "")} onValueChange={(v) => checkQtyAndUpdate(row.tempId, { inv: v })}>
+                              <SelectTrigger className="w-[220px]"><SelectValue placeholder="اختر المخزن" /></SelectTrigger>
+                              <SelectContent>
+                                {warehouses.map((w) => (
+                                  <SelectItem key={w.id} value={String(w.id)}>{w.name}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                          <TableCell>
+                            <Input type="number" step="0.01" value={row.unit_price} onChange={(e) => updateRow(row.tempId, { unit_price: e.target.value })} />
+                          </TableCell>
+                          <TableCell>
+                            <Input readOnly value={Number(row.total).toFixed(2)} />
+                          </TableCell>
+                          <TableCell>
+                            <Button type="button" variant="destructive" onClick={() => removeRow(row.tempId)}>حذف</Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               </div>
-              <div className="flex items-end justify-end">
-                <Button type="submit" disabled={processing} className="mt-6">حفظ</Button>
+
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Badge variant="outline">ملخص</Badge>
+                  <div className="flex items-center justify-between"><span>الإجمالي (قبل الخصم):</span><span>{subtotal.toFixed(2)}</span></div>
+                  <div className="flex items-center justify-between"><span>قيمة الخصم:</span><span>{discountValue.toFixed(2)}</span></div>
+                  <div className="flex items-center justify-between"><span>بعد الخصم:</span><span>{afterDiscount.toFixed(2)}</span></div>
+                  <div className="flex items-center justify-between"><span>الضريبة:</span><span>{taxAmount.toFixed(2)}</span></div>
+                  <div className="flex items-center justify-between"><span>مصروفات:</span><span>{toNumber(data.expenses).toFixed(2)}</span></div>
+                  <Separator className="my-2" />
+                  <div className="flex items-center justify-between font-semibold text-lg"><span>الإجمالي النهائي:</span><span>{grandTotal.toFixed(2)}</span></div>
+                </div>
+                <div className="flex items-end justify-end">
+                  <Button type="submit" disabled={processing} className="mt-6">حفظ</Button>
+                </div>
               </div>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-      
-<Dialog open={open} onOpenChange={setOpen}>
-  <DialogContent>
-    <DialogHeader>
-      <DialogTitle>إضافة عميل جديد</DialogTitle>
-    </DialogHeader>
+            </form>
+          </CardContent>
+        </Card>
 
- <NewCustomer
-      onCreated={(customer) => {
-        // أضف العميل الجديد للقائمة
-        setCustomersList((prev) => [...prev, customer]);
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>إضافة عميل جديد</DialogTitle>
+            </DialogHeader>
 
-        // اضبط id + الخصم
-        setData((prev) => ({
-          ...prev,
-         customer_id: String(customer.id), 
-          discount_percentage: customer.discount_percentage || 0,
-        }));
-        
-        
-        // اقفل الـ dialog
-        setOpen(false);
-      }}
-    />
+            <NewCustomer
+              onCreated={(customer) => {
+                // أضف العميل الجديد للقائمة
+                setCustomersList((prev) => [...prev, customer]);
 
-  </DialogContent>
-</Dialog>
-    </div>
+                // اضبط id + الخصم
+                setData((prev) => ({
+                  ...prev,
+                  customer_id: String(customer.id),
+                  discount_percentage: customer.discount_percentage || 0,
+                }));
+
+
+                // اقفل الـ dialog
+                setOpen(false);
+              }}
+            />
+
+          </DialogContent>
+        </Dialog>
+      </div>
     </AppLayout>
   );
 }

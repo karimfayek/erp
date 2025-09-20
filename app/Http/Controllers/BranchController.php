@@ -60,7 +60,10 @@ class BranchController extends Controller
      */
     public function edit(string $id)
     {
-        //
+         $branche = Branch::find($id);
+        return Inertia::render('Branch/Edit', [
+            'branche' => $branche,
+        ]);
     }
 
     /**
@@ -68,7 +71,17 @@ class BranchController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+         //dd($request->all());
+            $data = $request->validate([
+                'name' => 'required|string|max:255',
+                'code' => 'nullable|string|max:255',
+                'address' => 'nullable|string|max:255',
+                'phone' => 'nullable|string|max:255',
+            ]);
+    $branch = Branch::find($id);
+            $branch->update($data);
+          
+            return redirect()->back()->with('success', 'تم تعديل الفرع بنجاح');
     }
 
     /**
@@ -76,6 +89,7 @@ class BranchController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        $branche = Branch::find($id)->delete();
+          return redirect()->back()->with('success', 'تم الحذف ');
     }
 }

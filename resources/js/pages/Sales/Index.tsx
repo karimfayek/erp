@@ -26,6 +26,8 @@ import {
 import { type BreadcrumbItem } from '@/types';
 import { DataTable } from "@/components/DataTable";
 import { ArrowUpDown, MoreHorizontal } from "lucide-react";
+import { can } from "@/utils/permissions";
+import Delete from "@/components/includes/Delete";
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -162,11 +164,8 @@ export const invoiceColumns: ColumnDef<Invoice>[] = [
     header: "Collected",
     cell: ({ row }) => <div>{row.getValue("collected")} EGP</div>,
   },
-  {
-    accessorKey: "postponed",
-    header: "Postponed",
-    cell: ({ row }) => <div>{row.getValue("postponed")} EGP</div>,
-  },  {
+  
+    {
     id: "actions",
     enableHiding: false,
     cell: ({ row }) => {
@@ -182,12 +181,22 @@ export const invoiceColumns: ColumnDef<Invoice>[] = [
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             <DropdownMenuItem>
-                <Link href={`/sales/${invoice.invoice_number}`}>
+                <Link href={route('invoice.show' , invoice.id)}>
                 عرض الفاتورة
                 </Link>
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>View payment details</DropdownMenuItem>
+            {can('Invoice send') &&
+           <DropdownMenuItem>
+                <Link href={route('invoices.sendToETA', invoice.id)} method="post">
+                  ارسال للمنظومة
+                </Link>
+              </DropdownMenuItem>
+    }
+              <DropdownMenuSeparator />
+              {can('Invoices delete') &&
+              <Delete id={invoice.id} routeName={'sales.destroy'} />
+              }
+              
           </DropdownMenuContent>
         </DropdownMenu>
       )
@@ -195,7 +204,9 @@ export const invoiceColumns: ColumnDef<Invoice>[] = [
   },
 ]
 export default function SalesCreate() {
-
+if(!can('Invoices view')){
+  return false
+}
 const { sales } = usePage().props as unknown as {
     sales: {
       data: Invoice[]
@@ -216,7 +227,7 @@ const { sales } = usePage().props as unknown as {
       <Head title="  عرض الفواتير" />
 
        <div className="p-6">
-                  <b>عرض فواتير </b>
+                  <b>كل الفواتير </b>
                 
          <DataTable columns={invoiceColumns} data={sales.data} />
          <div className="flex space-x-2 rtl:space-x-reverse">
@@ -226,7 +237,7 @@ const { sales } = usePage().props as unknown as {
             variant={link.active ? "default" : "outline"}
             disabled={!link.url}
             onClick={() => handlePageChange(link.url)}
-            dangerouslySetInnerHTML={{ __html: link.label }} // عشان << و >>
+            dangerouslySetInnerHTML={{ __html: link.label }} 
           />
         ))}
       </div>

@@ -17,6 +17,7 @@ class InventoryMovement extends Model
         'from_warehouse_id',
         'to_warehouse_id',
         'movement_type',
+        'notes'
     ];
 
     protected $casts = [

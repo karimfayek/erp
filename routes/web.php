@@ -34,7 +34,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/invoices', [SalesController::class, 'invoices'])->name('invoices.index');
       Route::post('/inventory/qtyCheck', [SalesController::class, 'qtyCheck'])->name('inventory.qtyCheck');
     Route::get('/invoice/{id}', [SalesController::class, 'show'])->name('invoice.show');
+    Route::get('/invoice/{id}/details', [SalesController::class, 'details'])->name('invoice.details');
     
+Route::post('/invoices/{invoice}/toggle-delivery', [SalesController::class, 'toggleDelivery'])->name('delivery.status');
+Route::post('/invoices/{invoice}/update-collection', [SalesController::class, 'updateCollection']);
 
     Route::resource('inventory-transfers', InventoryTransferController::class);
     Route::resource('warehouses', WarehouseController::class);
@@ -59,6 +62,8 @@ Route::post('/invoices/{id}/send-to-eta', [TaxInvoiceController::class, 'sendToE
     });
 //reports
 Route::get('/reports/dashboard', [\App\Http\Controllers\ReportController::class, 'index'])->name('reports.dashboard')->middleware('permission:Reports view');
+Route::get('/reports/user/{user}', [\App\Http\Controllers\ReportController::class, 'user'])->name('reports.user')->middleware('permission:Reports view');
+Route::get('/reports/branch/{branch}', [\App\Http\Controllers\ReportController::class, 'branch'])->name('reports.branch')->middleware('permission:Reports view');
 Route::get('/reports', [\App\Http\Controllers\ReportController::class, 'index'])->name('reports.index');
 });
 

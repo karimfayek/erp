@@ -25,9 +25,10 @@ import {
  */
 import { type BreadcrumbItem } from '@/types';
 import { DataTable } from "@/components/DataTable";
-import { ArrowUpDown, MoreHorizontal } from "lucide-react";
+import { ArrowUpDown, BadgeCheckIcon, MoreHorizontal, X } from "lucide-react";
 import { can } from "@/utils/permissions";
 import Delete from "@/components/includes/Delete";
+import { Badge } from "@/components/ui/badge";
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -45,8 +46,16 @@ type Invoice = {
   collected: string
   postponed: string
   tax: string
+  is_delivered: boolean
   expenses: string
   customer: {
+    id: number
+    name: string
+    phone: string
+    email: string
+    address: string
+  },
+   user: {
     id: number
     name: string
     phone: string
@@ -86,12 +95,27 @@ export const invoiceColumns: ColumnDef<Invoice>[] = [
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Invoice #
+          رقم #
           <ArrowUpDown />
         </Button>
       )
     },
     cell: ({ row }) => <div>{row.getValue("invoice_number")}</div>,
+  },
+  {
+    accessorKey: "is_invoice",
+     header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          النوع
+          <ArrowUpDown />
+        </Button>
+      )
+    },
+    cell: ({ row }) => <div>{row.getValue("is_invoice") == 1 ? 'فاتورة' : 'بيان'}</div>,
   },
   {
     accessorKey: "date",
@@ -101,7 +125,7 @@ export const invoiceColumns: ColumnDef<Invoice>[] = [
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Date
+          تاريخ
           <ArrowUpDown />
         </Button>
       )
@@ -114,9 +138,11 @@ export const invoiceColumns: ColumnDef<Invoice>[] = [
   },
   {
     accessorKey: "customer.name",
-    header: "Customer",
+    header: "العميل",
     cell: ({ row }) => <div>{row.original.customer?.name}</div>,
+
   },
+
   {
     accessorKey: "subtotal",
     header: ({ column }) => {
@@ -125,7 +151,7 @@ export const invoiceColumns: ColumnDef<Invoice>[] = [
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          SubTotal
+          الإجمالى
           <ArrowUpDown />
         </Button>
       )
@@ -135,10 +161,11 @@ export const invoiceColumns: ColumnDef<Invoice>[] = [
   },
   {
     accessorKey: "discount_percentage",
-    header: "Discount %",
+    header: "خصم %",
     cell: ({ row }) => <div>{row.getValue("discount_percentage")}%</div>,
      enableSorting: true,
   },
+  
   {
     accessorKey: "tax",
    header: ({ column }) => {
@@ -147,7 +174,7 @@ export const invoiceColumns: ColumnDef<Invoice>[] = [
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Tax
+          ضرائب
           <ArrowUpDown />
         </Button>
       )
@@ -156,15 +183,46 @@ export const invoiceColumns: ColumnDef<Invoice>[] = [
   },
   {
     accessorKey: "expenses",
-    header: "Expenses",
+    header: "مصاريف",
     cell: ({ row }) => <div>{row.getValue("expenses")} EGP</div>,
   },
   {
     accessorKey: "collected",
-    header: "Collected",
+    header: "محصل",
     cell: ({ row }) => <div>{row.getValue("collected")} EGP</div>,
   },
-  
+  {
+    accessorKey: "expenses",
+    header: "مصاريف",
+    cell: ({ row }) => <div>{row.getValue("expenses")} EGP</div>,
+  },
+  {
+    accessorKey: "postponed",
+    header: "مؤجل",
+    cell: ({ row }) => <div>{row.getValue("postponed")} EGP</div>,
+  },
+    {
+    accessorKey: "user.name",
+    header: "التسليم",
+    cell: ({ row }) => <div>{row.original.is_delivered ? <Badge className="h-5 min-w-5 bg-green-700" > <BadgeCheckIcon /></Badge> :  <Badge variant="destructive"><X/> </Badge>}</div>,
+
+  },
+   {
+    accessorKey: "user.name",
+   header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          المندوب
+          <ArrowUpDown />
+        </Button>
+      )
+    },
+    cell: ({ row }) => <div>{row.original.user?.name}</div>,
+ enableSorting: true,
+  },
     {
     id: "actions",
     enableHiding: false,
@@ -182,7 +240,12 @@ export const invoiceColumns: ColumnDef<Invoice>[] = [
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             <DropdownMenuItem>
                 <Link href={route('invoice.show' , invoice.id)}>
-                عرض الفاتورة
+              طباعه الفاتورة
+                </Link>
+            </DropdownMenuItem>
+             <DropdownMenuItem>
+                <Link href={route('invoice.details' , invoice.id)}>
+              تفاصيل الفاتورة
                 </Link>
             </DropdownMenuItem>
             {can('Invoice send') &&
@@ -191,6 +254,17 @@ export const invoiceColumns: ColumnDef<Invoice>[] = [
                   ارسال للمنظومة
                 </Link>
               </DropdownMenuItem>
+    }
+    {!row.original.is_delivered &&
+  <DropdownMenuItem>
+  <Link
+    href={route('delivery.status', invoice.id)}
+    method="post"
+    data={{ delivered: true }}
+  >
+    تم التسليم
+  </Link>
+</DropdownMenuItem>
     }
               <DropdownMenuSeparator />
               {can('Invoices delete') &&

@@ -29,6 +29,7 @@ class InventoryService
                     'from_warehouse_id' => $data['from_warehouse_id'],
                     'to_warehouse_id'   => $data['to_warehouse_id'],
                     'movement_type'     => 'transfer',
+                    'notes'   => $data['notes'] ?? null,
                 ]);
     
             $this->updateInventory($data['product_id'], $data['from_warehouse_id'], -$data['quantity']);
@@ -45,6 +46,7 @@ class InventoryService
                 'from_warehouse_id' => $data['from_warehouse_id'],
                 'to_warehouse_id'   => $data['to_warehouse_id'],
                 'movement_type'     => 'transfer',
+                    'notes'   => $data['notes'] ?? null,
             ]);
 
             $this->updateInventory($data['product_id'], $data['to_warehouse_id'], +$data['quantity']);
@@ -68,10 +70,12 @@ class InventoryService
                 'prev_quantity'     =>$data['prev_quantity'],
                 'movement_date'     => $data['movement_date'] ?? now(),
                 'from_warehouse_id' => $data['from_warehouse_id'] ?? null,
+                'notes'   => $data['notes'] ?? null,
                 'to_warehouse_id' => match ($data['type']) {
-                'adjust' => $data['from_warehouse_id'],
+                'adjust' => $data['from_warehouse_id'] ?? null,
                 'sale'   => null,
-                default  => $data['from_warehouse_id'],
+                'in' => $data['to_warehouse_id'] ,
+                default  => $data['from_warehouse_id'] ?? null,
             },
                 'movement_type'     => $data['movement_type'],
             ]);

@@ -115,7 +115,14 @@ export default function Users() {
                                                 </Link>
                                             </DropdownMenuItem>
                                               )}
+{can('Reports view') &&
 
+                                                <DropdownMenuItem asChild>
+                                                    <Link href={route("reports.user", user.id)}>
+                                                        تقرير
+                                                    </Link>
+                                                </DropdownMenuItem>
+                                            }
                                             <DropdownMenuSeparator />
   {can("Users delete") && (
                                             <AlertDialog>

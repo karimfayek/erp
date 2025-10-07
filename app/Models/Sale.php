@@ -17,9 +17,29 @@ class Sale extends Model
 
     protected $casts = [
          'date' => 'date' ,
-        'issued_at' => 'datetime',
+        'issued_at' => 'datetime',        
+        'subtotal' => 'float',
+        'total' => 'float',      
+        'postponed' => 'float',
+        'collected' => 'float',
         ];
 
+    public function getTotalAttribute($value)
+    {
+        return number_format($value, 2, '.', ','); // 10,000.00
+    }
+     public function getSubtotalAttribute($value)
+    {
+        return number_format($value, 2, '.', ','); // 10,000.00
+    }
+     public function getCollectedAttribute($value)
+    {
+        return number_format($value, 2, '.', ','); // 10,000.00
+    }
+     public function getPostponedAttribute($value)
+    {
+        return number_format($value, 2, '.', ','); // 10,000.00
+    }
     public function customer()
     {
         return $this->belongsTo(Customer::class);

@@ -11,6 +11,8 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Input } from "@/components/ui/input";
 import axios from "axios";
 import { toast ,Toaster } from "sonner";
+import { NumberDisplay } from "@/lib/utils";
+import { Link } from "@inertiajs/react";
 // InvoicePreview
 // Props: { invoice }
 // invoice shape (example):
@@ -115,8 +117,8 @@ const handleSaveCollection = async () => {
             <div>
               <h4 className="text-sm font-semibold mb-2">حالة السداد</h4>
                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <div className="text-sm">المحصّل: <span className="font-medium">{Number(collected ?? 0).toFixed(2)}</span></div>
-              <div className="text-sm">المؤجل: <span className="font-medium">{Number(inv.postponed ?? 0).toFixed(2)}</span></div>
+              <div className="text-sm">المحصّل: <span className="font-medium">{collected}</span></div>
+              <div className="text-sm">المؤجل: <span className="font-medium">{inv.postponed}</span></div>
                  <Button onClick={() => setIsModalOpen(true)}>تعديل التحصيل</Button>
                 </div>
             </div>
@@ -167,23 +169,33 @@ const handleSaveCollection = async () => {
             </div>
 
             <div className="space-y-2">
-              <div className="flex justify-between"><span>الإجمالي (قبل الخصم):</span><span className="font-semibold">{Number(inv.subtotal ?? 0).toFixed(2)}</span></div>
+              <div className="flex justify-between"><span>الإجمالي (قبل الخصم):</span><span className="font-semibold">
+               {inv.subtotal}</span>
+               </div>
+
               {Number(inv.discount_percentage ?? 0) > 0 && (
                 <div className="flex justify-between"><span>قيمة الخصم ({inv.discount_percentage} %):</span><span className="font-semibold">{(Number(inv.subtotal ?? 0) * Number(inv.discount_percentage ?? 0) / 100).toFixed(2)}</span></div>
               )}
 
-              <div className="flex justify-between"><span>بعد الخصم:</span><span className="font-semibold">{Number(inv.after_discount ?? (inv.subtotal - (inv.subtotal*(inv.discount_percentage||0)/100))).toFixed(2)}</span></div>
+              <div className="flex justify-between"><span>بعد الخصم:</span><span className="font-semibold">
+                { (parseFloat(inv.subtotal.replace(/,/g, '')) || 0) -
+  ((parseFloat(inv.subtotal.replace(/,/g, '')) || 0) *
+   ((inv.discount_percentage || 0) / 100)) }
+                </span></div>
               <div className="flex justify-between"><span>الضريبة:</span><span className="font-semibold">{Number(inv.tax ?? 0).toFixed(2)}</span></div>
               <div className="flex justify-between"><span>ضرائب أخرى:</span><span className="font-semibold">{Number(inv.other_tax ?? 0).toFixed(2)}</span></div>
               <div className="flex justify-between"><span>المصروفات:</span><span className="font-semibold">{Number(inv.expenses ?? 0).toFixed(2)}</span></div>
               <Separator />
-              <div className="flex justify-between text-lg font-bold"><span>الإجمالي النهائي:</span><span>{Number(inv.total ?? inv.grandTotal ?? 0).toFixed(2)}</span></div>
+              <div className="flex justify-between text-lg font-bold"><span>الإجمالي النهائي:</span><span>
+             {inv.total}
+                </span></div>
             </div>
           </div>
 
           <div className="mt-6 flex justify-end gap-2">
-            <Button variant="secondary">طباعة</Button>
-            <Button>حفظ PDF</Button>
+            {/* <Button variant="secondary">طباعة</Button>
+            <Button>حفظ PDF</Button> */}
+            <Button variant="secondary"><Link href="/invoices">رجوع</Link></Button>
           </div>
         </CardContent>
       </Card>

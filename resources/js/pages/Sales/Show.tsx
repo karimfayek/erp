@@ -1,5 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { NumberDisplay } from "@/lib/utils"
+import { Link } from "@inertiajs/react"
 
 export default function InvoiceShow({ invoice }) {
   console.log(invoice)
@@ -16,6 +18,11 @@ export default function InvoiceShow({ invoice }) {
             }
           </h1>
           <p className="text-sm text-gray-600">#{invoice.invoice_number}</p>
+        </div>
+        <div>
+          <Link href="/invoices">
+          <p className="text-2xl">رافكو</p>
+          </Link>
         </div>
         <div className="text-right space-y-1 text-sm">
           <p>التاريخ: {new Date(invoice.date).toLocaleDateString("ar-EG")}</p>
@@ -59,8 +66,8 @@ export default function InvoiceShow({ invoice }) {
                   <TableCell>{item.product?.item_code}</TableCell>
                   <TableCell>{item.product?.name}</TableCell>
                   <TableCell>{item.qty}</TableCell>
-                  <TableCell>{item.unit_price}</TableCell>
-                  <TableCell>{item.total}</TableCell>
+                  <TableCell><NumberDisplay value={item.unit_price} /></TableCell>
+                  <TableCell><NumberDisplay value={item.total} /></TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -86,7 +93,8 @@ export default function InvoiceShow({ invoice }) {
               <CardTitle>ملخص الفاتورة</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 text-sm">
-              <div className="flex justify-between"><span>الإجمالي الفرعى :</span> <span>{invoice.subtotal}</span></div>
+              <div className="flex justify-between"><span>الإجمالي الفرعى :</span> <span>{invoice.subtotal}</span>
+              </div>
               {invoice.discount_percentage > 0 &&
 
                 <>
@@ -94,20 +102,23 @@ export default function InvoiceShow({ invoice }) {
                   <span>{invoice.discount_percentage}%</span>
                   </div>
                   <div className="flex justify-between"><span>بعد الخصم:</span>
-                   <span>{invoice.after_discount}</span></div>
+                    <span>
+                    { (parseFloat(invoice.subtotal.replace(/,/g, '')) || 0) -
+  ((parseFloat(invoice.subtotal.replace(/,/g, '')) || 0) *
+   ((invoice.discount_percentage || 0) / 100)) }
+                    </span>
+                  </div>
                    </>
               }
               {invoice.tax > 0 &&
                 <div className="flex justify-between"><span>الضريبة:</span> <span>{invoice.tax}</span></div>
               }
-              {invoice.expenses > 0 &&
-                <div className="flex justify-between"><span>المصروفات:</span> <span>{invoice.expenses}</span></div>
-              }
+             
               <div className="flex justify-between font-bold text-lg border-t pt-2">
                 <span>الإجمالي النهائي:</span>
                 <span>{invoice.total}</span>
               </div>
-              {invoice.collected > 0 &&
+              {invoice.collected < invoice.postponed &&
 
                 <><div className="flex justify-between"><span>تم تحصيل:</span>
                   <span>{invoice.collected}</span></div><div className="flex justify-between"><span>المؤجل:</span> <span>{invoice.postponed}</span></div></>

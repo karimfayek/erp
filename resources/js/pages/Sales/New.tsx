@@ -12,6 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import AppLayout from "@/layouts/app-layout";
 import { Switch } from "@/components/ui/switch";
+
+import CustomerCombobox from "@/components/CustomerCombobox";
 /**
  * Expected props from server:
  * - customers: [{id, name}]
@@ -23,6 +25,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import NewCustomer from "../Customers/New";
 import { can } from "@/utils/permissions";
 import axios from "axios";
+import { NumberDisplay } from "@/lib/utils";
+import { ProductCombobox } from "@/components/ProductCombobox";
 
 const breadcrumbs: BreadcrumbItem[] = [
   {
@@ -260,6 +264,7 @@ const token = document.querySelector('meta[name="csrf-token"]')?.content;
 
 
   const handleCustomerChange = (customerId: string) => {
+    console.log(customerId , 'c id')
     if (!customerId) return;
     if (customerId === 'new') {
       setOpen(true);
@@ -321,7 +326,7 @@ const token = document.querySelector('meta[name="csrf-token"]')?.content;
     return tax2 ;
   }, [afterDiscount, data.other_tax]);
 
-  const grandTotal = useMemo(() => afterDiscount - OtherTaxAmount + taxAmount + toNumber(data.expenses), [afterDiscount, taxAmount, data.expenses, OtherTaxAmount]);
+  const grandTotal = useMemo(() => afterDiscount - OtherTaxAmount + taxAmount , [afterDiscount, taxAmount,  OtherTaxAmount]);
 
   const postponed = useMemo(() => Math.max(0, grandTotal - toNumber(data.collected)), [grandTotal, data.collected]);
   useEffect(() => {
@@ -463,16 +468,12 @@ const token = document.querySelector('meta[name="csrf-token"]')?.content;
                 </div>
                 <div>
                   <Label>العميل</Label>
-                  <Select value={String(data.customer_id || "")} onValueChange={(v) => handleCustomerChange(v)}>
-                    <SelectTrigger className="w-full"><SelectValue placeholder="اختر العميل" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="new" className="text-blue-600">+ إضافة عميل جديد</SelectItem>
-                      {customersList.map((c) => (
-                        <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
-                      ))}
-
-                    </SelectContent>
-                  </Select>
+                  <CustomerCombobox
+                    customersList={customersList}
+                    data={data}
+                    handleCustomerChange={handleCustomerChange}
+                  />
+                  
                   {errors.customer_id && <p className="text-red-600 text-sm mt-1">{errors.customer_id}</p>}
                 </div>
                   {can('Invoice for others') &&
@@ -514,8 +515,17 @@ const token = document.querySelector('meta[name="csrf-token"]')?.content;
                   <Input id="tax_percent" type="number" step="1" value={data.tax_percent} onChange={(e) => setData("tax_percent", e.target.value)} />
                 </div>
                 <div>
-                  <Label htmlFor="tax_percent">ضرائب اخرى %</Label>
-                  <Input id="tax_percent" type="number" step="1" value={data.other_tax} onChange={(e) => setData("other_tax", e.target.value)} />
+                  <Label htmlFor="tax_percent">ضرائب اخرى خصم   %</Label>
+                   <Select value={Number(data.other_tax || "")} onValueChange={(v) => setData('other_tax'  , v)} >
+                              <SelectTrigger ><SelectValue placeholder="اختر " /></SelectTrigger>
+                              <SelectContent>
+                              
+                                  <SelectItem value={0}> 0</SelectItem>
+                                  <SelectItem value={1}> 1% </SelectItem>
+                                  <SelectItem value={3}> 3% </SelectItem>
+                              
+                              </SelectContent>
+                            </Select>
                 </div>
                 <div>
                   <Label htmlFor="expenses">مصروفات</Label>
@@ -562,15 +572,13 @@ const token = document.querySelector('meta[name="csrf-token"]')?.content;
                     <TableBody>
                       {items.map((row) => (
                         <TableRow key={row.tempId}>
+                          
                           <TableCell>
-                            <Select value={String(row.product_id || "")} onValueChange={(v) => checkQtyAndUpdate(row.tempId, { product_id: v })} >
-                              <SelectTrigger className="w-[220px]"><SelectValue placeholder="اختر المنتج" /></SelectTrigger>
-                              <SelectContent>
-                                {products.map((p) => (
-                                  <SelectItem key={p.id} value={String(p.id)}> {p.name} - ({p.internal_code}) - {p.brand_id}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                             <ProductCombobox
+    products={products}
+    selectedId={row.product_id}
+    onSelect={(v) => checkQtyAndUpdate(row.tempId, { product_id: v })}
+  />
                           </TableCell>
                           <TableCell>
                             <Input value={row.product_code || ""} onChange={(e) => updateRow(row.tempId, { product_code: e.target.value })} />
@@ -604,7 +612,7 @@ const token = document.querySelector('meta[name="csrf-token"]')?.content;
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Badge variant="outline">ملخص</Badge>
-                  <div className="flex items-center justify-between"><span>الإجمالي (الفرعى):</span><span>{subtotal.toFixed(2)}</span></div>
+                  <div className="flex items-center justify-between"><span>الإجمالي (الفرعى):</span><span><NumberDisplay  value={subtotal}/> </span></div>
                   {discountValue > 0 &&
 
                     <div className="flex items-center justify-between"><span>قيمة الخصم:</span><span>{discountValue.toFixed(2)}</span></div>
@@ -614,18 +622,15 @@ const token = document.querySelector('meta[name="csrf-token"]')?.content;
                   }
                   {taxAmount > 0 &&
 
-                    <div className="flex items-center justify-between"><span> ضريبه {data.tax_percent}  % : </span><span>{taxAmount.toFixed(2)} </span></div>
+                    <div className="flex items-center justify-between"><span> ضريبه {data.tax_percent}  % : </span><span><NumberDisplay  value={taxAmount}/>  </span></div>
                   }
                     {data.other_tax > 0 &&
 
                     <div className="flex items-center justify-between"><span> ضريبه {data.other_tax}  % : </span><span>{OtherTaxAmount.toFixed(2)} </span></div>
                   }
-                  {data.expenses > 0 &&
-
-                    <div className="flex items-center justify-between"><span>مصروفات:</span><span>{toNumber(data.expenses).toFixed(2)}</span></div>
-                  }
+                 
                   <Separator className="my-2" />
-                  <div className="flex items-center justify-between font-semibold text-lg"><span>الإجمالي النهائي:</span><span>{grandTotal.toFixed(2)}</span></div>
+                  <div className="flex items-center justify-between font-semibold text-lg"><span>الإجمالي النهائي:</span><span><NumberDisplay value={grandTotal} /></span></div>
                 </div>
                 <div className="flex items-end justify-end">
                   <Button type="submit" disabled={processing} className="mt-6">حفظ</Button>

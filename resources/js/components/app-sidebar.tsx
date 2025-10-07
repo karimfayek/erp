@@ -16,24 +16,24 @@ export function AppSidebar() {
     
 const mainNavItems: NavItem[] = [
     {
-        title: 'Dashboard',
+        title: 'داش بورد',
         href: '/dashboard',
         icon: LayoutGrid,
         
     },
     
     can("Branches view") &&  {
-        title: 'Branches',
+        title: 'الفروع',
         href: '/branches',
         icon: MapPinned,
     },
     {
-        title: 'Warehouses',
+        title: 'المخازن',
         href: '/warehouses',
         icon: Store,
     },
   can('Products view') &&{
-        title: 'Products',
+        title: 'المنتجات',
         href: '/products',
         icon: Bandage,
     },
@@ -43,7 +43,7 @@ const mainNavItems: NavItem[] = [
             icon: Contact,
         },
    can('Stock transfer') && {
-        title: 'Transfer',
+        title: 'نقل المنتجات',
         href: '/inventory-transfers',
         icon: ArrowLeftRight,
     },
@@ -51,16 +51,16 @@ const mainNavItems: NavItem[] = [
 const CollabseNavItems: NavItem[] = [
        
    can('Invoices view')&& {
-        title: 'Sales',
+        title: 'المبيعات',
         href: '/sales',
         icon: Receipt,
         items :[
             {
-                title: "New Sales Order",
+                title: "عمليه بيع جديدة",
                  url: '/sales',
               },
             {
-                title: "Invoices",
+                title: "الفواتير",
                 url: '/invoices',
               },
               

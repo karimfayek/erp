@@ -108,7 +108,7 @@ export default function Branch({ totalSales, dailySales, latestInvoices, filters
             <tbody>
               {latestInvoices.map((inv) => (
                 <tr key={inv.id}>
-                  <td className="p-2 border">{inv.id}</td>
+                 <td className="p-2 border">{inv.is_invoice? 'فاتورة' : 'بيان'}{'- '} {inv.invoice_number}</td>
                   <td className="p-2 border">{inv.customer?.name || "-"}</td>
                   <td className="p-2 border">{inv.subtotal}</td>
                     <td className="p-2 border">{new Date(inv.created_at).toLocaleString("ar-EG")}</td>

@@ -105,7 +105,11 @@ const CollabseNavItems: NavItem[] = [
             url: "/reports/dashboard",
             icon: Users,
             },
-          
+            can("Reports view") && {
+            title: "الفواتير",
+            url: "/reports/invoices",
+            icon: Users,
+            },
            
               
         ]

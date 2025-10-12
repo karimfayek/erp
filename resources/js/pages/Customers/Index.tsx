@@ -1,7 +1,7 @@
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { LoaderCircle, Plus } from 'lucide-react';
+import { Head, Link,  usePage } from '@inertiajs/react';
+import {  Plus } from 'lucide-react';
 
-import { ArrowUpDown, ChevronDown, MoreHorizontal } from "lucide-react"
+import { ArrowUpDown, MoreHorizontal } from "lucide-react"
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
@@ -14,29 +14,16 @@ const breadcrumbs: BreadcrumbItem[] = [
         href: '#',
     },
 ];
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
     DropdownMenu,
-    DropdownMenuCheckboxItem,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import {
-    AlertDialog,
-    AlertDialogTrigger,
-    AlertDialogContent,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogCancel,
-    AlertDialogAction,
-} from "@/components/ui/alert-dialog"
+
 import { useState } from 'react';
-import NewUser from './New';
 import NewCustomer from './New';
 import { DataTable } from '@/components/DataTable';
 import Delete from '@/components/includes/Delete';
@@ -52,6 +39,9 @@ type Customer = {
 }
 
 export default function Customers() {
+    if(!can('Clients view')){
+        return null
+    }
     const { customers, flash, errors } = usePage().props;
     const [open, setOpen] = useState(false);
     
@@ -162,7 +152,7 @@ export default function Customers() {
                     <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
 
-                        {can('Products edit') &&
+                        {can('Clients edit') &&
 
                             <DropdownMenuItem asChild>
                                 <Link href={route("customers.edit", customer.id)}>
@@ -173,7 +163,7 @@ export default function Customers() {
 
 
                         <DropdownMenuSeparator />
-                        {can('Products delete') &&
+                        {can('Clients delete') &&
                             <Delete id={customer.id} routeName={"customers.destroy"} />
                         }
                     </DropdownMenuContent>
@@ -196,11 +186,11 @@ export default function Customers() {
 
             <div className="mt-6  p-4 rounded shadow">
                 <div className='mb-4'>
-                    {can('Users create') &&
+                    {can('Clients create') &&
                     
                     <Button variant="outline" size="sm">
                         <Plus />
-                        <span className="hidden lg:inline" onClick={() => setOpen(true)}>Add Customer</span>
+                        <span className="hidden lg:inline" onClick={() => setOpen(true)}>اضافه عميل </span>
                     </Button>
                     }
                 </div>

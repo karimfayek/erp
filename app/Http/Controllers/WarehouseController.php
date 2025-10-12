@@ -9,6 +9,13 @@ use Inertia\Inertia;
 
 class WarehouseController extends Controller
 {
+     public function __construct()
+    {
+        $this->middleware('permission:Warehouses view')->only(['index']);
+        $this->middleware('permission:Warehouses edit')->only(['edit']);
+        $this->middleware('permission:Warehouses create')->only(['create', 'store']);
+        $this->middleware('permission:Warehouses delete')->only(['destroy']);
+    }
     /**
      * Display a listing of the resource.
      */
@@ -35,6 +42,9 @@ class WarehouseController extends Controller
      */
     public function store(Request $request)
     {
+         if (!auth()->user()->canDo('Warehouses create')) {
+        abort(403, 'ليس لديك صلاحية  ');
+    }
        
             //dd($request->all());
             $data = $request->validate([
@@ -64,6 +74,10 @@ class WarehouseController extends Controller
      */
     public function edit(string $id)
     {
+        
+            if (!auth()->user()->canDo('Warehouses edit')) {
+        abort(403, 'ليس لديك صلاحية  ');
+    }
         $warehouse = Warehouse::find($id);
         $branches = Branch::all();
         return Inertia::render('Warehouse/Edit', [
@@ -87,6 +101,9 @@ class WarehouseController extends Controller
      */
     public function destroy(string $id)
     {
+         if (!Auth::user()->canDo('Warehouses delete')) {
+        abort(403, 'ليس لديك صلاحية  ');
+    }
         $warehouse = Warehouse::find($id)->delete();
           return redirect()->back()->with('success', 'تم الحذف ');
     }

@@ -28,6 +28,7 @@ class UserRoleController extends Controller
     }
     public function update(Request $request, User $user)
     {
+        //dd($user);
         $request->validate([
             'role_id' => 'exists:roles,id',
         ]);

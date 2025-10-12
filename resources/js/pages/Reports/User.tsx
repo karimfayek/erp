@@ -81,7 +81,7 @@ export default function User({ totalSales, dailySales, latestInvoices, filters,u
             <BarChart data={userSales}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="user" />
-              <YAxis />
+              <YAxis  domain={[0, "dataMax + 10000"]} />
               <Tooltip />
               <Bar dataKey="total" fill="#82ca9d" />
             </BarChart>

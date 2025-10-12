@@ -187,7 +187,7 @@ const handleSaveCollection = async () => {
               <div className="flex justify-between"><span>المصروفات:</span><span className="font-semibold">{Number(inv.expenses ?? 0).toFixed(2)}</span></div>
               <Separator />
               <div className="flex justify-between text-lg font-bold"><span>الإجمالي النهائي:</span><span>
-             {inv.total}
+             {inv.total_formatted}
                 </span></div>
             </div>
           </div>

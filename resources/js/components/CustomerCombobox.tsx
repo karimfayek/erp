@@ -43,7 +43,7 @@ export default function CustomerCombobox({ customersList, data, handleCustomerCh
             {customersList.map((c) => (
               <CommandItem
                 key={c.id}
-                value={String(c.name)}
+                 value={`${c.name} ${c.phone || ""} ${c.email || ""} ${c.address || ""}`}
                 onSelect={() => {
                     const customer = customersList.find((x) => x.name === c.name);
                     handleCustomerChange(customer ? String(customer.id) : "");

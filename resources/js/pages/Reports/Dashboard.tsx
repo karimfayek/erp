@@ -74,7 +74,7 @@ export default function Dashboard({ totalSales, dailySales, userSales, latestInv
             <BarChart data={userSales}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="user" />
-              <YAxis />
+             <YAxis domain={[0, (dataMax) => dataMax * 1.2]} />
               <Tooltip />
               <Bar dataKey="total" fill="#82ca9d" />
             </BarChart>

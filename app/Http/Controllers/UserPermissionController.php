@@ -20,6 +20,7 @@ class UserPermissionController extends Controller
 
     public function update(Request $request, User $user)
     {
+        //dd($user);
         $request->validate([
             'permissions' => 'array',
             'permissions.*' => 'exists:permissions,id',

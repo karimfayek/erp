@@ -4,9 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { can } from '@/utils/permissions';
 
 
 export default function NewCustomer({ onCreated }) {
+        if(!can('Clients create')){
+                return null
+            }
     const {  errors } = usePage().props;
     const { data, setData, post, reset } = useForm({
         name: '',

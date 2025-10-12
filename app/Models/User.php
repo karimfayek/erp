@@ -96,7 +96,10 @@ public function directPermissions()
     }
 
     public function canDo(string $slug): bool {
-        return $this->permissions()->where('slug', $slug)->exists()
+         if ($this->hasRole('Super Admin')) {
+        return true;
+    }
+        return $this->permissions()->where('slug', $slug)->orWhere('name' , $slug)->exists()
             || $this->roles()->whereHas('permissions', fn($q)=>$q->where('slug',$slug))->exists();
     }
       public function sales() { return $this->hasMany(Sale::class); }

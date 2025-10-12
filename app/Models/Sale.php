@@ -23,10 +23,11 @@ class Sale extends Model
         'postponed' => 'float',
         'collected' => 'float',
         ];
+        protected $appends = ['total_formatted' , 'collected_number'];
 
-    public function getTotalAttribute($value)
+  public function getTotalFormattedAttribute()
     {
-        return number_format($value, 2, '.', ','); // 10,000.00
+        return number_format($this->attributes['total'], 2, '.', ',');
     }
      public function getSubtotalAttribute($value)
     {
@@ -35,6 +36,10 @@ class Sale extends Model
      public function getCollectedAttribute($value)
     {
         return number_format($value, 2, '.', ','); // 10,000.00
+    }
+      public function getCollectedNumberAttribute($value)
+    {
+        return $value;
     }
      public function getPostponedAttribute($value)
     {

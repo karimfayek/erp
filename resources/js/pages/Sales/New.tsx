@@ -510,23 +510,25 @@ const token = document.querySelector('meta[name="csrf-token"]')?.content;
                     onChange={(e) => setData((prev) => ({ ...prev, discount_percentage: e.target.value }))}
                   />
                 </div>
-                <div>
-                  <Label htmlFor="tax_percent">الضريبة %</Label>
-                  <Input id="tax_percent" type="number" step="1" value={data.tax_percent} onChange={(e) => setData("tax_percent", e.target.value)} />
-                </div>
-                <div>
-                  <Label htmlFor="tax_percent">ضرائب اخرى خصم   %</Label>
-                   <Select value={Number(data.other_tax || "")} onValueChange={(v) => setData('other_tax'  , v)} >
-                              <SelectTrigger ><SelectValue placeholder="اختر " /></SelectTrigger>
-                              <SelectContent>
-                              
-                                  <SelectItem value={0}> 0</SelectItem>
-                                  <SelectItem value={1}> 1% </SelectItem>
-                                  <SelectItem value={3}> 3% </SelectItem>
-                              
-                              </SelectContent>
-                            </Select>
-                </div>
+                {data.is_invoice &&
+                
+                <><div>
+                    <Label htmlFor="tax_percent">الضريبة %</Label>
+                    <Input id="tax_percent" type="number" step="1" value={data.is_invoice ? data.tax_percent : 0} onChange={(e) => setData("tax_percent", e.target.value)} />
+                  </div><div>
+                      <Label htmlFor="tax_percent">ضرائب اخرى خصم   %</Label>
+                      <Select value={data.is_invoice ? Number(data.other_tax || "" ) : 0} onValueChange={(v) => setData('other_tax', v)}>
+                        <SelectTrigger><SelectValue placeholder="اختر " /></SelectTrigger>
+                        <SelectContent>
+
+                          <SelectItem value={0}> 0</SelectItem>
+                          <SelectItem value={1}> 1% </SelectItem>
+                          <SelectItem value={3}> 3% </SelectItem>
+
+                        </SelectContent>
+                      </Select>
+                    </div></>
+                }
                 <div>
                   <Label htmlFor="expenses">مصروفات</Label>
                   <Input id="expenses" type="number" step="0.01" value={data.expenses} onChange={(e) => setData("expenses", e.target.value)} />

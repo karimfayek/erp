@@ -2,12 +2,18 @@ import { useForm } from "@inertiajs/react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useEffect } from "react";
 
 export default function UserPermissions({ user, permissions }) {
+  console.log(user , 'user')
   const { data, setData, put, processing } = useForm({
     permissions: user.permissions?.map((p) => p.id) || [],
   });
-
+ useEffect(() => {
+  setData('permissions' ,  user.permissions?.map((p) => p.id) || []);
+    // No cleanup needed for this simple effect
+  }, [user]);
+console.log(data.permissions ,'data p')
   const togglePermission = (id) => {
     if (data.permissions?.includes(id)) {
       setData("permissions", data.permissions?.filter((p) => p !== id));

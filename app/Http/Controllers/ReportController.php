@@ -191,6 +191,66 @@ class ReportController extends Controller
             'userSales' => $userSales
         ]);
     }
+public function invoices(Request $request)
+{
+     $query =  \App\Models\Sale::with(['user', 'items.product', 'customer']);
+       if ($request->status === 'delivered') {
+            $query->where('is_delivered', 1);
+        } elseif ($request->status === 'pending') {
+            $query->where('is_delivered', 0);
+        } elseif ($request->status === 'partial') {
+            $query->whereColumn('collected', '<', 'total');
+        }
+        if ($request->rep && $request->rep != 'all') {
+            $query->where('user_id', $request->rep);
+        }
+          if ($request->product && $request->product != 'all') {
+            $query->whereHas('items', function ($q) use ($request) {
+                $q->where('product_id', $request->product);
+            });
+        }
+         if ($request->customer && $request->customer != 'all') {
+           
+            $query->where('customer_id', $request->customer);
+        }
+           if ($search = $request->search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('invoice_number', 'like', "%{$search}%")
+                  ->orWhereHas('customer', fn($c) => $c->where('name', 'like', "%{$search}%"));
+            });
+        }
+        if ($request->filled('from_date')) {
+    $query->whereDate('date', '>=', $request->from_date);
+}
 
+if ($request->filled('to_date')) {
+    $query->whereDate('date', '<=', $request->to_date);
+}
+
+          $invoicesInfo = $query->get();
+          $collected = $query->sum('collected');
+          $expenses= $query->sum('expenses');
+         $invoices = $query
+            ->latest()
+            ->paginate(15)
+            ->withQueryString();
+              
+          //dd($invoicesInfo);
+        $reps = \App\Models\User::select('id', 'name')->get();
+        $products = \App\Models\Product::select('id', 'name')->get();
+         $customers = \App\Models\Customer::select('id', 'name')->get();
+            return Inertia::render('Reports/Invoices', [                    
+                    'invoices' => $invoices,
+                    'reps' => $reps,
+                    'products' => $products,
+                    'customers' => $customers,
+                    'info' => [
+                    'invoicesTotals' => $invoicesInfo->sum('total'),
+                    'collected' =>number_format((float) $collected, 2, '.', ','),
+                    'postponed' => $invoicesInfo->sum('postponed'),
+                    'expenses' => number_format((float) $expenses, 2, '.', ','),
+                    ]
+                ]);
+        }
 
 }

@@ -23,8 +23,12 @@ const breadcrumbs: BreadcrumbItem[] = [
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { MoreHorizontal } from 'lucide-react';
 import Delete from '@/components/includes/Delete';
+import { can } from '@/utils/permissions';
 
 export default function Index() {
+      if (!can('Warehouses view')) {
+        return null
+      }
     const { warehouses , flash ,  errors = {} , branches} = usePage().props;
     console.log(warehouses , 'warehouses')
     const { data, setData, post, reset } = useForm({
@@ -52,6 +56,7 @@ export default function Index() {
             {flash?.success && (
                 <div className="bg-green-100 text-green-700 p-2 rounded ">{flash.success}</div>
             )}
+{can('Warehouses create') && 
 
             <form onSubmit={submit} className="space-y-2  p-4 rounded shadow md:grid grid-cols-2  gap-2">
                  <div>
@@ -80,7 +85,7 @@ export default function Index() {
                 
                 <Button type="submit"className='col-span-2'>إضافة مخزن</Button>
             </form>
-
+}
             <div className="mt-6  p-4 rounded shadow">
                 <Table>
                     <TableHeader>
@@ -108,21 +113,23 @@ export default function Index() {
                                         <DropdownMenuContent align="end">
                                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
 
-                                            <DropdownMenuItem asChild>
-                                                <Link href={route("warehouses.show", warehouse.id)}>
-                                                    عرض فواتير المستخدم
-                                                </Link>
-                                            </DropdownMenuItem>
-
+                                            {can('Warehouses edit') &&
+                                            
                                             <DropdownMenuItem asChild>
                                                 <Link href={route("warehouses.edit", warehouse.id)}>
                                                     تعديل
                                                 </Link>
                                             </DropdownMenuItem>
+                                            }
+{can('Warehouses delete') &&
 
+                                            <>
                                             <DropdownMenuSeparator />
-<Delete id={warehouse.id} routeName={"warehouses.destroy"} />
+                                            <Delete id={warehouse.id} routeName={"warehouses.destroy"} />
+                                            </>
+                                            }
                                         </DropdownMenuContent>
+
                                     </DropdownMenu>
                                 </TableCell>
                             </TableRow>

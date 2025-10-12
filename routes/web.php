@@ -15,14 +15,34 @@ use App\Http\Controllers\UserRoleController;
 use App\Http\Controllers\UserPermissionController;
 use App\Http\Controllers\TaxInvoiceController;
 use Inertia\Inertia;
-
+use Carbon\Carbon;
 Route::get('/', function () {
     return Inertia::render('welcome');
 })->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', function () {
-        return Inertia::render('dashboard');
+        return Inertia::render('dashboard', 
+        [
+            'stats' => [
+                'branches' => \App\Models\Branch::count(),
+                'warehouses' => \App\Models\Warehouse::count(),
+                'products' => \App\Models\Product::count(),
+                'transfers' => \App\Models\InventoryTransfer::whereDate('created_at', today())->count(),
+                'sales' => \App\Models\Sale::sum('total'),
+            ],
+            'dailySales' => \App\Models\Sale::selectRaw('DATE(created_at) as date, SUM(subtotal) as total')
+            ->groupBy(\DB::raw('DATE(created_at)'))
+            ->orderBy('date')
+            ->get()
+            ->map(function ($row) {
+            return [
+                'date' => Carbon::parse($row->date)->toDateString(),
+                'total' => $row->total,
+            ];
+            })
+        ]); 
+   
     })->name('dashboard');
     Route::resource('users', UserController::class);
     Route::resource('products', ProductController::class);
@@ -64,6 +84,7 @@ Route::post('/invoices/{id}/send-to-eta', [TaxInvoiceController::class, 'sendToE
 Route::get('/reports/dashboard', [\App\Http\Controllers\ReportController::class, 'index'])->name('reports.dashboard')->middleware('permission:Reports view');
 Route::get('/reports/user/{user}', [\App\Http\Controllers\ReportController::class, 'user'])->name('reports.user')->middleware('permission:Reports view');
 Route::get('/reports/branch/{branch}', [\App\Http\Controllers\ReportController::class, 'branch'])->name('reports.branch')->middleware('permission:Reports view');
+Route::get('/reports/invoices', [\App\Http\Controllers\ReportController::class, 'invoices'])->name('reports.invoices')->middleware('permission:Reports view');
 Route::get('/reports', [\App\Http\Controllers\ReportController::class, 'index'])->name('reports.index');
 });
 

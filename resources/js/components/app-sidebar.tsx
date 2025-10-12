@@ -27,7 +27,7 @@ const mainNavItems: NavItem[] = [
         href: '/branches',
         icon: MapPinned,
     },
-    {
+    can('Warehouses view') && {
         title: 'المخازن',
         href: '/warehouses',
         icon: Store,
@@ -55,7 +55,7 @@ const CollabseNavItems: NavItem[] = [
         href: '/sales',
         icon: Receipt,
         items :[
-            {
+           can('Invoices create')&&{
                 title: "عمليه بيع جديدة",
                  url: '/sales',
               },
@@ -64,7 +64,7 @@ const CollabseNavItems: NavItem[] = [
                 url: '/invoices',
               },
               
-        ]
+        ].filter(Boolean)
     },
   
      can('Users view') &&   {
@@ -73,7 +73,7 @@ const CollabseNavItems: NavItem[] = [
         icon: KeySquare,
         items :[
              can("Users view") && {
-            title: "المتستخدمين",
+            title: "المستخدمين",
             url: "/users",
             icon: Users,
             },

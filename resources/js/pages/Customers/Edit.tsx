@@ -5,9 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import AppLayout from '@/layouts/app-layout';
+import { can } from '@/utils/permissions';
 
 
 export default function Edit({ customer }) {
+    if(!can('Clients edit')){
+            return null
+        }
     const { errors } = usePage().props;
 
     const { data, setData, put, reset } = useForm({

@@ -116,7 +116,7 @@ export default function InvoiceShow({ invoice }) {
              
               <div className="flex justify-between font-bold text-lg border-t pt-2">
                 <span>الإجمالي النهائي:</span>
-                <span>{invoice.total}</span>
+                <span>{invoice.total_formatted}</span>
               </div>
               {invoice.collected < invoice.postponed &&
 

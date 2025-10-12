@@ -8,6 +8,7 @@ import AppLayout from "@/layouts/app-layout.js";
 
 export default function AccessControl({ users, roles, permissions }) {
   const [selectedUser, setSelectedUser] = useState(null);
+const [userPermissions , setUserPermissions] = useState(permissions)
 
   return (
     <AppLayout>

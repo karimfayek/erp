@@ -11,6 +11,9 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Inertia\Response;
 
+use Spatie\Activitylog\Models\Activity;
+
+
 class AuthenticatedSessionController extends Controller
 {
     /**
@@ -32,6 +35,14 @@ class AuthenticatedSessionController extends Controller
         $request->authenticate();
 
         $request->session()->regenerate();
+        activity()
+        ->causedBy(auth()->user())
+        ->withProperties([
+            'ip' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ])
+        ->log('المستخدم قام بتسجيل الدخول');
+
 
         return redirect()->intended(route('dashboard', absolute: false));
     }

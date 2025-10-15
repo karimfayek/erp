@@ -239,6 +239,7 @@ if ($request->filled('to_date')) {
         $reps = \App\Models\User::select('id', 'name')->get();
         $products = \App\Models\Product::select('id', 'name')->get();
          $customers = \App\Models\Customer::select('id', 'name')->get();
+         //dd($collected);
             return Inertia::render('Reports/Invoices', [                    
                     'invoices' => $invoices,
                     'reps' => $reps,
@@ -246,7 +247,7 @@ if ($request->filled('to_date')) {
                     'customers' => $customers,
                     'info' => [
                     'invoicesTotals' => $invoicesInfo->sum('total'),
-                    'collected' =>number_format((float) $collected, 2, '.', ','),
+                    'collected' => number_format((float) $collected, 2, '.', ','),
                     'postponed' => $invoicesInfo->sum('postponed'),
                     'expenses' => number_format((float) $expenses, 2, '.', ','),
                     ]

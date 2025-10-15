@@ -18,12 +18,13 @@ class Sale extends Model
     protected $casts = [
          'date' => 'date' ,
         'issued_at' => 'datetime',        
-        'subtotal' => 'float',
-        'total' => 'float',      
-        'postponed' => 'float',
-        'collected' => 'float',
+        'postponed' => 'decimal:2',
+    'collected' => 'decimal:2',
+    'subtotal' => 'decimal:2',
+    'total' => 'decimal:2',
+    'tax' => 'decimal:2',
         ];
-        protected $appends = ['total_formatted' , 'collected_number'];
+        protected $appends = ['total_formatted' , 'collected_formatted'];
 
   public function getTotalFormattedAttribute()
     {
@@ -33,15 +34,13 @@ class Sale extends Model
     {
         return number_format($value, 2, '.', ','); // 10,000.00
     }
-     public function getCollectedAttribute($value)
+  
+      public function getCollectedFormattedAttribute($value)
     {
-        return number_format($value, 2, '.', ','); // 10,000.00
+        return number_format($value, 2, '.', ',');
     }
-      public function getCollectedNumberAttribute($value)
-    {
-        return $value;
-    }
-     public function getPostponedAttribute($value)
+    
+     public function getPostponedFormattedAttribute($value)
     {
         return number_format($value, 2, '.', ','); // 10,000.00
     }

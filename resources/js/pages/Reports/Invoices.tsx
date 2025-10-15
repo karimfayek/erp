@@ -223,7 +223,7 @@ const resetFilter = ()=>{
                                                 }
                                             </td>
                                             <td className="p-2">
-                                                {invoice.collected_number >= invoice.total ?
+                                                {invoice.collected_number < invoice.total ?
                                                     <Badge className="bg-green-100 text-green-700">تم </Badge>
                                                     :
                                                     <Badge className="bg-red-100 text-red-700"> جزئى</Badge>
@@ -264,7 +264,7 @@ const resetFilter = ()=>{
                             </div>
                             <div className="flex flex-col">
                                 <b>  اجمالى المبلغ للفواتير</b>
-                                <p>{info?.invoicesTotals}</p>
+                                <p>{Number(info?.invoicesTotals).toFixed(2)}</p>
                             </div>
                             <div className="flex flex-col">
                             <b>  اجمالى المبلغ المحصل</b>
@@ -272,7 +272,7 @@ const resetFilter = ()=>{
                         </div>
                          <div className="flex flex-col">
                             <b>  اجمالى المبلغ المؤجل</b>
-                            <p>{info?.postponed}</p>
+                            <p>{Number(info?.postponed).toFixed(2)}</p>
                         </div>
                          <div className="flex flex-col">
                             <b>  اجمالى  المصاريف</b>

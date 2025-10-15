@@ -119,7 +119,7 @@ $warehouse = Warehouse::where('id' ,  $request->warehouse_id)->get();
 
     public function store(Request $request)
     {
-      // dd($request->all());
+      //dd($request->all());
         $validated = $request->validate([
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
@@ -147,6 +147,9 @@ $warehouse = Warehouse::where('id' ,  $request->warehouse_id)->get();
             'is_invoice' => 'required|boolean',
         ]);
 
+        $user = \App\Models\User::find($data['user_id']);
+        $branchCode = $user->warehouse->branch->code ;
+      
        $nextId = Sale::max('id') + 1;
         $data['internal_id'] = 'SYS-' . date('Y') . '-' . str_pad($nextId, 6, '0', STR_PAD_LEFT);
 
@@ -154,11 +157,11 @@ $warehouse = Warehouse::where('id' ,  $request->warehouse_id)->get();
         if ($data['is_invoice']) {
             // فواتير عادية
             $nextInvoiceNumber = Sale::where('is_invoice', 1)->count() + 1;
-            $data['invoice_number'] = 'INV/' . date('Y') . '/' . str_pad($nextInvoiceNumber, 4, '0', STR_PAD_LEFT);
+            $data['invoice_number'] = 'INV/' . date('Y') . '/' . str_pad($nextInvoiceNumber, 4, '0', STR_PAD_LEFT). '/' . $branchCode;
         } else {
             // بيانات أسعار
             $nextQuotationNumber = Sale::where('is_invoice', 0)->count() + 1;
-            $data['invoice_number'] = 'QTN/' . date('Y') . '/' . str_pad($nextQuotationNumber, 4, '0', STR_PAD_LEFT);
+            $data['invoice_number'] = 'QTN/' . date('Y') . '/' . str_pad($nextQuotationNumber, 4, '0', STR_PAD_LEFT). '/' . $branchCode;
         }
         $data['issued_at'] = now();
         
@@ -170,7 +173,6 @@ $warehouse = Warehouse::where('id' ,  $request->warehouse_id)->get();
           } */
         // create sale
         $sale = Sale::create($data);
-        $user = \App\Models\User::find($data['user_id']);
         // create items
         foreach ($validated['items'] as $item) {
             $product = \App\Models\Product::find($item['product_id']);

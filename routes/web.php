@@ -86,6 +86,13 @@ Route::get('/reports/user/{user}', [\App\Http\Controllers\ReportController::clas
 Route::get('/reports/branch/{branch}', [\App\Http\Controllers\ReportController::class, 'branch'])->name('reports.branch')->middleware('permission:Reports view');
 Route::get('/reports/invoices', [\App\Http\Controllers\ReportController::class, 'invoices'])->name('reports.invoices')->middleware('permission:Reports view');
 Route::get('/reports', [\App\Http\Controllers\ReportController::class, 'index'])->name('reports.index');
+
+
+//activity
+Route::get('/user/activity/login/{id?}', [\App\Http\Controllers\ActivityController::class, 'login'])->name('user.login.activity')->middleware('permission:super');
+
+
+
 });
 
 require __DIR__.'/settings.php';

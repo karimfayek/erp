@@ -45,7 +45,7 @@ type RegisterForm = {
 };
 
 export default function Users() {
-    const { users,warehouses, flash, errors } = usePage().props;
+    const { users, warehouses, flash, errors } = usePage().props;
     const [open, setOpen] = useState(false);
     const { delete: destroy, processing } = useForm()
 
@@ -68,11 +68,11 @@ export default function Users() {
             <div className="mt-6  p-4 rounded shadow">
                 <div className='mb-4'>
                     {can('Users create') &&
-                    
-                    <Button variant="outline" size="sm">
-                        <Plus />
-                        <span className="hidden lg:inline" onClick={() => setOpen(true)}>Add User</span>
-                    </Button>
+
+                        <Button variant="outline" size="sm">
+                            <Plus />
+                            <span className="hidden lg:inline" onClick={() => setOpen(true)}>Add User</span>
+                        </Button>
                     }
                 </div>
                 <Table>
@@ -101,54 +101,62 @@ export default function Users() {
 
                                         <DropdownMenuContent align="end">
                                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                           
-                                                <DropdownMenuItem asChild>
+
+                                            <DropdownMenuItem asChild>
                                                 <Link href={route("users.show", user.id)}>
                                                     عرض فواتير المستخدم
                                                 </Link>
-                                                </DropdownMenuItem>
-                                           
-                                        {can("Users edit") && (
-                                            <DropdownMenuItem asChild>
-                                                <Link href={route("users.edit", user.id)}>
-                                                    تعديل
-                                                </Link>
                                             </DropdownMenuItem>
-                                              )}
-{can('Reports view') &&
+
+                                            {can("Users edit") && (
+                                                <DropdownMenuItem asChild>
+                                                    <Link href={route("users.edit", user.id)}>
+                                                        تعديل
+                                                    </Link>
+                                                </DropdownMenuItem>
+                                            )}
+                                            
+                                            {can("super") && (
+                                                <DropdownMenuItem asChild>
+                                                    <Link href={route("user.login.activity", user.id)}>
+                                                        تقارير الدخول للسيستم
+                                                    </Link>
+                                                </DropdownMenuItem>
+                                            )}
+                                            {can('Reports view') &&
 
                                                 <DropdownMenuItem asChild>
                                                     <Link href={route("reports.user", user.id)}>
-                                                        تقرير
+                                                         مبيعات
                                                     </Link>
                                                 </DropdownMenuItem>
                                             }
                                             <DropdownMenuSeparator />
-  {can("Users delete") && (
-                                            <AlertDialog>
-                                                <AlertDialogTrigger asChild>
-                                                    <Button variant="ghost" className='hover:bg-red-500'>مسح </Button>
-                                                </AlertDialogTrigger>
-                                                <AlertDialogContent>
-                                                    <AlertDialogHeader>
-                                                        <AlertDialogTitle>هل أنت متأكد؟</AlertDialogTitle>
-                                                        <AlertDialogDescription>
-                                                            هذا الإجراء لا يمكن التراجع عنه. سيتم حذف المستخدم بشكل دائم.
-                                                        </AlertDialogDescription>
-                                                    </AlertDialogHeader>
-                                                    <AlertDialogFooter>
-                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                        <AlertDialogAction
-                                                            onClick={() => handleDelete(user.id)}
-                                                            disabled={processing}
-                                                            className="bg-red-600 hover:bg-red-700"
-                                                        >
-                                                            {processing ? "جارٍ الحذف..." : "تأكيد الحذف"}
-                                                        </AlertDialogAction>
-                                                    </AlertDialogFooter>
-                                                </AlertDialogContent>
-                                            </AlertDialog>
-                                              )}
+                                            {can("Users delete") && (
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild>
+                                                        <Button variant="ghost" className='hover:bg-red-500'>مسح </Button>
+                                                    </AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader>
+                                                            <AlertDialogTitle>هل أنت متأكد؟</AlertDialogTitle>
+                                                            <AlertDialogDescription>
+                                                                هذا الإجراء لا يمكن التراجع عنه. سيتم حذف المستخدم بشكل دائم.
+                                                            </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                            <AlertDialogAction
+                                                                onClick={() => handleDelete(user.id)}
+                                                                disabled={processing}
+                                                                className="bg-red-600 hover:bg-red-700"
+                                                            >
+                                                                {processing ? "جارٍ الحذف..." : "تأكيد الحذف"}
+                                                            </AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                            )}
                                         </DropdownMenuContent>
                                     </DropdownMenu>
                                 </TableCell>

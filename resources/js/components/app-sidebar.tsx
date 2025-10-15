@@ -110,6 +110,11 @@ const CollabseNavItems: NavItem[] = [
             url: "/reports/invoices",
             icon: Users,
             },
+            can("super") && {
+            title: "تسجيل الدخول",
+            url: "/user/activity/login",
+            icon: Users,
+            },
            
               
         ]

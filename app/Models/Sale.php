@@ -39,6 +39,11 @@ class Sale extends Model
     {
         return number_format($value, 2, '.', ',');
     }
+    public function setPostponedAttribute($value)
+{
+    $this->attributes['postponed'] = $this->total - $this->collected;
+}
+
     
      public function getPostponedFormattedAttribute($value)
     {

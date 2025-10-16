@@ -204,11 +204,12 @@ public function invoices(Request $request)
         if ($request->rep && $request->rep != 'all') {
             $query->where('user_id', $request->rep);
         }
-          if ($request->product && $request->product != 'all') {
-            $query->whereHas('items', function ($q) use ($request) {
-                $q->where('product_id', $request->product);
-            });
-        }
+       if ($request->branch && $request->branch != 'all') {
+       // dd($request->branch);
+    $query->whereHas('user.warehouse.branch', function ($q) use ($request) {
+        $q->where('id', $request->branch);
+    });
+}
          if ($request->customer && $request->customer != 'all') {
            
             $query->where('customer_id', $request->customer);
@@ -237,13 +238,13 @@ if ($request->filled('to_date')) {
               
           //dd($invoicesInfo);
         $reps = \App\Models\User::select('id', 'name')->get();
-        $products = \App\Models\Product::select('id', 'name')->get();
+        $branches = \App\Models\Branch::select('id', 'name')->get();
          $customers = \App\Models\Customer::select('id', 'name')->get();
          //dd($collected);
             return Inertia::render('Reports/Invoices', [                    
                     'invoices' => $invoices,
                     'reps' => $reps,
-                    'products' => $products,
+                    'branches' => $branches,
                     'customers' => $customers,
                     'info' => [
                     'invoicesTotals' => $invoicesInfo->sum('total'),

@@ -33,6 +33,7 @@ const [collected , setCollected] = useState(inv.collected)
  const [isDelivered, setIsDelivered] = useState(invoice.is_delivered)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [collectedAmount, setCollectedAmount] = useState(invoice.collected_amount || 0)
+  const [postponedAmount, setPostponedAmount] = useState(invoice.postponed || 0)
   const [newCollected, setNewCollected] = useState(collectedAmount)
 
  const handleToggleDelivery = async () => {
@@ -51,7 +52,10 @@ const handleSaveCollection = async () => {
   try {
     await axios.post(`/invoices/${invoice.id}/update-collection`, {
       collected_amount: newCollected,
-    });
+    }).then((data) => {
+      setPostponedAmount(data.data.postponed)
+    }
+    );
     setCollectedAmount(Number(newCollected));
     setIsModalOpen(false);
     setCollected(newCollected)
@@ -118,7 +122,7 @@ const handleSaveCollection = async () => {
               <h4 className="text-sm font-semibold mb-2">حالة السداد</h4>
                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div className="text-sm">المحصّل: <span className="font-medium">{collected}</span></div>
-              <div className="text-sm">المؤجل: <span className="font-medium">{inv.postponed}</span></div>
+              <div className="text-sm">المؤجل: <span className="font-medium">{postponedAmount}</span></div>
                  <Button onClick={() => setIsModalOpen(true)}>تعديل التحصيل</Button>
                 </div>
             </div>

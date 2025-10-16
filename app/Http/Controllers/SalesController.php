@@ -279,12 +279,14 @@ return back()->with('success', 'تم تحديث حالة التسليم بنجا
         ]);
 
         $invoice->collected = $request->collected_amount;
+        $invoice->postponed = $invoice->total - $invoice->collected;
         $invoice->save();
 
         return response()->json([
             'success' => true,
             'message' => 'تم تحديث المبلغ المحصل بنجاح',
             'collected_amount' => $invoice->collected_amount,
+            'postponed' => $invoice->postponed,
         ]);
     }
 }

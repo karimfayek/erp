@@ -12,12 +12,12 @@ import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover
 import AppLayout from "@/layouts/app-layout";
 import { Link, router } from "@inertiajs/react";
 
-export default function InvoiceReports({ invoices, reps, products, customers ,info }) {
+export default function InvoiceReports({ invoices, reps, branches, customers ,info }) {
     console.log(invoices, 'inv')
     const [filters, setFilters] = useState({
         status: "",
         rep: "",
-        product: "",
+        branch: "",
         search: "",
         customer: "",
         from_date: "",
@@ -27,7 +27,7 @@ const resetFilter = ()=>{
     setFilters({
          status: "",
         rep: "all",
-        product: "all",
+        branch: "all",
         search: "",
         customer: "all",
         from_date: "",
@@ -36,7 +36,7 @@ const resetFilter = ()=>{
     router.get(route("reports.invoices"), {
          status: "",
         rep: "all",
-        product: "all",
+        branch: "all",
         search: "",
         customer: "all",
         from_date: "",
@@ -97,13 +97,13 @@ const resetFilter = ()=>{
                             </SelectContent>
                         </Select>
 
-                        <Select onValueChange={(val) => handleFilterChange("product", val)} value={filters.product}>
+                        <Select onValueChange={(val) => handleFilterChange("branch", val)} value={filters.branch}>
                             <SelectTrigger>
-                                <SelectValue placeholder="المنتج" />
+                                <SelectValue placeholder="الفرع" />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value={'all'}>{'الكل'}</SelectItem>
-                                {products.map((p) => (
+                                {branches.map((p) => (
                                     <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                                 ))}
                             </SelectContent>

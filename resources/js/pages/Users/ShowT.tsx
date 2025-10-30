@@ -168,12 +168,20 @@ export const invoiceColumns: ColumnDef<Invoice>[] = [
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             <DropdownMenuItem>
-                <Link href={`/sales/${invoice.invoice_number}`}>
+                <Link href={`${route("invoice.show", invoice.id)}`}>
                 عرض الفاتورة
                 </Link>
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>View payment details</DropdownMenuItem>
+                   <DropdownMenuItem>
+                            <Link href={route('invoice.details' , invoice.id)}>
+                          تفاصيل الفاتورة
+                            </Link>
+                        </DropdownMenuItem>
+                       <DropdownMenuItem>
+                            <Link href={route('invoice.draft', invoice.id)}>
+                          مسودة الفاتورة
+                            </Link>
+                          </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       )

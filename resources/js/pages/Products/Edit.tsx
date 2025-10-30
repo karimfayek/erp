@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { can } from '@/utils/permissions';
 
 import EditInventory from './EditInventory';
+import { is } from 'date-fns/locale';
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'تعديل منتج',
@@ -19,10 +20,10 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 
 export default function Edit({product , warehouses}) {
-    if(!can('Products edit') ){
+    if(!can('Products edit') && !can('Maintenance products')){
         return null
     }
-
+console.log(product , 'product edit page')
     const {  flash ,  errors = {} , branches} = usePage().props;
    
     const { data, setData, put, reset } = useForm({
@@ -32,6 +33,8 @@ export default function Edit({product , warehouses}) {
         unit_type: product.unit_type ||  '',
         description:  product.description || '',
         price: product.price ||  0,
+        cost_price: product.cost_price ||  0,
+        is_service: product.type === 'service' ||  false,
         stock:  product.stock || '',
         unit: product.unit ||  '',
         tax_percentage: product.tax_percentage ||  14,
@@ -62,20 +65,28 @@ export default function Edit({product , warehouses}) {
                                     <Label>اسم</Label>
                                     <Input placeholder="اسم المنتج" value={data.name} onChange={e => setData('name', e.target.value)} />
                                 </div>
+                                  {!data.is_service &&
                                 <div>
-                        <Label>براند</Label>
-                        <Input placeholder=" براند" value={data.brand_id} onChange={e => setData('brand_id', e.target.value)} />
-                    </div>
-                                <div>
-                                    <Label>الوصف</Label>
-                                    <Input placeholder="الوصف" value={data.description} onChange={e => setData('description', e.target.value)} />
+                                    <Label>براند</Label>
+                                    <Input placeholder=" براند" value={data.brand_id} onChange={e => setData('brand_id', e.target.value)} />
                                 </div>
-                                
-                                
-                                
+}
+                               
                                 <div>
                                     <Label>السعر</Label>
                                     <Input type="number" step="0.01" placeholder="السعر" value={data.price} onChange={e => setData('price', e.target.value)} />
+                                </div>
+                                {!data.is_service &&
+                                
+                                <div>
+                                    <Label>سعر التكلفة</Label>
+                                    <p>{data.is_service }</p>
+                                    <Input type="number" step="0.01" placeholder="سعر التكلفة" value={data.cost_price} onChange={e => setData('cost_price', e.target.value)} />
+                                </div>
+                                }
+                                 <div>
+                                    <Label>الوصف</Label>
+                                    <Input placeholder="الوصف" value={data.description} onChange={e => setData('description', e.target.value)} />
                                 </div>
                                  <div>
                                     <Label>نسبة الضريبة %</Label>
@@ -86,7 +97,6 @@ export default function Edit({product , warehouses}) {
                                         onChange={(e) => setData("tax_percentage", e.target.value)}
                                     />
                                 </div>
-                                
                                 <div>
                                     <Label>item_code</Label>
                                     <Input

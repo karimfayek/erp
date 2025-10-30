@@ -6,25 +6,44 @@ import InputError from '@/components/input-error';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Button } from '@/components/ui/button';
-import { FormEventHandler } from 'react';
+import { FormEventHandler, useState } from 'react';
 import { LoaderCircle } from 'lucide-react';
 import { useForm } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { can } from '@/utils/permissions';
+import axios from 'axios';
 
-export default function EditUser({ user, warehouses }) {
+export default function EditUser({ user, warehouses, assigned }) {
+      if(!can('Users view') && !can('Maintenance users')){
+        
+        return null
+    }
     const breadcrumbs: BreadcrumbItem[] = [
         {
             title: 'Edit User',
             href: '/users',
         },
     ];
+    const [selected, setSelected] = useState(new Set(assigned));
+
+const toggle = (id) => {
+  const s = new Set(selected);
+  if (s.has(id)) s.delete(id); else s.add(id);
+  setSelected(s);
+};
+
+const save = () => {
+  const payload = { warehouses: Array.from(selected) };
+  axios.post(route('users.branches.update', user.id), payload)
+       .then(() => toast.success('تم حفظ الصلاحيات'));
+};
     const { data, setData, put, processing, errors, reset } = useForm({
         name: user.name || '',
         email: user.email || '',
         warehouse_id : user.warehouse_id || '' ,
         password: '',
+        salary: user.salary || '',
     });
 
     const submit = (e: React.FormEvent) => {
@@ -40,7 +59,7 @@ export default function EditUser({ user, warehouses }) {
 
             <form method="POST" className="flex flex-col gap-6 p-6" onSubmit={submit}>
                 <div className="grid gap-6">
-                    {can('Users edit name') &&(
+                    {( can('users.edit.name') || can('Maintenance users')) && (
 
                     <div className="grid gap-2">
                         <Label htmlFor="name">Name</Label>
@@ -71,7 +90,7 @@ export default function EditUser({ user, warehouses }) {
                   </SelectContent>
                 </Select>
                 </div>
- {can('Users edit email') &&(
+ { (can('Users edit email') || can('Maintenance users')) && (user.type !== 'technician') && (
                     <div className="grid gap-2">
                         <Label htmlFor="email">Email address</Label>
                         <Input
@@ -88,7 +107,23 @@ export default function EditUser({ user, warehouses }) {
                         <InputError message={errors.email} />
                     </div>
   )}
-   {can('Users edit password') &&(
+  {(can('Users salary') || can('Maintenance salary') )&& (
+    <div className="grid gap-2">
+        <Label htmlFor="salary">المرتب </Label>
+        <Input
+            id="salary"
+            type="number"
+            required
+            tabIndex={4}
+            value={data.salary}
+            onChange={(e) => setData('salary', e.target.value)}
+            disabled={processing}
+            placeholder="المرتب "
+        />
+        <InputError message={errors.salary} />
+    </div>
+  )}
+   {(can('Users edit password') || can('Maintenance users')) && user.type !== 'technician' && (
                     <div className="grid gap-2">
                         <Label htmlFor="password">Password</Label>
                         <Input
@@ -113,6 +148,23 @@ export default function EditUser({ user, warehouses }) {
                 </div>
 
             </form>
+{user.type !== 'technician' &&  (
+    
+            <>
+            <div className="mt-6 mx-2 p-4 border rounded my-2.5">
+                    <h2 className="text-lg font-bold mb-4">صلاحيات الفروع (فواتير درافت)</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {warehouses.map(w => (
+                            <div key={w.id} className="flex items-center">
+                                <input type="checkbox" checked={selected.has(w.id)} onChange={() => toggle(w.id)} />
+                                <span className="mr-2">{w.name}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div><Button onClick={save}>حفظ</Button></>
+)
+}
+
         </AppLayout>
     )
 } 

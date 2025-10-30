@@ -13,7 +13,10 @@ class InventoryService
      */
     public function recordMovement(array $data)
     {
-       
+       $product = \App\Models\Product::find($data['product_id']);
+       if($product->type ==='service'){
+        return null; // لا حاجة لتسجيل حركة للمخزون للخدمات
+       }    
       return DB::transaction(function () use ($data) {
         if ($data['movement_type'] === 'transfer') {
             try {

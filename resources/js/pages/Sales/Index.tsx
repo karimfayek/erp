@@ -248,13 +248,12 @@ export const invoiceColumns: ColumnDef<Invoice>[] = [
               تفاصيل الفاتورة
                 </Link>
             </DropdownMenuItem>
-            {can('Invoice send') &&
            <DropdownMenuItem>
-                <Link href={route('invoices.sendToETA', invoice.id)} method="post">
-                  ارسال للمنظومة
+                <Link href={route('invoice.draft', invoice.id)}>
+           تفاصيل كـ مسودة
                 </Link>
               </DropdownMenuItem>
-    }
+    
     {!row.original.is_delivered &&
   <DropdownMenuItem>
   <Link
@@ -278,14 +277,15 @@ export const invoiceColumns: ColumnDef<Invoice>[] = [
   },
 ]
 export default function SalesCreate() {
-if(!can('Invoices view')){
+if(!can('Invoices view') && !can('Maintenance sales')){
   return false
 }
-const { sales } = usePage().props as unknown as {
+const { sales , title} = usePage().props as unknown as {
     sales: {
       data: Invoice[]
       links: { url: string | null; label: string; active: boolean }[]
-    }
+    },
+    title: string
   }
   console.log(sales)
   const handlePageChange = (url: string | null) => {
@@ -301,7 +301,7 @@ const { sales } = usePage().props as unknown as {
       <Head title="  عرض الفواتير" />
 
        <div className="p-6">
-                  <b>كل الفواتير </b>
+                  <b> {title} </b>
                 
          <DataTable columns={invoiceColumns} data={sales.data} />
          <div className="flex space-x-2 rtl:space-x-reverse">

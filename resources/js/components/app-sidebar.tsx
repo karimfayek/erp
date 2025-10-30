@@ -3,17 +3,17 @@ import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
-import { Link } from '@inertiajs/react';
-import { BookOpen, Folder, LayoutGrid ,Bandage , Users , ArrowLeftRight , Receipt, Store , MapPinned ,Contact, KeySquare, BarChart2} from 'lucide-react';
+import { Link, usePage } from '@inertiajs/react';
+import { BadgeDollarSign, BookOpen, Folder, LayoutGrid ,Bandage , Users , ArrowLeftRight , Receipt, Store , MapPinned ,Contact, KeySquare, BarChart2, Cog, BanknoteIcon, FileMinus} from 'lucide-react';
 
 import AppLogo from './app-logo';
 import { NavCollabse } from './nav-collabse.js';
 import { can } from '@/utils/permissions';
-import { title } from 'process';
-
 
 export function AppSidebar() {
-    
+   
+const user = usePage().props.auth.user;
+console.log(user , 'user from sidebar'); 
 const mainNavItems: NavItem[] = [
     {
         title: 'داش بورد',
@@ -48,6 +48,77 @@ const mainNavItems: NavItem[] = [
         icon: ArrowLeftRight,
     },
 ].filter(Boolean) as NavItem[];
+
+const maintenanceNavItems: NavItem[] = [
+    can('Maintenance sales') &&{
+        title: 'عمليه بيع جديدة',
+        href: '/maintainance/sales/maintainance',
+        icon: BanknoteIcon,
+        
+    },
+    
+    can("Maintenance sales") &&  {
+        title: 'الفواتير',
+        href: '/invoices/maintainance/all',
+        icon: Receipt,
+    },
+  can('Maintenance products') &&{
+        title: 'المنتجات والخدمات',
+        href: '/maintainance/products/maintainance',
+        icon: Bandage,
+    },
+  can('Maintenance users') &&{
+        title: 'الفنيين',
+        href: '/maintainance/users/maintainance',
+        icon: Users,
+    },
+    
+  can('Maintenance salary') &&{
+        title: 'الرواتب',
+        href: '/payroll/calc',
+        icon: BadgeDollarSign,
+    },
+     can('Maintenance salary') &&{
+        title: 'الخصومات',
+        href: '/payroll/deductions',
+        icon: FileMinus ,
+    },
+].filter(Boolean) as NavItem[];
+const CollabseNavItemsMaintenance: NavItem[] = [
+     can('Maintenance sales')&& {
+        title: 'فواتير الصيانه حسب النوع',
+        href: '/sales',
+        icon: Receipt,
+        items :[
+           can('Invoices create')&&
+            {
+                title: "كل الفواتير",
+                url: '/invoices/maintainance/all',
+              },
+              
+            {
+                title: "فواتير فقط",
+                url: '/invoices/maintainance/invoices',
+              },
+              
+            {
+                title: "بيان اسعار",
+                url: '/invoices/maintainance/quotes',
+              },
+              
+            {
+                title: " مسودات",
+                url: '/invoices/maintainance/draft',
+              },
+            {
+                title: " تم ارساله للمنظومة",
+                url: '/invoices/maintainance/sent',
+              },
+          
+              
+        ].filter(Boolean)
+    },
+]
 const CollabseNavItems: NavItem[] = [
        
    can('Invoices view')&& {
@@ -60,12 +131,47 @@ const CollabseNavItems: NavItem[] = [
                  url: '/sales',
               },
             {
-                title: "الفواتير",
-                url: '/invoices',
+                title: "كل الفواتير",
+                url: '/invoices/inv/all',
               },
+          
               
         ].filter(Boolean)
     },
+       can('Invoices view')&& {
+        title: 'الفواتير',
+        href: '/sales',
+        icon: Receipt,
+        items :[
+           can('Invoices create')&&
+            {
+                title: "كل الفواتير",
+                url: '/invoices/inv/all',
+              },
+              
+            {
+                title: "فواتير فقط",
+                url: '/invoices/inv/invoices',
+              },
+              
+            {
+                title: "بيان اسعار",
+                url: '/invoices/inv/quotes',
+              },
+              
+            {
+                title: " مسودات",
+                url: '/invoices/inv/draft',
+              },
+            {
+                title: " تم ارساله للمنظومة",
+                url: '/invoices/inv/sent',
+              },
+          
+              
+        ].filter(Boolean)
+    },
+ 
   
      can('Users view') &&   {
         title: 'المستخدمين و الصلاحيات',
@@ -149,7 +255,21 @@ const footerNavItems: NavItem[] = [
 
             <SidebarContent>
                 <NavMain items={mainNavItems} />
-                <NavCollabse items={CollabseNavItems} />
+                {(!user.maintainance || user.role === 'super-admin') && (
+
+                    <NavCollabse items={CollabseNavItems} />
+                )
+                
+                }
+
+                {can('Maintenance') && 
+                <>
+                
+                <NavMain items={maintenanceNavItems} title="الصيانة" />
+
+                <NavCollabse items={CollabseNavItemsMaintenance} title="فلتر فواتير الصيانة" />
+                </>
+                }
             </SidebarContent>
 
             <SidebarFooter>

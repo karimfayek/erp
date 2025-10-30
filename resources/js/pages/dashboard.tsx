@@ -6,6 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Package, Store, Warehouse, ArrowLeftRight, ShoppingCart, Plus } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts"
 import { can } from '@/utils/permissions';
+import { mn } from 'date-fns/locale';
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Dashboard',
@@ -15,10 +16,10 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 export default function Dashboard({stats , dailySales}) {
       const cards = [
-    { title: "الفروع", value: stats.branches, icon: Store,hrefs:"/branches" , can:'Branches view'},
+    { title: "الفروع", value: stats.branches, icon: Store,hrefs:"/branches" , can:'Branches view' },
     { title: "المخازن", value: stats.warehouses, icon: Warehouse ,hrefs:"/warehouses" ,can:"Warehouses view"},
-    { title: "المنتجات", value: stats.products, icon: Package ,hrefs:"/products" ,can:'Products view'},
-    { title: "نقل اليوم", value: stats.transfers, icon: ArrowLeftRight,hrefs:"/inventory-transfers",can:'Stock transfer' },
+    { title: "المنتجات", value: stats.products, icon: Package ,hrefs:"/products" ,can:'Products view' , mntnce:'Maintenance products'},
+    { title: "نقل اليوم", value: stats.transfers, icon: ArrowLeftRight,hrefs:"/inventory-transfers",can:'Stock transfer'},
     { title: "المبيعات", value: stats.sales, icon: ShoppingCart ,hrefs:"/sales" , can:'admin'},
   ];
     return (
@@ -33,7 +34,7 @@ export default function Dashboard({stats , dailySales}) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
           >
-            {can(card.can) &&
+            {can(card.can) || (card.mntnce && can(card.mntnce)) && 
             
             <Card className="hover:shadow-xl transition-shadow duration-300 rounded-2xl border border-gray-100 bg-white">
               <CardHeader className="flex items-center justify-between pb-2">

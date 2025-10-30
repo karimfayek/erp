@@ -6,12 +6,13 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import AppLayout from '@/layouts/app-layout';
 import { can } from '@/utils/permissions';
+import { add } from 'date-fns';
 
 
 export default function Edit({ customer }) {
-    if(!can('Clients edit')){
-            return null
-        }
+    if (!can('Clients edit')) {
+        return null
+    }
     const { errors } = usePage().props;
 
     const { data, setData, put, reset } = useForm({
@@ -25,8 +26,9 @@ export default function Edit({ customer }) {
         street: customer.street || '',
         building_number: customer.building_number || '',
         type: customer.type || 'B',
-        tax_id: customer.tax_id || '',
-        company_name: customer.company_name || ''
+        tax_id: customer.type === 'F' ? '000000000' : customer.tax_id || '',
+        company_name: customer.company_name || '',
+        address: customer.address || '',
     });
     console.log(errors, 'errors')
     const submit = (e: any) => {
@@ -38,7 +40,7 @@ export default function Edit({ customer }) {
 
     }
 
-    const {  flash } = usePage().props;
+    const { flash } = usePage().props;
     return (
 
         <AppLayout>
@@ -127,6 +129,12 @@ export default function Edit({ customer }) {
                         رقم المبنى
                     </Label>
                     <Input type="number" placeholder="رقم المبنى" value={data.building_number} onChange={e => setData('building_number', e.target.value)} />
+                </div>
+                <div>
+                    <Label>
+                        العنوان الكامل
+                    </Label>
+                    <Input type="text" placeholder="العنوان الكامل" value={data.address} onChange={e => setData('address', e.target.value)} />
                 </div>
 
 

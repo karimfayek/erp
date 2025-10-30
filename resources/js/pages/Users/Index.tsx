@@ -45,7 +45,11 @@ type RegisterForm = {
 };
 
 export default function Users() {
-    const { users, warehouses, flash, errors } = usePage().props;
+    if(!can('Users view') && !can('Maintenance users')){
+        
+        return null
+    }
+    const { users, warehouses, flash, errors ,maintainance , roles} = usePage().props;
     const [open, setOpen] = useState(false);
     const { delete: destroy, processing } = useForm()
 
@@ -53,11 +57,11 @@ export default function Users() {
         destroy(route("users.destroy", id))
     }
 
-
+const title = maintainance ? 'الفنيين' : 'المستخدمين';
     return (
 
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="المستخدمين" />
+            <Head title={title} />
 
             {flash?.success && (
                 <div className="bg-green-100 text-green-700 p-2 rounded ">{flash.success}</div>
@@ -67,19 +71,23 @@ export default function Users() {
 
             <div className="mt-6  p-4 rounded shadow">
                 <div className='mb-4'>
-                    {can('Users create') &&
+                    {(can('Users create') || can('Maintenance users') )&&(    
 
                         <Button variant="outline" size="sm">
                             <Plus />
-                            <span className="hidden lg:inline" onClick={() => setOpen(true)}>Add User</span>
+                            <span className="hidden lg:inline" onClick={() => setOpen(true)}>{maintainance ? 'إضافة فني' : 'إضافة مستخدم'} </span>
                         </Button>
+                    )
                     }
                 </div>
                 <Table>
                     <TableHeader>
                         <TableRow className="text-right">
                             <TableHead className="text-right">الاسم</TableHead>
+                            {!maintainance &&
+                            
                             <TableHead className="text-right">الايميل</TableHead>
+                            }
                             <TableHead className="text-right">-</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -87,7 +95,9 @@ export default function Users() {
                         {users?.data.map(user => (
                             <TableRow key={user.id}>
                                 <TableCell>{user.name}</TableCell>
+                                  {!maintainance &&
                                 <TableCell>{user.email}</TableCell>
+                                  }
 
                                 {/* عمود الأكشنز */}
                                 <TableCell className="text-right">
@@ -101,20 +111,23 @@ export default function Users() {
 
                                         <DropdownMenuContent align="end">
                                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-
-                                            <DropdownMenuItem asChild>
-                                                <Link href={route("users.show", user.id)}>
-                                                    عرض فواتير المستخدم
-                                                </Link>
-                                            </DropdownMenuItem>
-
-                                            {can("Users edit") && (
+                                             {(can("Users edit") || can("Maintenance users")) && (
                                                 <DropdownMenuItem asChild>
                                                     <Link href={route("users.edit", user.id)}>
                                                         تعديل
                                                     </Link>
                                                 </DropdownMenuItem>
                                             )}
+                                             {!maintainance &&
+                                             <>
+                                             
+                                            <DropdownMenuItem asChild>
+                                                <Link href={route("users.show", user.id)}>
+                                                    عرض فواتير المستخدم
+                                                </Link>
+                                            </DropdownMenuItem>
+                                            
+                                           
                                             
                                             {can("super") && (
                                                 <DropdownMenuItem asChild>
@@ -131,6 +144,9 @@ export default function Users() {
                                                     </Link>
                                                 </DropdownMenuItem>
                                             }
+                                             </>
+}
+
                                             <DropdownMenuSeparator />
                                             {can("Users delete") && (
                                                 <AlertDialog>
@@ -172,7 +188,7 @@ export default function Users() {
                         <DialogTitle>إضافة مستخدم جديد</DialogTitle>
                     </DialogHeader>
 
-                    <NewUser onSuccess={() => setOpen(false)} warehouses={warehouses} />
+                    <NewUser onSuccess={() => setOpen(false)} warehouses={warehouses} maintainance={maintainance} roles={roles} />
 
                 </DialogContent>
             </Dialog>

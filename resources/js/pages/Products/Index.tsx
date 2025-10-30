@@ -21,15 +21,10 @@ import { toast } from 'sonner';
 import { DataTable } from '@/components/DataTable';
 import { ColumnDef } from '@tanstack/react-table';
 import { Checkbox } from '@/components/ui/checkbox';
+import { ca } from 'date-fns/locale';
 
 
 
-const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'Products',
-        href: '/products',
-    },
-];
 type Product = {
     id: number
     name: string
@@ -42,13 +37,20 @@ type Product = {
     price_without_tax:number 
     tax_percentage:number
 }
-export default function Index() {
-    if (!can('Products view')) {
+export default function Index({maintainance}: {maintainance:boolean}) {
+    if (!can('Products view') && !can('Maintenance products')) {
         return false
     }
+   const title = maintainance ? 'منتجات وخدمات الصيانة' : 'المنتجات'; 
+const breadcrumbs: BreadcrumbItem[] = [
+    {
+        title: title,
+        href: '/products',
+    },
+];
     const [open, setOpen] = useState(false);
     const { products, flash, warehouses, errors = {} } = usePage().props;
-  console.log(products , 'products')
+  console.log(warehouses , 'warehouses index')
 // 📌 Columns
  const invoiceColumns: ColumnDef<Product>[] = [
     {
@@ -75,7 +77,7 @@ export default function Index() {
     },
        {
     accessorKey: "name",
-    header: "المنتج",
+    header: maintainance ? 'اسم المنتج / الخدمة' : 'اسم المنتج',
     cell: info => <span className="font-medium">{info.getValue()}</span>,
   },
 {
@@ -159,7 +161,7 @@ export default function Index() {
                     <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
 
-                        {can('Products edit') &&
+                        {can('Products edit') || can('Maintenance products') &&
 
                             <DropdownMenuItem asChild>
                                 <Link href={route("products.edit", product.id)}>
@@ -201,26 +203,28 @@ export default function Index() {
 
             <div className="mt-2  p-4 rounded shadow">
 
-                {can('Products create') &&
+                {can('Products create') || can('Maintenance products') &&
 
                     <Dialog open={open} onOpenChange={setOpen} >
                         <DialogTrigger asChild>
 
                             <Button variant="outline" size="sm" className='mb-5'>
                                 <Plus />
-                                <span className="inline" onClick={() => setOpen(true)}>Add Product</span>
+                                <span className="inline" onClick={() => setOpen(true)}>{maintainance ? 'إضافة منتج/خدمة جديدة' : 'إضافة منتج جديد'}</span>
                             </Button>
                         </DialogTrigger>
 
                         <DialogContent className='sm:max-w-[90vw] lg:max-w-[1400px] w-full h-auto max-h-[90vh] overflow-y-auto p-6' dir='rtl'>
+{!maintainance &&
 
                             <DialogHeader>
                                 <DialogTitle className='text-center'>إضافة منتج جديد
-
+                                    {maintainance && ' - في وضع الصيانة'}
                                 </DialogTitle>
                             </DialogHeader>
+}
 
-                            <NewProduct warehouses={warehouses} onSuccess={() => setOpen(false)} />
+                            <NewProduct m = {maintainance} warehouses={warehouses} onSuccess={() => setOpen(false)} />
 
                         </DialogContent>
                     </Dialog>

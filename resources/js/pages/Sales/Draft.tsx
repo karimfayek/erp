@@ -13,6 +13,7 @@ import axios from "axios";
 import { toast ,Toaster } from "sonner";
 import { NumberDisplay } from "@/lib/utils";
 import { Link } from "@inertiajs/react";
+import { is } from "date-fns/locale";
 // InvoicePreview
 // Props: { invoice }
 // invoice shape (example):
@@ -26,33 +27,13 @@ import { Link } from "@inertiajs/react";
 //   notes
 // }
 
-export default function InvoicePreview({ invoice }) {
+export default function InvoiceDraft({ invoice }) {
   const inv = invoice || {};
   const items = inv.items || [];
-const [collected , setCollected] = useState(inv.collected)
- const [isDelivered, setIsDelivered] = useState(invoice.is_delivered)
- const [markDraft, setMarkDraft] = useState(invoice.marked_to_draft)
- 
-   const eta_status = inv.eta_status; // 'draft', 'sent'
-  const [isSent, setIsSent] = useState(eta_status)
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [collectedAmount, setCollectedAmount] = useState(invoice.collected_amount || 0)
-  const [postponedAmount, setPostponedAmount] = useState(invoice.postponed || 0)
-  const [newCollected, setNewCollected] = useState(collectedAmount)
+  const eta_status = inv.eta_status; // 'draft', 'sent'
+ const [isSent, setIsSent] = useState(eta_status)
 
  const handleToggleDelivery = async () => {
-  try {
-    setIsDelivered(!isDelivered);
-    await axios.post(`/invoices/${invoice.id}/toggle-delivery`, {
-      delivered: !isDelivered,
-    });
-    toast.success("تم تحديث حالة التسليم");
-  } catch (err) {
-    toast.error("حدث خطأ أثناء تحديث الحالة");
-  }
-};
-
- const handleSent = async () => {
   try {
     if(isSent === 'sent'){
       setIsSent(null);
@@ -68,34 +49,8 @@ const [collected , setCollected] = useState(inv.collected)
     toast.error("حدث خطأ أثناء تحديث الحالة");
   }
 };
-const handleMarkDraft = async () => {
-  try {
-    setMarkDraft(!markDraft);
-    await axios.post(`/invoices/${invoice.id}/toggle-mark-draft`, {
-      marked_to_draft: !markDraft,
-    });
-    toast.success("تم تحديث حالة المسودة");
-  } catch (err) {
-    toast.error("حدث خطأ أثناء تحديث الحالة");
-  }
-};
 
-const handleSaveCollection = async () => {
-  try {
-    await axios.post(`/invoices/${invoice.id}/update-collection`, {
-      collected_amount: newCollected,
-    }).then((data) => {
-      setPostponedAmount(data.data.postponed)
-    }
-    );
-    setCollectedAmount(Number(newCollected));
-    setIsModalOpen(false);
-    setCollected(newCollected)
-    toast.success("تم تحديث المبلغ المحصل بنجاح");
-  } catch (err) {
-    toast.error("حدث خطأ أثناء تحديث المبلغ");
-  }
-};
+
   return (
     <div className="max-w-6xl mx-auto p-6" dir="rtl">
            <Toaster />
@@ -107,24 +62,9 @@ const handleSaveCollection = async () => {
               <Badge variant="secondary">{inv.document_type || 'I'}</Badge>
               <Badge variant="outline">{inv.invoice_type || 'T01'}</Badge>
               <div className="flex items-center gap-2" dir="ltr">
-                <Switch id="delivered" checked={isDelivered} onCheckedChange={handleToggleDelivery} className="data-[state=checked]:bg-green-500" />
-                <Label className="text-sm">{inv.is_delivered ? 'تم التسليم' : 'لم يتم التسليم'}</Label>
-              </div>
-              {inv.eta_status !== 'sent' &&
-              
-              <div className="flex items-center gap-2" dir="ltr">
-                <Switch id="draft" checked={markDraft} onCheckedChange={handleMarkDraft} className="data-[state=checked]:bg-green-500" />
-                <Label className="text-sm">{inv.marked_to_draft || markDraft ? 'تم وضعه في المسودة' : 'لم يتم وضعه في المسودة'}</Label>
-              </div>
-              }
-
-              {inv.eta_status === 'sent' &&
-              
-              <div className="flex items-center gap-2" dir="ltr">
-                <Switch id="draft" checked={isSent} onCheckedChange={handleSent} className="data-[state=checked]:bg-green-500" />
-                <Label className="text-sm">{inv.eta_status === 'sent' || isSent === 'sent' ? 'تم الإرسال للمنظومة' : 'لم يتم الإرسال للمنظومة'}</Label>
-                                         </div>
-              }
+                             <Switch id="delivered" checked={isSent === 'sent'} onCheckedChange={handleToggleDelivery} className="data-[state=checked]:bg-green-500" />
+                             <Label className="text-sm">{inv.eta_status === 'sent' || isSent === 'sent' ? 'تم الإرسال للمنظومة' : 'لم يتم الإرسال للمنظومة'}</Label>
+                           </div>
             </div>
           </div>
 
@@ -152,10 +92,11 @@ const handleSaveCollection = async () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6" dir="rtl">
             <div>
               <h4 className="text-sm font-semibold mb-2">العميل</h4>
-              <div className="text-sm">{inv.customer?.name ?? '-'}</div>
-              <div className="text-sm text-muted-foreground">{inv.customer?.phone ?? ''}</div>
-              <div className="text-sm text-muted-foreground">{inv.customer?.email ?? ''}</div>
-              <div className="text-sm text-muted-foreground">{inv.customer?.address ?? ''}</div>
+              <div className="text-sm"> اسم العميل : {inv.customer?.name ?? '-'}</div>
+              <div> رقم التليفون : <span  className="text-sm text-muted-foreground">{inv.customer?.phone ?? ''}</span></div>
+              <div className="text-sm "> البريد الإلكتروني : <span  className="text-sm text-muted-foreground">{inv.customer?.email ?? ''}</span></div>
+              <div className="text-sm ">العنوان : <span  className="text-sm text-muted-foreground">{inv.customer?.address ?? ''}</span></div>
+              <div className="text-sm ">الرقم الضريبى : <span  className="text-sm text-muted-foreground">{inv.customer?.tax_id ?? ''}</span></div>
             </div>
 
             <div>
@@ -165,22 +106,7 @@ const handleSaveCollection = async () => {
               <div className="text-sm">طريقة الدفع: <span className="font-medium">{inv.payment_method ?? '-'}</span></div>
             </div>
 
-            <div>
-              <h4 className="text-sm font-semibold mb-2">حالة السداد</h4>
-               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <div className="text-sm">المحصّل: <span className="font-medium">{collected}</span></div>
-              <div className="text-sm">المؤجل: <span className="font-medium">{postponedAmount}</span></div>
-                 <Button onClick={() => setIsModalOpen(true)}>تعديل التحصيل</Button>
-                </div>
-            </div>
-
-
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div>
-               <div className="text-sm">المصروفات: <span className="font-medium">{Number(inv.expenses ?? 0).toFixed(2)}</span></div>
-             </div>
-          
-             </div>
+           
           </div>
 
           <div className="overflow-x-auto rounded-md border">
@@ -200,7 +126,7 @@ const handleSaveCollection = async () => {
                     <TableCell>
                       <div className="flex flex-col">
                         <div className="font-medium">{row.product_name || '-'}</div>
-                        <div className="text-xs text-muted-foreground">{row.product_code || ''}</div>
+                        <div className="text-xs text-muted-foreground">{row.product?.item_code || ''}</div>
                       </div>
                     </TableCell>
                     <TableCell>{row.description}</TableCell>
@@ -225,16 +151,21 @@ const handleSaveCollection = async () => {
                </div>
 
               {Number(inv.discount_percentage ?? 0) > 0 && (
-                <div className="flex justify-between"><span>قيمة الخصم ({inv.discount_percentage} %):</span><span className="font-semibold">{(Number(inv.subtotal ?? 0) * Number(inv.discount_percentage ?? 0) / 100).toFixed(2)}</span></div>
-              )}
-
-              <div className="flex justify-between"><span>بعد الخصم:</span><span className="font-semibold">
-                { (parseFloat(inv.subtotal.replace(/,/g, '')) || 0) -
-  ((parseFloat(inv.subtotal.replace(/,/g, '')) || 0) *
-   ((inv.discount_percentage || 0) / 100)) }
-                </span></div>
+                <>
+                <div className="flex justify-between"><span>قيمة الخصم ({Number(inv.discount_percentage).toFixed(0)} %):</span><span className="font-semibold">{(Number(inv.subtotal ?? 0) * Number(inv.discount_percentage ?? 0) / 100).toFixed(2)}</span></div><div className="flex justify-between"><span>بعد الخصم:</span><span className="font-semibold">
+                  {
+                  (parseFloat(inv.subtotal.replace(/,/g, '')) || 0) -
+                    ((parseFloat(inv.subtotal.replace(/,/g, '')) || 0) *
+                      ((inv.discount_percentage || 0) / 100))
+                      }
+                </span>
+                </div>
+                </>
+                   )}
               <div className="flex justify-between"><span>الضريبة:</span><span className="font-semibold">{Number(inv.tax ?? 0).toFixed(2)}</span></div>
-              <div className="flex justify-between"><span>ضرائب أخرى:</span><span className="font-semibold">{Number(inv.other_tax ?? 0).toFixed(2)}</span></div>
+              {inv.other_tax > 0 && (
+                <div className="flex justify-between"><span>ضرائب أخرى خصم ({Number(inv.other_tax).toFixed(0)} %):</span><span className="font-semibold">{Number(inv.other_tax ?? 0).toFixed(2)}</span></div>
+              )}
               <div className="flex justify-between"><span>المصروفات:</span><span className="font-semibold">{Number(inv.expenses ?? 0).toFixed(2)}</span></div>
               <Separator />
               <div className="flex justify-between text-lg font-bold"><span>الإجمالي النهائي:</span><span>
@@ -250,25 +181,7 @@ const handleSaveCollection = async () => {
           </div>
         </CardContent>
       </Card>
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>تعديل المبلغ المحصل</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3">
-            <Label>المبلغ الجديد</Label>
-            <Input
-              type="number"
-              value={newCollected}
-              onChange={(e) => setNewCollected(e.target.value)}
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsModalOpen(false)}>إلغاء</Button>
-            <Button onClick={handleSaveCollection}>حفظ</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      
     </div>
   );
 }

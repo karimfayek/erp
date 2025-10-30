@@ -14,6 +14,7 @@ use App\Http\Controllers\CustomerBranchController;
 use App\Http\Controllers\UserRoleController;
 use App\Http\Controllers\UserPermissionController;
 use App\Http\Controllers\TaxInvoiceController;
+use App\Http\Controllers\TechnicianPayrollController;
 use Inertia\Inertia;
 use Carbon\Carbon;
 Route::get('/', function () {
@@ -45,18 +46,26 @@ Route::middleware(['auth', 'verified'])->group(function () {
    
     })->name('dashboard');
     Route::resource('users', UserController::class);
+    Route::post('/users/{user}/branches', [UserController::class,'updateBranches'])->name('users.branches.update')->middleware('permission:super');
+
+    Route::get('/maintainance/users/{maintainance?}', [UserController::class, 'index'])->name('maintainance.users.index');
     Route::resource('products', ProductController::class);
+     Route::get('/maintainance/products/{m?}', [ProductController::class, 'index'])->name('maintainance.products.index');
     Route::post('/products/{product}/inventories', [InventoryTransferController::class, 'update']);
     Route::resource('customers', CustomerController::class);
     Route::resource('customer-branches', CustomerBranchController::class);
     Route::resource('representatives', \App\Http\Controllers\RepresentativeController::class);
     Route::resource('sales', SalesController::class);
-    Route::get('/invoices', [SalesController::class, 'invoices'])->name('invoices.index');
+     Route::get('/maintainance/sales/{maintainance?}', [SalesController::class, 'index'])->name('sales.maintainance.index');
+    Route::get('/invoices/{maintainance?}/{type?}', [SalesController::class, 'invoices'])->name('invoices.index');
       Route::post('/inventory/qtyCheck', [SalesController::class, 'qtyCheck'])->name('inventory.qtyCheck');
     Route::get('/invoice/{id}', [SalesController::class, 'show'])->name('invoice.show');
     Route::get('/invoice/{id}/details', [SalesController::class, 'details'])->name('invoice.details');
+    Route::get('/invoice/{id}/draft', [SalesController::class, 'draft'])->name('invoice.draft')->middleware('permission:Invoice Draft');
     
 Route::post('/invoices/{invoice}/toggle-delivery', [SalesController::class, 'toggleDelivery'])->name('delivery.status');
+Route::post('/invoices/{invoice}/toggle-draft', [SalesController::class, 'toggleDraft'])->name('draft.status');
+Route::post('/invoices/{invoice}/toggle-mark-draft', [SalesController::class, 'toggleMarkDraft'])->name('draft.mark.status');
 Route::post('/invoices/{invoice}/update-collection', [SalesController::class, 'updateCollection']);
 
     Route::resource('inventory-transfers', InventoryTransferController::class);
@@ -91,8 +100,19 @@ Route::get('/reports', [\App\Http\Controllers\ReportController::class, 'index'])
 //activity
 Route::get('/user/activity/login/{id?}', [\App\Http\Controllers\ActivityController::class, 'login'])->name('user.login.activity')->middleware('permission:super');
 
+//payroll
+ Route::get('/payroll/calc', [TechnicianPayrollController::class, 'calcIndex'])->name('payroll.calc.index');
+    // Endpoint AJAX/POST لحساب النتائج (يرجع Inertia أو JSON)
+    Route::post('/payroll/calc', [TechnicianPayrollController::class, 'calcCompute'])->name('payroll.calc.compute');
 
+    // صفحة تعديل المرتبات الأساسية
+    Route::get('/payroll/salaries', [TechnicianPayrollController::class, 'salariesIndex'])->name('payroll.salaries.index');
+    Route::post('/payroll/salaries', [TechnicianPayrollController::class, 'salariesStore'])->name('payroll.salaries.store');
 
+    // صفحة الخصومات / إضافة خصم
+    Route::get('/payroll/deductions', [TechnicianPayrollController::class, 'deductionsIndex'])->name('payroll.deductions.index');
+    Route::post('/payroll/deductions', [TechnicianPayrollController::class, 'deductionsStore'])->name('payroll.deductions.store');
+    Route::delete('/payroll/deductions/{deduction}', [TechnicianPayrollController::class, 'deductionsDestroy'])->name('deduction.delete');
 });
 
 require __DIR__.'/settings.php';

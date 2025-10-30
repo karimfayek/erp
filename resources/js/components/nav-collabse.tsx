@@ -21,6 +21,7 @@ import { Link } from "@inertiajs/react"
 
 export function NavCollabse({
   items,
+  title = "sales",
 }: {
   items: {
     title: string
@@ -35,7 +36,7 @@ export function NavCollabse({
 }) {
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>Sales</SidebarGroupLabel>
+      <SidebarGroupLabel>{title}</SidebarGroupLabel>
       <SidebarMenu>
         {items.map((item) => (
           <Collapsible

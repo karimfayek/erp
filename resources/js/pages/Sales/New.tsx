@@ -35,13 +35,15 @@ const breadcrumbs: BreadcrumbItem[] = [
   },
 ];
 export default function SalesCreate() {
-  if (!can('Invoices create')) {
+  if (!can('Invoices create') && !can('Maintenance sales')) {
     return null
   }
 
-  const { customers = [], users = [], user = {}, products = [], warehouses = [], errors = {}, flash = {}, inventory = {} } = usePage().props as {
+  const { customers = [], users = [], user = {}, products = [], warehouses = [], errors = {}, flash = {}, inventory = {}, maintainance = false, technicians = [] } = usePage().props as {
     customers: any[],
     products: any[],
+    technicians: any[],
+    maintainance: boolean,
     users: any[],
     user: { id: string | number, name: string },
     warehouses: { id: string | number, name: string }[],
@@ -50,7 +52,7 @@ export default function SalesCreate() {
     inventory: any,
   };
 
-const token = document.querySelector('meta[name="csrf-token"]')?.content;
+  const token = document.querySelector('meta[name="csrf-token"]')?.content;
   const productMap = useMemo(() => {
     const map = new Map();
     products.forEach((p) => map.set(String(p.id), p));
@@ -80,28 +82,59 @@ const token = document.querySelector('meta[name="csrf-token"]')?.content;
     tax: 0,
     other_tax: 0,
     is_delivered: true,
-    is_invoice :true ,
+    is_invoice: true,
     expenses: 0,
     unknown_f: "",
     document_type: 'I',
     invoice_type: 'T02',
     payment_method: 'C',
-    total : 0,
+    total: 0,
     notes: "",
+    maintainance: maintainance,
     items: [],
+    technicians: [],
   });
-  const handleIsInvoiceCHange = (v) => {
-    if(!v){
-    setData('tax_percent' , 0)
-     setData('other_tax' , 0)
-    }else{
- setData('tax_percent' ,14)
+  const addTechnician = (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    // استخدم setData من useForm بشكل صريح لتجنب stale state
+    const newList = [...(data.technicians || []), { technician_id: '', commission_percent: 0 }];
+    setData('technicians', newList);
+  };
+
+  const removeTechnician = (e, index) => {
+    if (e && e.preventDefault) e.preventDefault();
+    const newList = [...(data.technicians || [])];
+    newList.splice(index, 1);
+    setData('technicians', newList);
+  };
+
+  const updateTechnician = (index, field, value) => {
+    const newList = [...(data.technicians || [])];
+    // تأكد أن العنصر موجود
+    if (!newList[index]) newList[index] = { technician_id: '', commission_percent: 0 };
+    // لو الحقل نسبة العمولة حول القيمة لرقم
+    if (field === 'commission_percent') {
+      // نقبل قيم عشرية
+      newList[index][field] = value === '' ? '' : Number(value);
+    } else {
+      // تحويل id إلى نص لتتوافق مع Select (يمكن تحويل للباك كـ Number عند الإرسال)
+      newList[index][field] = value;
     }
-     setData('is_invoice', v)
-    
+    setData('technicians', newList);
+  };
+
+  const handleIsInvoiceCHange = (v) => {
+    if (!v) {
+      setData('tax_percent', 0)
+      setData('other_tax', 0)
+    } else {
+      setData('tax_percent', 14)
+    }
+    setData('is_invoice', v)
+
   }
   const handleUserChange = (userId) => {
- 
+
     const user = users.find((u) => u.id == userId);
     if (!user) return;
     setWarHouseName(user.warehouse)
@@ -120,12 +153,12 @@ const token = document.querySelector('meta[name="csrf-token"]')?.content;
       prevItems.forEach((item) => {
         if (!item.product_id || !item.qty) return;
 
-        axios.post("/inventory/qtyCheck", {          
-            product_id: item.product_id,
-            qty: item.qty,
-            warehouse_id: warehouseId,
+        axios.post("/inventory/qtyCheck", {
+          product_id: item.product_id,
+          qty: item.qty,
+          warehouse_id: warehouseId,
         })
-          
+
           .then((response) => {
             const data = response.data;
             setCurrentWarehouses(data.inv)
@@ -209,13 +242,13 @@ const token = document.querySelector('meta[name="csrf-token"]')?.content;
       if (!newRow.product_id || !newRow.inv || !newRow.qty) return prev.map((r) => r.tempId === tempId ? newRow : r);
 
       axios.post('/inventory/qtyCheck', {
-        
-          product_id: newRow.product_id,
-          qty: newRow.qty,
-          warehouse_id: userInventory,
-      })       
+
+        product_id: newRow.product_id,
+        qty: newRow.qty,
+        warehouse_id: userInventory,
+      })
         .then((response) => {
-            const data = response.data;
+          const data = response.data;
           setCurrentWarehouses(data.inv)
           if (data.available_qty >= newRow.qty) {
 
@@ -264,7 +297,7 @@ const token = document.querySelector('meta[name="csrf-token"]')?.content;
 
 
   const handleCustomerChange = (customerId: string) => {
-    console.log(customerId , 'c id')
+    console.log(customerId, 'c id')
     if (!customerId) return;
     if (customerId === 'new') {
       setOpen(true);
@@ -318,22 +351,22 @@ const token = document.querySelector('meta[name="csrf-token"]')?.content;
   const afterDiscount = useMemo(() => subtotal - discountValue, [subtotal, discountValue]);
   const taxAmount = useMemo(() => {
     const tax1 = (afterDiscount * toNumber(data.tax_percent)) / 100;
-    return tax1 ;
+    return tax1;
   }, [afterDiscount, data.tax_percent]);
-  
+
   const OtherTaxAmount = useMemo(() => {
     const tax2 = (afterDiscount * toNumber(data.other_tax)) / 100;
-    return tax2 ;
+    return tax2;
   }, [afterDiscount, data.other_tax]);
 
-  const grandTotal = useMemo(() => afterDiscount - OtherTaxAmount + taxAmount , [afterDiscount, taxAmount,  OtherTaxAmount]);
+  const grandTotal = useMemo(() => afterDiscount - OtherTaxAmount + taxAmount, [afterDiscount, taxAmount, OtherTaxAmount]);
 
   const postponed = useMemo(() => Math.max(0, grandTotal - toNumber(data.collected)), [grandTotal, data.collected]);
   useEffect(() => {
     setData("items", items);
     setData("collected", grandTotal);
   }, [items]);
-  
+
   useEffect(() => {
     setData(prev => ({
       ...prev,
@@ -394,7 +427,7 @@ const token = document.querySelector('meta[name="csrf-token"]')?.content;
           <CardContent className="pt-4 space-y-4">
             <div className="flex justify-center">
               <div className="self-start border flex items-center justify-between p-4 space-x-2" dir="ltr">
-                
+
                 <Label htmlFor="is_invoice"> بيان اسعار</Label>
                 <Switch id="is_invoice"
                   className="data-[state=checked]:bg-green-500"
@@ -405,17 +438,17 @@ const token = document.querySelector('meta[name="csrf-token"]')?.content;
               </div>
               <div className="mx-auto self-center text-2xl text-center">
                 <h2>
-                  {data.is_invoice ? 
-                  <p> فاتورة</p>
-                :
-                
-                 <p>بيان اسعار</p>
-                }
+                  {data.is_invoice ?
+                    <p> فاتورة</p>
+                    :
+
+                    <p>بيان اسعار</p>
+                  }
                 </h2>
               </div>
             </div>
-            
-          <Separator />
+
+            <Separator />
             <form onSubmit={submit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
@@ -473,26 +506,26 @@ const token = document.querySelector('meta[name="csrf-token"]')?.content;
                     data={data}
                     handleCustomerChange={handleCustomerChange}
                   />
-                  
+
                   {errors.customer_id && <p className="text-red-600 text-sm mt-1">{errors.customer_id}</p>}
                 </div>
-                  {can('Invoice for others') &&
-                  
-                <div>
-                  <Label>المندوب</Label>
-                  <Select value={String(data.user_id || "")} onValueChange={(v) => handleUserChange(v)}>
-                    <SelectTrigger className="w-full"><SelectValue placeholder="اختر المندوب" /></SelectTrigger>
-                    <SelectContent>
-                      {users.map((u) => (
-                        <SelectItem key={u.id} value={String(u.id)}>{u.name}</SelectItem>
-                      ))}
+                {can('Invoice for others') &&
 
-                    </SelectContent>
-                  </Select>
-                  <p>{warHouseName?.name}</p>
-                  {errors.user_id && <p className="text-red-600 text-sm mt-1">{errors.user_id}</p>}
-                </div>
-                  }
+                  <div>
+                    <Label>المندوب</Label>
+                    <Select value={String(data.user_id || "")} onValueChange={(v) => handleUserChange(v)}>
+                      <SelectTrigger className="w-full"><SelectValue placeholder="اختر المندوب" /></SelectTrigger>
+                      <SelectContent>
+                        {users.map((u) => (
+                          <SelectItem key={u.id} value={String(u.id)}>{u.name}</SelectItem>
+                        ))}
+
+                      </SelectContent>
+                    </Select>
+                    <p>{warHouseName?.name}</p>
+                    {errors.user_id && <p className="text-red-600 text-sm mt-1">{errors.user_id}</p>}
+                  </div>
+                }
                 <div className="border flex items-center justify-between p-4 space-x-2" dir="ltr">
                   <Switch id="is_delivered"
                     className="data-[state=checked]:bg-green-500"
@@ -501,7 +534,55 @@ const token = document.querySelector('meta[name="csrf-token"]')?.content;
                   />
                   <Label htmlFor="is_delivered">تم التسليم</Label>
                 </div>
+            
+                
               </div>
+              {maintainance &&
+              
+                  <div className="mt-6 border-t pt-4">
+                  <h3 className="text-lg font-semibold mb-2">الفنيين</h3>
+                  <div className="grid grid-cols-3 gap-4 font-semibold mb-2">
+                      <Label>الفنى</Label>
+                       <Label>نسبه العمولة</Label>
+                      <Label>حذف</Label>
+                    </div>
+                  {(data.technicians || []).map((tech, index) => (
+                    <div key={tech.technician_id ? `t-${tech.technician_id}-${index}` : `t-index-${index}`} className="grid grid-cols-3 gap-4 mb-2">
+                      {/* اختر الفني: نفعل stringify على القيم */}
+                      <div>
+
+                      <Select
+                        value={tech.technician_id ? String(tech.technician_id) : ""}
+                        onValueChange={(v) => updateTechnician(index, 'technician_id', v)}
+                      >
+                        <SelectTrigger><SelectValue placeholder="اختر الفني" /></SelectTrigger>
+                        <SelectContent>
+                          {technicians.map((t) => (
+                            <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      </div>
+
+                      {/* نسبة العمولة - نخلي القيمة قابلة للكتابة ونحوّلها لرقم */}
+                      <div>
+                      <Input
+                        type="number"
+                        placeholder="نسبة العمولة %"
+                        value={tech.commission_percent !== undefined ? tech.commission_percent : ''}
+                        onChange={(e) => updateTechnician(index, 'commission_percent', e.target.value)}
+                      />
+                      </div>
+
+                      {/* زر حذف - مهم: نوعه button حتى لا يرسل الفورم */}
+                      <Button type="button" variant="destructive" onClick={(e) => removeTechnician(e, index)}>حذف</Button>
+                    </div>
+                  ))}
+
+                  {/* زر إضافة - أيضاً type="button" */}
+                  <Button type="button" variant="secondary" onClick={(e) => addTechnician(e)}>+ إضافة فني</Button>
+                </div>
+              }
 
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
@@ -511,13 +592,13 @@ const token = document.querySelector('meta[name="csrf-token"]')?.content;
                   />
                 </div>
                 {data.is_invoice &&
-                
-                <><div>
+
+                  <><div>
                     <Label htmlFor="tax_percent">الضريبة %</Label>
                     <Input id="tax_percent" type="number" step="1" value={data.is_invoice ? data.tax_percent : 0} onChange={(e) => setData("tax_percent", e.target.value)} />
                   </div><div>
                       <Label htmlFor="tax_percent">ضرائب اخرى خصم   %</Label>
-                      <Select value={data.is_invoice ? Number(data.other_tax || "" ) : 0} onValueChange={(v) => setData('other_tax', v)}>
+                      <Select value={data.is_invoice ? Number(data.other_tax || "") : 0} onValueChange={(v) => setData('other_tax', v)}>
                         <SelectTrigger><SelectValue placeholder="اختر " /></SelectTrigger>
                         <SelectContent>
 
@@ -562,7 +643,7 @@ const token = document.querySelector('meta[name="csrf-token"]')?.content;
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="min-w-[220px]">المنتج</TableHead>
+                        <TableHead className="min-w-[220px]">{maintainance ? 'اسم المنتج / الخدمة' : 'اسم المنتج'}</TableHead>
                         <TableHead>الكود</TableHead>
                         <TableHead>الوصف</TableHead>
                         <TableHead>الكمية</TableHead>
@@ -574,13 +655,13 @@ const token = document.querySelector('meta[name="csrf-token"]')?.content;
                     <TableBody>
                       {items.map((row) => (
                         <TableRow key={row.tempId}>
-                          
+
                           <TableCell>
-                             <ProductCombobox
-    products={products}
-    selectedId={row.product_id}
-    onSelect={(v) => checkQtyAndUpdate(row.tempId, { product_id: v })}
-  />
+                            <ProductCombobox
+                              products={products}
+                              selectedId={row.product_id}
+                              onSelect={(v) => checkQtyAndUpdate(row.tempId, { product_id: v })}
+                            />
                           </TableCell>
                           <TableCell>
                             <Input value={row.product_code || ""} onChange={(e) => updateRow(row.tempId, { product_code: e.target.value })} />
@@ -614,7 +695,7 @@ const token = document.querySelector('meta[name="csrf-token"]')?.content;
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Badge variant="outline">ملخص</Badge>
-                  <div className="flex items-center justify-between"><span>الإجمالي (الفرعى):</span><span><NumberDisplay  value={subtotal}/> </span></div>
+                  <div className="flex items-center justify-between"><span>الإجمالي (الفرعى):</span><span><NumberDisplay value={subtotal} /> </span></div>
                   {discountValue > 0 &&
 
                     <div className="flex items-center justify-between"><span>قيمة الخصم:</span><span>{discountValue.toFixed(2)}</span></div>
@@ -624,13 +705,13 @@ const token = document.querySelector('meta[name="csrf-token"]')?.content;
                   }
                   {taxAmount > 0 &&
 
-                    <div className="flex items-center justify-between"><span> ضريبه {data.tax_percent}  % : </span><span><NumberDisplay  value={taxAmount}/>  </span></div>
+                    <div className="flex items-center justify-between"><span> ضريبه {data.tax_percent}  % : </span><span><NumberDisplay value={taxAmount} />  </span></div>
                   }
-                    {data.other_tax > 0 &&
+                  {data.other_tax > 0 &&
 
                     <div className="flex items-center justify-between"><span> ضريبه {data.other_tax}  % : </span><span>{OtherTaxAmount.toFixed(2)} </span></div>
                   }
-                 
+
                   <Separator className="my-2" />
                   <div className="flex items-center justify-between font-semibold text-lg"><span>الإجمالي النهائي:</span><span><NumberDisplay value={grandTotal} /></span></div>
                 </div>

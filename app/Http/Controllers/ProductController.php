@@ -17,10 +17,24 @@ class ProductController extends Controller
         $this->inventoryService = $inventoryService;
     }
 
-    public function index()
+    public function index($m = null)
     {
-        $products = Product::with('inventory' , 'warehouses')->latest()->get();
-        $warehouses = Warehouse::with('branch')->latest()->get();
+        if($m == 'maintainance'){
+                 if (!\Auth::user()->canDO('maintenance.products')) {
+            abort(403, 'ليس لديك صلاحية  للوصول إلى هذه الصفحة.');
+         }
+            $products = Product::with('inventory' , 'warehouses')->latest()->where('maintainance', true)->get();
+            $warehouses = Warehouse::with('branch')->latest()->where('maintainance', 1)->get();
+           // dd($warehouses);
+            $maintainance = true;
+        } else {
+            if (!\Auth::user()->canDO('products.view')) {
+                abort(403, 'ليس لديك صلاحية  للوصول إلى هذه الصفحة.');
+            }
+            $products = Product::with('inventory' , 'warehouses')->latest()->where('maintainance', false)->get();
+            $warehouses = Warehouse::with('branch')->latest()->where('maintainance', false)->get();
+             $maintainance = false;
+        }
         return Inertia::render('Products/Index', [
             'products'   => $products->map(fn ($product) => [
                 'id'             => $product->id,
@@ -32,12 +46,17 @@ class ProductController extends Controller
                 'warehouses'     => $product->warehouses,
                  'inventories'      => $product->inventory,
             ]),
-            'warehouses' => Warehouse::with('branch')->latest()->get(),
+            'warehouses' =>$warehouses,
+            'maintainance' =>$maintainance,
         ]);
     }
 
        public function edit(Product $product)
     {
+        //dd(\Auth::user()->canDO('maintenance.products'));
+        if (!\Auth::user()->canDO('products.view') && !\Auth::user()->canDO('maintenance.products')) {
+                abort(403, 'ليس لديك صلاحية  للوصول إلى هذه الصفحة.');
+            }
           $warehouses = Warehouse::with('branch')->latest()->get();
         return Inertia::render('Products/Edit', [
             'product' => $product->load('inventory' , 'inventory.warehouse'),
@@ -55,16 +74,26 @@ class ProductController extends Controller
             'internal_code' => 'nullable|string|max:255',
             'unit_type' => 'nullable|string|max:255',
             'tax_percentage' => 'nullable|numeric|max:255',
+            'maintainance'=>'nullable|boolean',
             'description' => 'nullable|string',
             'price' => 'required|numeric',
-            'stock' => 'required|integer',
+            'cost_price' => 'nullable|numeric',
+            'stock' => 'nullable|integer',
+            'type' => 'nullable|string|max:255',
+            'warehouse_id' => 'nullable|exists:warehouses,id',
         ]);
         $data['user_id'] = auth()->id();
+        $data['maintainance'] = $request->maintainance ? $request->maintainance : false;
+        $data['type'] = $request->is_service ? 'service' : 'product';
+        $data['cost_price'] = $request->is_service ? 0 : $request->cost_price;
+        //dd( $data);
         $product = Product::create($data);
-        $warehouse = Warehouse::find($request->warehouse_id);
-        $warehouse->products()->syncWithoutDetaching([
-            $product->id => ['quantity' => $request->stock, 'min_quantity' => 10]
-        ]);
+        if($request->warehouse_id && !$request->is_service){
+            $warehouse = Warehouse::find($request->warehouse_id);
+            $warehouse->products()->syncWithoutDetaching([
+                $product->id => ['quantity' => $request->stock, 'min_quantity' => 10]
+            ]);
+        }
         return redirect()->back()->with('success', 'تم إضافة المنتج بنجاح');
     }
         public function update(Request $request , Product $product)
@@ -79,9 +108,11 @@ class ProductController extends Controller
             'unit_type' => 'nullable|string|max:255',
             'tax_percentage' => 'nullable|numeric|max:255',
             'description' => 'nullable|string',
-            'price' => 'required|numeric',
+            'price' => 'required|numeric',            
+            'cost_price' => 'nullable|numeric',
         ]);
 
+        $data['cost_price'] = $request->is_service ? 0 : $request->cost_price;
         $product->update($data);
        // $warehouse = Warehouse::find($request->warehouse_id);
       /*   $warehouse->products()->syncWithoutDetaching([

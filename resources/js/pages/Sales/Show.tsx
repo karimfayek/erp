@@ -28,6 +28,12 @@ export default function InvoiceShow({ invoice }) {
           <p>التاريخ: {new Date(invoice.date).toLocaleDateString("ar-EG")}</p>
           <p>المندوب: <span className="font-semibold">{invoice.user?.name || "غير محدد"}</span></p>
           <p>الفرع: <span className="font-semibold">{invoice.user?.warehouse?.branch?.name || "غير محدد"}</span></p>
+          {invoice.maintainance &&
+  <p>
+    {invoice.technicians?.length === 1 ? "الفني" : "الفنيين"}: <span className="font-semibold">
+    {invoice.technicians?.map(tech => tech.name).join(", ") || "غير محدد"}
+    </span></p>
+          }
         </div>
       </div>
 

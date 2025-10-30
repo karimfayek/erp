@@ -48,6 +48,7 @@ class HandleInertiaRequests extends Middleware
                 'id'          => auth()->id(),
                 'name'        => auth()->user()->name,
                 'role'        => auth()->user()->roles->first()?->slug, 
+                'maintainance' => auth()->user()->warehouse->maintainance ?? false,
                 'permissions' => auth()->user()->allPermissions()->pluck('name'),
             ] : null,
         ],

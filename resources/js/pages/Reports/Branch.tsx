@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts"
 import { useForm } from "@inertiajs/react"
+import { Link } from "@inertiajs/react"
 
 export default function Branch({ totalSales, dailySales, latestInvoices, filters,branch , userSales}) {
   const { data, setData, get } = useForm({
@@ -108,7 +109,11 @@ export default function Branch({ totalSales, dailySales, latestInvoices, filters
             <tbody>
               {latestInvoices.map((inv) => (
                 <tr key={inv.id}>
-                 <td className="p-2 border">{inv.is_invoice? 'فاتورة' : 'بيان'}{'- '} {inv.invoice_number}</td>
+                 <td className="p-2 border">
+                  <Link href={route('sales.show', inv.id)} className="text-blue-600 underline">
+                  {inv.is_invoice? 'فاتورة' : 'بيان'}{'- '} {inv.invoice_number}
+                  </Link>
+                  </td>
                   <td className="p-2 border">{inv.customer?.name || "-"}</td>
                   <td className="p-2 border">{inv.subtotal}</td>
                     <td className="p-2 border">{new Date(inv.created_at).toLocaleString("ar-EG")}</td>

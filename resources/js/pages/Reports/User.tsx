@@ -2,9 +2,9 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts"
-import { useForm } from "@inertiajs/react"
+import { Link, useForm } from "@inertiajs/react"
 
-export default function User({ totalSales, dailySales, latestInvoices, filters,user , userSales}) {
+export default function User({ totalSales, dailySales, latestInvoices, filters, user, userSales }) {
   const { data, setData, get } = useForm({
     start: filters.start,
     end: filters.end,
@@ -12,7 +12,7 @@ export default function User({ totalSales, dailySales, latestInvoices, filters,u
 
   const submit = (e) => {
     e.preventDefault()
-    get(route("reports.user" , user.id), { preserveState: true })
+    get(route("reports.user", user.id), { preserveState: true })
   }
 
   return (
@@ -73,15 +73,15 @@ export default function User({ totalSales, dailySales, latestInvoices, filters,u
 
       <Card>
         <CardContent className="p-4">
-          <h2 className="text-lg font-bold mb-4">مبيعات    
-            {" "}  
+          <h2 className="text-lg font-bold mb-4">مبيعات
+            {" "}
             {user.name}
           </h2>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={userSales}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="user" />
-              <YAxis  domain={[0, "dataMax + 10000"]} />
+              <YAxis domain={[0, "dataMax + 10000"]} />
               <Tooltip />
               <Bar dataKey="total" fill="#82ca9d" />
             </BarChart>
@@ -108,10 +108,16 @@ export default function User({ totalSales, dailySales, latestInvoices, filters,u
             <tbody>
               {latestInvoices.map((inv) => (
                 <tr key={inv.id}>
-                  <td className="p-2 border">{inv.is_invoice? 'فاتورة' : 'بيان'}{'- '} {inv.invoice_number}</td>
+                  
+                    <td className="p-2 border">
+                      <Link href={route('sales.show', inv.id)} className="text-blue-600 underline">
+                      {inv.is_invoice ? 'فاتورة' : 'بيان'}{'- '} {inv.invoice_number}
+                      </Link>
+                      </td>
+                  
                   <td className="p-2 border">{inv.customer?.name || "-"}</td>
                   <td className="p-2 border">{inv.subtotal}</td>
-                    <td className="p-2 border">{new Date(inv.created_at).toLocaleString("ar-EG")}</td>
+                  <td className="p-2 border">{new Date(inv.created_at).toLocaleString("ar-EG")}</td>
                 </tr>
               ))}
             </tbody>

@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Warehouse extends Model
 {
     protected $fillable = [
-        'name','code','branch_id','location' , 'is_active'
+        'name','code','branch_id','location' , 'is_active','maintainance'
     ];
     public function branch()
     {
@@ -27,5 +27,11 @@ public function outgoingMovements()
 public function incomingMovements()
 {
     return $this->hasMany(InventoryMovement::class, 'to_warehouse_id');
+}
+public function users()
+{
+    return $this->belongsToMany(\App\Models\User::class, 'user_warehouses')
+                ->withPivot('role')
+                ->withTimestamps();
 }
 }

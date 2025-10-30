@@ -45,7 +45,7 @@ export default function RolesIndex({ roles, permissions }) {
                     checked={data.permissions.includes(perm.id)}
                     onCheckedChange={() => togglePermission(perm.id)}
                   />
-                  {perm.name}
+                  {perm.name_ar}
                 </label>
               ))}
             </div>

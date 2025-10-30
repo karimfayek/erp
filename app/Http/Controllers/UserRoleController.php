@@ -13,7 +13,7 @@ class UserRoleController extends Controller
     public function index()
     {
         return Inertia::render('Roles/Roles', [
-            'users' => User::with('roles')->get(),
+            'users' => User::with('roles')->where('type', 'user')->get(),
             'roles' => Role::all(),
         ]);
     }
@@ -21,7 +21,7 @@ class UserRoleController extends Controller
   public function AccessControl()
     {
         return Inertia::render('AccessControl/Index', [
-           'users' => User::with(['roles', 'permissions'])->get(),
+           'users' => User::with(['roles', 'permissions'])->where('type', 'user')->get(),
             'roles' => Role::with('permissions')->get(),
             'permissions' => Permission::all(),
         ]);

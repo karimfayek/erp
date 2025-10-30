@@ -10,7 +10,7 @@ class Product extends Model
 
     protected $fillable = [
         'code','name','price','item_code','item_type','description','unit_type' , 'price_without_tax',
-        'tax_percentage', 'user_id','brand_id','internal_code'
+        'tax_percentage', 'user_id','brand_id','internal_code','cost_price','type','maintainance'
     ];
 
     
@@ -33,6 +33,10 @@ class Product extends Model
 }
 public function getTotalQuantityAttribute()
 {
+    if($this->type === 'service'){
+        return 'N/A';
+    }
     return $this->warehouses->sum(fn($warehouse) => $warehouse->pivot->quantity);
 }
+
 }

@@ -21,20 +21,28 @@ class SalesController extends Controller
         $this->inventoryService = $inventoryService;
     }
 
-    public function index()
+    public function index($maintainance = null )
     {
-        $sales = Sale::latest()->paginate(10);
+        
         $user = auth()->user();
         $inv = \App\Models\Warehouse::where('id', $user->warehouse_id)->first();
-        $users = \App\Models\User::with('warehouse')->get();
-        $customers = Customer::with('representatives')->latest()->get();
-        $products = Product::latest()->get();
+       
+        $customers = Customer::with('representatives')->latest()->get();        
+        $users = \App\Models\User::with('warehouse')->where('type', 'user')->get();
+        $technicians = \App\Models\User::with('warehouse')->where('type', 'technician')->get();
         $warehouses = Warehouse::where('id', $user->warehouse_id)->get();
-
+        if($maintainance == 'maintainance'){
+            $products = Product::latest()->where('maintainance', true)->get();
+            $maintainance = true;
+        } else {
+            $products = Product::latest()->where('maintainance', false)->get();
+             $maintainance = false;
+        }
         return Inertia::render('Sales/New', [
-            'sales' => $sales,
             'products' => $products,
+            'maintainance' => $maintainance,
             'users' => $users,
+            'technicians' => $technicians,
             'user' => $user,
             'customers' => $customers,
             'warehouses' => $warehouses,
@@ -71,25 +79,75 @@ class SalesController extends Controller
         ]);
     }
 
-    public function invoices()
+    public function invoices($maintainance = null , $type = null)
     {
+        
         $user = auth()->user();
         $role = $user->roles;
-        // dd($role[0]);
+          $query = Sale::query();
+        $title = 'كل الفواتير';
+         if($maintainance == 'maintainance'){
+            $query->where('maintainance', true);
+            $maintainance = true;
+        } else {
+             $query->where('maintainance', false);
+             $maintainance = false;
+        }
+    // حسب نوع الفواتير (invoice / quote / الكل)
+            if ($type === 'invoices') {
+                $query->where('is_invoice', 1);
+                $title = 'الفواتير';
+            } elseif ($type === 'quotes') {
+                //dd($type);
+                $query->where('is_invoice', 0);
+                $title = 'بيان اسعار';
+            } elseif ($type === 'draft') {
+                
+                $query->where('marked_to_draft', true);
+                $title = 'المسودات';
+            } elseif ($type === 'sent') {
+                $query->where('eta_status', 'sent');
+                $title = 'تم ارساله للمنظومة';
+            }else{
+               $query = Sale::query();
+            }
         if ($role[0]->slug === 'super-admin') {
-            $sales = Sale::with('customer', 'user' ,'creator')->latest()->paginate(50);
+          
+            $sales = $query->with(['customer', 'user', 'creator'])
+                       ->latest()
+                       ->paginate(50);
 
         } else {
+           
+              $allowed = auth()->user()->warehouseIds();
+            if(count($allowed) > 0 && $type === 'draft'){
+                
+                $sales = $query->whereIn('user_id', function ($subquery) use ($allowed) {
+                    $subquery->select('id')
+                             ->from('users')
+                             ->whereIn('warehouse_id', $allowed);
+                })->with('customer', 'user' ,'creator')->latest()->paginate(50);
+               // dd($sales);
+                
+            }else{
+                $sales = $query->where('user_id', $user->id)->with('customer', 'user' ,'creator')->latest()->paginate(50);
+                
 
-            $sales = $user->sales()->with('user' , 'customer','creator')->paginate(50);
-        }
-        $customers = Customer::latest()->get();
-        $products = Product::latest()->get();
+            }
+
+            }
+           
+       
+       
+            if($maintainance == 'maintainance'){
+                $maintainance = true;
+            } else {
+                $maintainance = false;
+            }
 
         return Inertia::render('Sales/Index', [
             'sales' => $sales,
-            'products' => $products,
-            'customers' => $customers,
+            'title' => $title,
         ]);
     }
 
@@ -99,7 +157,8 @@ class SalesController extends Controller
             'product_id' => 'required|exists:products,id',
             'warehouse_id' => 'required|exists:warehouses,id',
         ]);
-
+        $product = Product::find($request->product_id);
+       
         $quantity = \App\Models\ProductInventory::where('product_id', $request->product_id)
             ->where('warehouse_id', $request->warehouse_id)
             ->value('quantity') ?? 0;
@@ -114,12 +173,15 @@ class SalesController extends Controller
             return [$warehouse->name => $qty];
         });
 $warehouse = Warehouse::where('id' ,  $request->warehouse_id)->get();
+ if($product->type == 'service'){
+            return response()->json(['available_qty' => 100 , 'all_quantities' => [], 'inv' =>$warehouse]);
+        }
         return response()->json(['available_qty' => $quantity, 'all_quantities' => $allQuantities , 'inv' =>$warehouse]);
     }
 
     public function store(Request $request)
     {
-      //dd($request->all());
+    // dd($request->all());
         $validated = $request->validate([
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
@@ -145,6 +207,7 @@ $warehouse = Warehouse::where('id' ,  $request->warehouse_id)->get();
             'payment_method' => 'required',
             'is_delivered' => 'required|boolean',
             'is_invoice' => 'required|boolean',
+            'maintainance' => 'required|boolean',
         ]);
 
         $user = \App\Models\User::find($data['user_id']);
@@ -195,13 +258,35 @@ $warehouse = Warehouse::where('id' ,  $request->warehouse_id)->get();
                 'from_warehouse_id' =>$user->warehouse_id,
             ]);
         }
+        if($request->maintainance){
+        // تسجيل عمولة الفنيين
+        if ($request->has('technicians') && is_array($request->technicians)) {
+            if (!$sale || !$sale->id) {
+             // log or throw
+            throw new \RuntimeException('Invoice not created, cannot attach technicians.');
+        }
+            foreach ($request->technicians as $tech) {
+                if (isset($tech['technician_id']) && isset($tech['commission_percent'])) {
+                    $sale->technicians()->attach($tech['technician_id'], [
+                        'commission_percent' => $tech['commission_percent'],
+                    ]);
+                }
+            }
+            $total = $sale->subtotal - $sale->expenses; // مجموع الفاتورة
+            foreach ($sale->technicians as $tech) {
+                $amount = $total * ($tech->pivot->commission_percent / 100);
+                $tech->pivot->commission_amount = $amount;
+                $tech->pivot->save();
+            }
+        }
+    }
 
         return redirect()->back()->with('success', 'تم  الانشاء');
     }
 
     public function show($id)
     {
-        $sale = Sale::with(['customer', 'items', 'items.product', 'user' ,'user.warehouse.branch'])->findOrFail($id);
+        $sale = Sale::with(['customer', 'items', 'items.product', 'user' ,'technicians','user.warehouse.branch'])->findOrFail($id);
 
         return Inertia::render('Sales/Show', [
             'invoice' => $sale,
@@ -213,6 +298,22 @@ $warehouse = Warehouse::where('id' ,  $request->warehouse_id)->get();
         $sale = Sale::with(['customer', 'items', 'items.product', 'user' ,'user.warehouse.branch'])->findOrFail($id);
 
         return Inertia::render('Sales/Details', [
+            'invoice' => $sale,
+        ]);
+
+    }
+      public function draft($id)
+    {
+       // dd('here');
+        $sale = Sale::with(['customer', 'items', 'items.product', 'user' ,'user.warehouse.branch'])->findOrFail($id);
+
+         $warehouseId = $sale->user?->warehouse?->id;
+        // dd($warehouseId);
+        // dd(auth()->user()->hasAccessToWarehouse($warehouseId));
+         if (!auth()->user()->hasAccessToWarehouse($warehouseId)) {
+            abort(403, 'غير مسموح لك بإدارة فواتير هذا الفرع');
+        }
+        return Inertia::render('Sales/Draft', [
             'invoice' => $sale,
         ]);
 
@@ -265,10 +366,57 @@ $warehouse = Warehouse::where('id' ,  $request->warehouse_id)->get();
             'message' => 'تم تحديث حالة التسليم بنجاح',
             'is_delivered' => $invoice->is_delivered,
         ]);
+    }
 }
+
+    public function toggleMarkDraft(Request $request, Sale $invoice)
+    {
+        $request->validate([
+            'marked_to_draft' => 'required|boolean',
+        ]);
+
+        $invoice->marked_to_draft = $request->marked_to_draft;
+        $invoice->save();
+
+        if ($request->expectsJson()) {
+    // الرد على axios أو fetch أو أي API call
+   
+        return response()->json([
+            'success' => true,
+            'message' => 'تم تحديث حالة المسودة بنجاح',
+            'is_delivered' => $invoice->is_delivered,
+        ]);
+
+    }
 
 // الرد على Inertia form أو POST عادي
 return back()->with('success', 'تم تحديث حالة التسليم بنجاح');
+    }
+      public function toggleDraft(Request $request, Sale $invoice)
+    {
+        $warehouseId = $invoice->user?->warehouse?->id;
+         if (!auth()->user()->hasAccessToWarehouse($warehouseId)) {
+            abort(403, 'غير مسموح لك بإدارة فواتير هذا الفرع');
+        }
+        $request->validate([
+            'draft' => 'nullable|string|in:draft,sent',
+        ]);
+
+        $invoice->eta_status = $request->draft;
+        $invoice->save();
+
+        if ($request->expectsJson()) {
+    // الرد على axios أو fetch أو أي API call
+   
+        return response()->json([
+            'success' => true,
+            'message' => 'تم تحديث حالة المسودة بنجاح',
+            'is_delivered' => $invoice->is_delivered,
+        ]);
+}
+
+// الرد على Inertia form أو POST عادي
+return back()->with('success', 'تم تحديث حالة المسودة بنجاح');
     }
 
     // ✅ لتحديث المبلغ المحصل

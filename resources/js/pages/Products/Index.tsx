@@ -161,7 +161,7 @@ const breadcrumbs: BreadcrumbItem[] = [
                     <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
 
-                        {can('Products edit') || can('Maintenance products') &&
+                        {(can('Products edit') || can('Maintenance products')) &&
 
                             <DropdownMenuItem asChild>
                                 <Link href={route("products.edit", product.id)}>
@@ -203,7 +203,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 
             <div className="mt-2  p-4 rounded shadow">
 
-                {can('Products create') || can('Maintenance products') &&
+                {(can('Products create') || can('Maintenance products')) &&
 
                     <Dialog open={open} onOpenChange={setOpen} >
                         <DialogTrigger asChild>

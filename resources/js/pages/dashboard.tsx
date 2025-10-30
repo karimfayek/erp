@@ -34,7 +34,7 @@ export default function Dashboard({stats , dailySales}) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
           >
-            {can(card.can) || (card.mntnce && can(card.mntnce)) && 
+            { (can(card.can) || (card.mntnce && can(card.mntnce))) &&
             
             <Card className="hover:shadow-xl transition-shadow duration-300 rounded-2xl border border-gray-100 bg-white">
               <CardHeader className="flex items-center justify-between pb-2">

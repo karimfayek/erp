@@ -48,7 +48,7 @@ export default function NewProduct({m, warehouses, onSuccess }) {
     return (
         <React.Fragment>
 
-            {can('Products create') || can('Maintenance products') &&
+            {(can('Products create') || can('Maintenance products')) &&
               <><div className="flex flex-col items-center justify-center mt-10">
                     {data.maintainance &&
                     

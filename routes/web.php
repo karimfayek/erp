@@ -104,7 +104,7 @@ Route::get('/user/activity/login/{id?}', [\App\Http\Controllers\ActivityControll
  Route::get('/payroll/calc', [TechnicianPayrollController::class, 'calcIndex'])->name('payroll.calc.index');
     // Endpoint AJAX/POST لحساب النتائج (يرجع Inertia أو JSON)
     Route::post('/payroll/calc', [TechnicianPayrollController::class, 'calcCompute'])->name('payroll.calc.compute');
-
+    Route::post('/payroll/calc/invoice-details', [TechnicianPayrollController::class, 'invoiceDetails'])->name('payroll.calc.invoice_details');
     // صفحة تعديل المرتبات الأساسية
     Route::get('/payroll/salaries', [TechnicianPayrollController::class, 'salariesIndex'])->name('payroll.salaries.index');
     Route::post('/payroll/salaries', [TechnicianPayrollController::class, 'salariesStore'])->name('payroll.salaries.store');

@@ -28,16 +28,16 @@ class Sale extends Model
         'expenses' => 'decimal:2',
         'discount_percentage' => 'decimal:2',
     ];
-        protected $appends = ['total_formatted' , 'collected_formatted'];
+        protected $appends = ['total_formatted' , 'collected_formatted' , 'postponed_formatted' , 'subtotal_formatted'];
 
         public function getTotalFormattedAttribute()
         {
         return number_format($this->attributes['total'], 2, '.', ',');
         }
-        public function getSubtotalAttribute($value)
-        {
-        return number_format($value, 2, '.', ','); // 10,000.00
-        }
+       public function getSubtotalFormattedAttribute()
+{
+    return number_format($this->attributes['subtotal'] ?? 0, 2, '.', ',');
+}
 
         public function getCollectedFormattedAttribute($value)
         {

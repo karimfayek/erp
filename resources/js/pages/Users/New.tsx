@@ -63,7 +63,7 @@ const handleNameAndEmail = (value: string) => {
         <form method="POST" className="flex flex-col gap-6 p-6" onSubmit={submit}>
             <div className="grid gap-6">
                 <div className="grid gap-2">
-                    <Label htmlFor="name">Name</Label>
+                    <Label htmlFor="name">الاسم</Label>
                     <Input
                         id="name"
                         type="text"
@@ -110,6 +110,24 @@ const handleNameAndEmail = (value: string) => {
                         </SelectContent>
                     </Select>
                 </div>
+                {maintainance
+                &&
+                 <div className="grid gap-2">
+                            <Label htmlFor="salary">المرتب</Label>
+                            <Input
+                                id="salary"
+                                type="number"
+                                step ="0.01"
+                                tabIndex={3}
+                                autoComplete="salary"
+                                value={data.salary}
+                                onChange={(e) => setData('salary', e.target.value)}
+                                disabled={processing}
+                                placeholder="salary@example.com"
+                            />
+                            <InputError message={errors.salary} />
+                        </div>
+                }
                 {!maintainance &&
                     <>
                      <Select value={String(data.role || "")} onValueChange={(e) => setData('role', e)} required={true}>
@@ -121,7 +139,7 @@ const handleNameAndEmail = (value: string) => {
                         </SelectContent>
                     </Select>
                         <div className="grid gap-2">
-                            <Label htmlFor="password">Password</Label>
+                            <Label htmlFor="password">كلمة المرور</Label>
                             <Input
                                 id="password"
                                 type="password"
@@ -136,7 +154,7 @@ const handleNameAndEmail = (value: string) => {
                             <InputError message={errors.password} />
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="password_confirmation">Confirm password</Label>
+                            <Label htmlFor="password_confirmation">تأكيد كلمة المرور</Label>
                             <Input
                                 id="password_confirmation"
                                 type="password"
@@ -156,7 +174,7 @@ const handleNameAndEmail = (value: string) => {
 
                 <Button type="submit" className="mt-2 w-full" tabIndex={5} disabled={processing}>
                     {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
-                    Create account
+                    إنشاء 
                 </Button>
             </div>
 

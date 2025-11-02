@@ -309,7 +309,7 @@ export default function SalesCreate() {
         return {
           ...prev,
           customer_id: String(customerId),
-          discount_percentage: selected ? selected.discount_percentage || prev.discount_percentage || 0 : prev.discount_percentage
+          discount_percentage: selected ? selected.discount_percentage ||  0 : prev.discount_percentage
         };
       });
     }
@@ -379,6 +379,13 @@ export default function SalesCreate() {
   }, [items, taxAmount, subtotal, postponed]);
   const submit = (e) => {
     e.preventDefault();
+    if(data.technicians.length === 0){
+      const proceed = window.confirm("⚠️ لم تضف أى فنى ,هل تريد المتابعة رغم ذلك؟");
+    if (!proceed) {
+      
+      return;
+    }
+    }
     const payload = {
       ...data,
       tax: +taxAmount.toFixed(2),
@@ -569,6 +576,8 @@ export default function SalesCreate() {
                       <Input
                         type="number"
                         placeholder="نسبة العمولة %"
+                        //onmousewheel dont change number
+                        onWheel={(e) =>e.target.blur()} 
                         value={tech.commission_percent !== undefined ? tech.commission_percent : ''}
                         onChange={(e) => updateTechnician(index, 'commission_percent', e.target.value)}
                       />
@@ -588,6 +597,7 @@ export default function SalesCreate() {
                 <div>
                   <Label htmlFor="discount_percentage">نسبة الخصم %</Label>
                   <Input id="discount_percentage" type="number" step="1" value={data.discount_percentage}
+                   onWheel={(e) =>e.target.blur()} 
                     onChange={(e) => setData((prev) => ({ ...prev, discount_percentage: e.target.value }))}
                   />
                 </div>
@@ -595,7 +605,7 @@ export default function SalesCreate() {
 
                   <><div>
                     <Label htmlFor="tax_percent">الضريبة %</Label>
-                    <Input id="tax_percent" type="number" step="1" value={data.is_invoice ? data.tax_percent : 0} onChange={(e) => setData("tax_percent", e.target.value)} />
+                    <Input id="tax_percent" type="number" step="1" value={data.is_invoice ? data.tax_percent : 0} onChange={(e) => setData("tax_percent", e.target.value)}  onWheel={(e) =>e.target.blur()}  />
                   </div><div>
                       <Label htmlFor="tax_percent">ضرائب اخرى خصم   %</Label>
                       <Select value={data.is_invoice ? Number(data.other_tax || "") : 0} onValueChange={(v) => setData('other_tax', v)}>
@@ -611,8 +621,12 @@ export default function SalesCreate() {
                     </div></>
                 }
                 <div>
-                  <Label htmlFor="expenses">مصروفات</Label>
-                  <Input id="expenses" type="number" step="0.01" value={data.expenses} onChange={(e) => setData("expenses", e.target.value)} />
+                  <Label htmlFor="expenses">
+                    {maintainance ? 'انتقالات ومصروفات' : 'مصروفات'}
+                  </Label>
+                  <Input
+                   onWheel={(e) =>e.target.blur()} 
+                  id="expenses" type="number" step="0.01" value={data.expenses} onChange={(e) => setData("expenses", e.target.value)} />
                 </div>
 
               </div>
@@ -620,7 +634,9 @@ export default function SalesCreate() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="collected">محصل (ما تم تحصيله)</Label>
-                  <Input id="collected" type="number" step="0.01" value={data.collected} onChange={(e) => setData("collected", e.target.value)} />
+                  <Input 
+                   onWheel={(e) =>e.target.blur()} 
+                  id="collected" type="number" step="0.01" value={data.collected} onChange={(e) => setData("collected", e.target.value)} />
                 </div>
                 <div>
                   <Label>مؤجل (يُحسب تلقائيًا)</Label>

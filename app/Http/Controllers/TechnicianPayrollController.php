@@ -159,7 +159,132 @@ class TechnicianPayrollController extends Controller
     }
 
  
-    
+public function invoiceDetails(Request $request)
+{
+    $request->validate([
+        'technician_id' => 'required|integer|exists:users,id',
+        'start' => 'required|date',
+        'end' => 'required|date',
+    ]);
+
+    $techId = (int) $request->technician_id;
+    $start = Carbon::parse($request->start)->startOfDay();
+    $end = Carbon::parse($request->end)->endOfDay();
+
+    // جلب الفواتير التي ظهر فيها هذا الفني ضمن الفترة، مع البنود والمنتجات
+    $sales = \App\Models\Sale::with(['items.product', 'technicians'])
+        ->whereBetween('date', [$start->toDateString(), $end->toDateString()])
+        ->whereHas('technicians', function($q) use ($techId) {
+            $q->where('users.id', $techId);
+        })
+        ->orderBy('date', 'asc')
+        ->get();
+
+    $invoices = [];
+
+    foreach ($sales as $sale) {
+        // safeguard: ensure numeric fields
+        $subtotal = floatval($sale->subtotal ?? 0);
+        //dd( $subtotal);
+        $expenses = floatval($sale->expenses ?? 0);
+        $discountPercent = floatval($sale->discount_percentage ?? 0);
+        $discoutVal = ( floatval($sale->subtotal ?? 0) /100) * (  $discountPercent) ;
+        $afterDiscount = floatval($sale->subtotal ?? 0) - ($discoutVal ?? 0); //1800
+        $otherTax = floatval($sale->other_tax ?? 0) ; // 3%
+        $otherTaxValue =  $afterDiscount / 100 * $otherTax ;
+        // حساب إجمالي ربح البنود: sum((unit_price - product.cost_price) * qty)
+        $totalProfit = 0.0;
+        foreach ($sale->items as $item) {
+            $unitPrice = isset($item->unit_price) ? floatval($item->unit_price) : 0.0;
+            $qty = isset($item->qty) ? floatval($item->qty) : 0.0;
+
+            // تأكد من وجود المنتج وسعر التكلفة
+            $costPrice = 0.0;
+            if (isset($item->product) && isset($item->product->cost_price)) {
+                $costPrice = floatval($item->product->cost_price);
+            } else {
+                // سجّل تحذير لو المنتج مفقود أو لا يوجد cost_price — يساعد في الـ debugging
+                \Log::warning("InvoiceDetail: item product or cost_price missing", [
+                    'sale_id' => $sale->id,
+                    'item_id' => $item->id,
+                ]);
+            }
+
+            $lineProfit = ($unitPrice - $costPrice) * $qty;
+            $totalProfit += $lineProfit;
+        }
+
+        // قيمة الخصم (قيمة نقدية) — حسب طلبك الخصم يخصم من الربح بعد احتسابه من subtotal
+        $discountValue = ($subtotal * ($discountPercent / 100.0));
+
+        // profit after expenses and discount (قبل الضرائب)
+        $profitAfterExpenses = $totalProfit - $expenses - $discountValue - ($otherTaxValue ?? 0);
+
+        // إيجاد pivot لهذا الفني داخل sale->technicians
+        $pivot = null;
+        foreach ($sale->technicians as $t) {
+            if ((int)$t->id === $techId) {
+                $pivot = $t->pivot;
+                break;
+            }
+        }
+
+        $commissionPercent = 0.0;
+        if ($pivot && isset($pivot->commission_percent)) {
+            // بعض الأحيان commission_percent قد يكون نصي أو null
+            $commissionPercent = floatval($pivot->commission_percent);
+        } else {
+            \Log::info("InvoiceDetail: pivot commission_percent missing or null", [
+                'sale_id' => $sale->id,
+                'technician_id' => $techId,
+            ]);
+        }
+
+        $commissionAmount = $profitAfterExpenses * ($commissionPercent / 100.0);
+
+        // تفاصيل البنود (لواجهة المستخدم)
+        $items = [];
+        foreach ($sale->items as $item) {
+            $unitPrice = isset($item->unit_price) ? floatval($item->unit_price) : 0.0;
+            $qty = isset($item->qty) ? floatval($item->qty) : 0.0;
+            $costPrice = (isset($item->product) && isset($item->product->cost_price)) ? floatval($item->product->cost_price) : 0.0;
+            $lineProfit = ($unitPrice - $costPrice) * $qty;
+
+            $items[] = [
+                'id' => $item->id,
+                'product_name' => $item->product->name ?? ($item->description ?? ''),
+                'unit_price' => round($unitPrice, 2),
+                'cost_price' => round($costPrice, 2),
+                'qty' => $qty,
+                'line_profit' => round($lineProfit, 2),
+            ];
+        }
+
+        $invoices[] = [
+            'id' => $sale->id,
+            'date' => $sale->date,
+            'subtotal' =>$subtotal,
+            'expenses' => $expenses,
+            'discount_percentage' => $discountPercent,
+            'discount_value' => round($discountValue, 2),
+            'otherTaxValue' => round($otherTaxValue , 2),
+            'total_profit' => round($totalProfit, 2),
+            'profit_after_expenses' => round($profitAfterExpenses, 2),
+            'commission_percent' => round($commissionPercent, 2),
+            'commission_amount' => round($commissionAmount, 2),
+            'items' => $items,
+        ];
+    }
+$technician = User::find($techId);
+    return response()->json([
+        'technician_id' => $technician->name,
+        'start' => $start->toDateString(),
+        'end' => $end->toDateString(),
+        'invoices' => $invoices,
+    ]);
+}
+
+
 
     // صفحة عرض/إضافة خصومات
     public function deductionsIndex()

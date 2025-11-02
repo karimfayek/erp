@@ -84,10 +84,11 @@ class SalesController extends Controller
         
         $user = auth()->user();
         $role = $user->roles;
-          $query = Sale::query();
+        $query = Sale::query();
         $title = 'كل الفواتير';
          if($maintainance == 'maintainance'){
             $query->where('maintainance', true);
+            //dd($query->get());
             $maintainance = true;
         } else {
              $query->where('maintainance', false);
@@ -109,7 +110,7 @@ class SalesController extends Controller
                 $query->where('eta_status', 'sent');
                 $title = 'تم ارساله للمنظومة';
             }else{
-               $query = Sale::query();
+               $query = $query;
             }
         if ($role[0]->slug === 'super-admin') {
           
@@ -118,7 +119,7 @@ class SalesController extends Controller
                        ->paginate(50);
 
         } else {
-           
+            // draft allowed warehouses
               $allowed = auth()->user()->warehouseIds();
             if(count($allowed) > 0 && $type === 'draft'){
                 
@@ -275,10 +276,13 @@ $warehouse = Warehouse::where('id' ,  $request->warehouse_id)->get();
             $totalProfit = $sale->items->sum(function($item) {
                // dd($item->unit_price - $item->product->cost_price);
                 return ($item->unit_price - $item->product->cost_price) * $item->qty;
-            });   
-            $discout = $sale->discount_percentage ?? 0 ;
-            $discoutVal = ($sale->subtotal /100) * $discout ;
-            $profitAfterExpenses = $totalProfit - ($sale->expenses ?? 0) - ($discoutVal ?? 0);
+            });   //1000
+            $expenses = floatval($sale->expenses ?? 0); // 50
+            $discoutVal = ( floatval($sale->subtotal ?? 0) /100) * ( $sale->discount_percentage ?? 0) ; // 200
+            $afterDiscount = floatval($sale->subtotal ?? 0) - ($discoutVal ?? 0); //1800
+            $otherTax = floatval($sale->other_tax ?? 0) ; // 3%
+            $otherTaxValue =  $afterDiscount / 100 * $otherTax ; // 1800 /100 *3 = 54
+            $profitAfterExpenses = $totalProfit - ($expenses) - ($discoutVal ?? 0) - ($otherTaxValue ?? 0); // 1000 - 50 - 200 - 54 = 696
 
             foreach ($sale->technicians as $tech) {
                 $amount = $profitAfterExpenses * ($tech->pivot->commission_percent / 100);

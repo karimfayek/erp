@@ -20,6 +20,8 @@ export default function Calc() {
   const [selected, setSelected] = useState(new Set(technicians.map(t=>t.id)));
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [invoiceDetails, setInvoiceDetails] = useState(null);
+const [detailLoading, setDetailLoading] = useState(false);
   const [detailInvoiceIds, setDetailInvoiceIds] = useState([]);
   const [openDetail, setOpenDetail] = useState(false);
   const toggle = (id) => {
@@ -45,10 +47,23 @@ export default function Calc() {
     }
   };
 
-  const openDetails = (invoiceIds = []) => {
-    setDetailInvoiceIds(invoiceIds);
+const openDetails = async (technician_id) => {
+  setDetailLoading(true);
+  try {
+    const res = await axios.post(route('payroll.calc.invoice_details'), {
+      technician_id,
+      start,
+      end,
+    });
+    setInvoiceDetails(res.data); // يحتوي على invoices array
     setOpenDetail(true);
-  };
+  } catch (err) {
+    console.error(err);
+    toast.error('فشل جلب تفاصيل العمولات');
+  } finally {
+    setDetailLoading(false);
+  }
+};
 
   return (
     <AppLayout>
@@ -103,9 +118,9 @@ export default function Calc() {
                   <TableCell>{Number(r.total_deductions).toFixed(2)}</TableCell>
                   <TableCell>{Number(r.final_salary).toFixed(2)}</TableCell>
                   <TableCell>
-                    <button className="underline text-sm" onClick={() => openDetails(r.invoice_ids)}>
-                      عرض {r.invoice_ids?.length ?? 0}
-                    </button>
+                    <button className="underline text-sm" onClick={() => openDetails(r.id)}>
+  {detailLoading ? 'جارٍ التحميل...' : 'عرض التفاصيل'}
+</button>
                   </TableCell>
                 </TableRow>
               ))}
@@ -113,19 +128,71 @@ export default function Calc() {
           </Table>
         </div>
 
-        {/* مودال تفاصيل الفواتير (IDs فقط؛ يمكنك جلب التفاصيل عند الفتح إذا تحب) */}
-        <Dialog open={openDetail} onOpenChange={setOpenDetail}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>تفاصيل العمولات - الفواتير</DialogTitle>
-            </DialogHeader>
-            <div className="p-4 space-y-2">
-              {detailInvoiceIds && detailInvoiceIds.length > 0 ? (
-                detailInvoiceIds.map(id => <div key={id}>فاتورة #{id}</div>)
-              ) : <div>لا توجد فواتير</div>}
+       <Dialog open={openDetail} onOpenChange={setOpenDetail}>
+         <DialogContent className='sm:max-w-[90vw] lg:max-w-[1400px] w-full h-auto max-h-[90vh] overflow-y-auto p-6' dir='rtl'>
+
+    <DialogHeader>
+      <DialogTitle>تفاصيل العمولات</DialogTitle>
+    </DialogHeader>
+
+    {invoiceDetails ? (
+      <div className="space-y-6 p-2">
+        <div className="text-sm">الفني: #{invoiceDetails.technician_id} — الفترة: {invoiceDetails.start} إلى {invoiceDetails.end}</div>
+
+        {invoiceDetails.invoices.length > 0 ? invoiceDetails.invoices.map(inv => (
+          <div key={inv.id} className="border rounded p-4">
+            <div className="flex justify-between items-start">
+              <div>
+                <div className="font-semibold">فاتورة #{inv.id}</div>
+                <div className="text-xs text-muted-foreground">تاريخ: {new Date(inv.date).toLocaleDateString()}</div>
+              </div>
+              <div className="text-right">
+                <div className="font-semibold">الربح (العناصر): {Number(inv.total_profit).toFixed(2)}</div>
+                <div>انتقالات ومصروفات: {Number(inv.expenses).toFixed(2)}</div>
+                <div>الخصم ({inv.discount_percentage}%): {Number(inv.discount_value).toFixed(2)}</div>
+                <div>ضرائب اخرى خصم ({inv.other_tax}%): {Number(inv.otherTaxValue).toFixed(2)}</div>
+                <div className="font-semibold">الربح بعد المصروفات: {Number(inv.profit_after_expenses).toFixed(2)}</div>
+                <div>نسبة العمولة: {Number(inv.commission_percent).toFixed(2)}%</div>
+                <div className="text-lg font-bold">العمولة: {Number(inv.commission_amount).toFixed(2)}</div>
+              </div>
             </div>
-          </DialogContent>
-        </Dialog>
+
+            <div className="mt-4">
+              <div className="text-sm font-medium mb-2">بنود الفاتورة</div>
+              <div className="overflow-x-auto">
+                <table className="w-full table-fixed text-sm">
+                  <thead>
+                    <tr className="text-left">
+                      <th className="w-1/3 pb-2 text-right">الصنف</th>
+                      <th className="w-1/6 pb-2 text-right">سعر البيع</th>
+                      <th className="w-1/6 pb-2 text-right">سعر التكلفة</th>
+                      <th className="w-1/6 pb-2 text-right">الكمية</th>
+                      <th className="w-1/6 pb-2 text-right">ربح السطر</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {inv.items.map(item => (
+                      <tr key={item.id}>
+                        <td className="py-1">{item.product_name}</td>
+                        <td>{Number(item.unit_price).toFixed(2)}</td>
+                        <td>{Number(item.cost_price).toFixed(2)}</td>
+                        <td>{Number(item.qty)}</td>
+                        <td>{Number(item.line_profit).toFixed(2)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )) : <div>لا توجد فواتير للفترة المحددة</div>}
+      </div>
+    ) : (
+      <div className="p-4">جارٍ التحميل...</div>
+    )}
+  </DialogContent>
+</Dialog>
+
 
       </div>
     </AppLayout>

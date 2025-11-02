@@ -13,7 +13,6 @@ import { can } from '@/utils/permissions';
 export function AppSidebar() {
    
 const user = usePage().props.auth.user;
-console.log(user , 'user from sidebar'); 
 const mainNavItems: NavItem[] = [
     {
         title: 'داش بورد',

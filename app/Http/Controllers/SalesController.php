@@ -272,9 +272,18 @@ $warehouse = Warehouse::where('id' ,  $request->warehouse_id)->get();
                     ]);
                 }
             }
-            $total = $sale->subtotal - $sale->expenses; // مجموع الفاتورة
+            $totalProfit = $sale->items->sum(function($item) {
+               // dd($item->unit_price - $item->product->cost_price);
+                return ($item->unit_price - $item->product->cost_price) * $item->qty;
+            });   
+            $discout = $sale->discount_percentage ?? 0 ;
+            $discoutVal = ($sale->subtotal /100) * $discout ;
+            $profitAfterExpenses = $totalProfit - ($sale->expenses ?? 0) - ($discoutVal ?? 0);
+
             foreach ($sale->technicians as $tech) {
-                $amount = $total * ($tech->pivot->commission_percent / 100);
+                $amount = $profitAfterExpenses * ($tech->pivot->commission_percent / 100);
+
+//dd($amount);
                 $tech->pivot->commission_amount = $amount;
                 $tech->pivot->save();
             }

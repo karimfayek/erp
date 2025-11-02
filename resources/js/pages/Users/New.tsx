@@ -78,7 +78,7 @@ const handleNameAndEmail = (value: string) => {
                     />
                     <InputError message={errors.name} className="mt-2" />
                 </div>
-                {maintainance &&
+                {!maintainance &&
                     <>
                         <div className="grid gap-2">
                             <Label htmlFor="email">Email address</Label>

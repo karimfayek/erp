@@ -19,7 +19,7 @@ export default function Login({ logs }) {
               {logs.map((log) => (
                 <li key={log.id} className="border-b pb-2">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium">{log.causer.name} {log.description}</span>
+                    <span className="text-sm font-medium">{log.causer?.name} {log.description}</span>
                     <Badge variant="outline" className="text-xs">
                       {new Date(log.created_at).toLocaleString("ar-EG")}
                     </Badge>

@@ -187,6 +187,7 @@ public function invoiceDetails(Request $request)
         $subtotal = floatval($sale->subtotal ?? 0);
         //dd( $subtotal);
         $expenses = floatval($sale->expenses ?? 0);
+        $transportation = $sale->transportation ; 
         $discountPercent = floatval($sale->discount_percentage ?? 0);
         $discoutVal = ( floatval($sale->subtotal ?? 0) /100) * (  $discountPercent) ;
         $afterDiscount = floatval($sale->subtotal ?? 0) - ($discoutVal ?? 0); //1800
@@ -218,7 +219,7 @@ public function invoiceDetails(Request $request)
         $discountValue = ($subtotal * ($discountPercent / 100.0));
 
         // profit after expenses and discount (قبل الضرائب)
-        $profitAfterExpenses = $totalProfit - $expenses - $discountValue - ($otherTaxValue ?? 0);
+        $profitAfterExpenses = $totalProfit - $expenses - $transportation - $discountValue - ($otherTaxValue ?? 0);
 
         // إيجاد pivot لهذا الفني داخل sale->technicians
         $pivot = null;

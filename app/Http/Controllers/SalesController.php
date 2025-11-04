@@ -79,19 +79,27 @@ class SalesController extends Controller
         ]);
     }
 
-    public function invoices($maintainance = null , $type = null)
+    public function invoicesOld($maintainance = null , $type = null)
     {
         
         $user = auth()->user();
         $role = $user->roles;
         $query = Sale::query();
+         $allowed = auth()->user()->warehouseIds();
         $title = 'كل الفواتير';
          if($maintainance == 'maintainance'){
-            $query->where('maintainance', true);
-            //dd($query->get());
+            if(count($allowed) < 1 ){
+
+                $query->where('maintainance', true);
+            }
+           
             $maintainance = true;
         } else {
-             $query->where('maintainance', false);
+
+              if(count($allowed) < 1 ){
+
+                $query->where('maintainance', false);
+            }
              $maintainance = false;
         }
     // حسب نوع الفواتير (invoice / quote / الكل)
@@ -104,7 +112,8 @@ class SalesController extends Controller
                 $title = 'بيان اسعار';
             } elseif ($type === 'draft') {
                 
-                $query->where('marked_to_draft', true);
+                $query->where('eta_status', null)->where('marked_to_draft', true);
+               // dd($query->get());
                 $title = 'المسودات';
             } elseif ($type === 'sent') {
                 $query->where('eta_status', 'sent');
@@ -120,37 +129,152 @@ class SalesController extends Controller
 
         } else {
             // draft allowed warehouses
-              $allowed = auth()->user()->warehouseIds();
-            if(count($allowed) > 0 && $type === 'draft'){
-                
-                $sales = $query->whereIn('user_id', function ($subquery) use ($allowed) {
-                    $subquery->select('id')
-                             ->from('users')
-                             ->whereIn('warehouse_id', $allowed);
-                })->with('customer', 'user' ,'creator')->latest()->paginate(50);
-               // dd($sales);
-                
-            }else{
+             
+              //dd($allowed);
+           if (count($allowed) > 0) {
+
+                    $query->where(function($q) use ($user, $allowed) {
+                        $q->where('user_id', $user->id)
+                        ->orWhereHas('user', function($qq) use ($allowed) {
+                            $qq->whereIn('warehouse_id', $allowed);
+                        });
+                    });
+                    $sales = $query->with('customer', 'user', 'creator')
+                            ->latest()
+                            ->paginate(50);
+                } else {
                 $sales = $query->where('user_id', $user->id)->with('customer', 'user' ,'creator')->latest()->paginate(50);
                 
 
             }
 
             }
-           
-       
-       
+            
             if($maintainance == 'maintainance'){
                 $maintainance = true;
             } else {
                 $maintainance = false;
             }
-
         return Inertia::render('Sales/Index', [
             'sales' => $sales,
             'title' => $title,
         ]);
     }
+        public function invoices($maintainance = null, $type = null)
+        {
+            $user = auth()->user();
+            if (!$user) {
+                abort(403, 'غير مصرح');
+            }
+        $allowed = method_exists($user, 'warehouseIds')
+                    ? (array) $user->warehouseIds()
+                    : $user->warehouses()->pluck('id')->map(fn($v) => (int)$v)->toArray();
+            // بناء الاستعلام الأساسي
+            $query = Sale::query();
+            $title = 'كل الفواتير';
+
+            // -------------------------
+            // 1) فلتر الصيانة (maintainance)
+            // -------------------------
+            // نعامل ثلاثة حالات: 'maintainance' أو true/1
+            if($maintainance == 'maintainance'){
+            if(count($allowed) < 1 ){
+
+                $query->where('maintainance', true);
+            }
+           
+            $maintainance = true;
+        } else {
+
+              if(count($allowed) < 1 ){
+
+                $query->where('maintainance', false);
+            }
+             $maintainance = false;
+        }
+            // -------------------------
+            // 2) فلتر النوع (type)
+            // -------------------------
+            if ($type === 'invoices') {
+                $query->where('is_invoice', 1);
+                $title = 'الفواتير';
+            } elseif ($type === 'quotes') {
+                $query->where('is_invoice', 0);
+                $title = 'بيان اسعار';
+            } elseif ($type === 'draft') {
+                // شرط الدرافت حسب طلبك: marked_to_draft = true و eta_status IS NULL
+                $query->whereNull('eta_status')->where('marked_to_draft', true);
+                $title = 'المسودات';
+            } elseif ($type === 'sent') {
+                $query->where('eta_status', 'sent');
+                $title = 'تم ارساله للمنظومة';
+            }
+            // else: نترك كل الفواتير حسب الفلاتر السابقة
+
+            // -------------------------
+            // 3) من هو السوبر-ادمن؟
+            // -------------------------
+            // لا تعتمد على $role[0] لأنها غير آمنة، استخرج الـ slugs بأمان
+            $roleSlugs = $user->roles->pluck('slug')->toArray();
+            $isSuperAdmin = in_array('super-admin', $roleSlugs, true);
+
+            // -------------------------
+            // 4) تطبيق قواعد الوصول
+            //   - super-admin: يرى كل النتائج طبق الفلاتر أعلاه
+            //   - غيره:
+            //       * إذا عنده صلاحيات على فروع (allowed not empty):
+            //           - لو type === 'draft' → يرى (فواتيره الخاصة) OR (فواتير المستخدمين الذين ينتمون للـ allowed warehouses)
+            //           - غير ذلك → يرى فواتيره الخاصة فقط
+            //       * إذا ليس له صلاحيات فروع → يرى فواتيره الخاصة فقط
+            // -------------------------
+            if ($isSuperAdmin) {
+                $sales = $query->with(['customer', 'user', 'creator'])
+                            ->latest()
+                            ->paginate(50);
+            } else {
+                // جلب الفروع المسموح بها للمستخدم الحالي (تابع implement لديك)
+                // افترض أنك لديك method warehouseIds() كما أشرت سابقًا، وإلا استعمل relation warehouses()
+              
+//dd($allowed);
+                // لو عنده صلاحيات فرعية
+                if (!empty($allowed)) {
+                    if ($type === 'draft'|| $type === 'sent') {
+                       // dd($query->get());
+                        // يرى: فواتيره الخاصة OR فواتير المستخدمين الذين يخصهم allowed warehouses
+                        $query->where(function ($q) use ($user, $allowed) {
+                            $q->where('user_id', $user->id)
+                            ->orWhereHas('user', function ($qq) use ($allowed) {
+                                $qq->whereIn('warehouse_id', $allowed);
+                            });
+                        });
+
+                        $sales = $query->with(['customer', 'user', 'creator'])
+                                    ->latest()
+                                    ->paginate(50);
+                    } else {
+                        // غير درافت: يرى فقط فواتيره الخاصة
+                        $sales = $query->where('user_id', $user->id)
+                                    ->with(['customer', 'user', 'creator'])
+                                    ->latest()
+                                    ->paginate(50);
+                    }
+                } else {
+                    // ليس له أي صلاحية على فروع أخرى → يرى فواتيره الخاصة فقط
+                    $sales = $query->where('user_id', $user->id)
+                                ->with(['customer', 'user', 'creator'])
+                                ->latest()
+                                ->paginate(50);
+                }
+            }
+
+       
+//dd($sales);
+            return Inertia::render('Sales/Index', [
+                'sales' => $sales,
+                'title' => $title,
+            ]);
+        }
+
 
     public function qtyCheck(Request $request)
     {
@@ -182,7 +306,8 @@ $warehouse = Warehouse::where('id' ,  $request->warehouse_id)->get();
 
     public function store(Request $request)
     {
-    // dd($request->all());
+    
+   // dd($totalTransportation);
         $validated = $request->validate([
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
@@ -192,6 +317,7 @@ $warehouse = Warehouse::where('id' ,  $request->warehouse_id)->get();
         ]);
         $data = $request->validate([
             'date' => 'required|date|max:255',
+            'transportation' => 'nullable|numeric',
             'customer_id' => 'required|exists:customers,id',
             'user_id' => 'required|exists:users,id',
             'representative_id' => 'nullable|exists:representatives,id',
@@ -236,6 +362,9 @@ $warehouse = Warehouse::where('id' ,  $request->warehouse_id)->get();
               $data['customer_branch_id'] = $representative->customer_branch_id;
           } */
         // create sale
+        
+    $totalTransportation = collect($request['technicians'])->sum('transportation');
+    $data['transportation'] = ( $totalTransportation ?? 0);
         $sale = Sale::create($data);
         // create items
         foreach ($validated['items'] as $item) {
@@ -321,7 +450,7 @@ $warehouse = Warehouse::where('id' ,  $request->warehouse_id)->get();
         $sale = Sale::with(['customer', 'items', 'items.product', 'user' ,'user.warehouse.branch'])->findOrFail($id);
 
          $warehouseId = $sale->user?->warehouse?->id;
-        // dd($warehouseId);
+        //dd($warehouseId);
         // dd(auth()->user()->hasAccessToWarehouse($warehouseId));
          if (!auth()->user()->hasAccessToWarehouse($warehouseId)) {
             abort(403, 'غير مسموح لك بإدارة فواتير هذا الفرع');
@@ -384,6 +513,7 @@ $warehouse = Warehouse::where('id' ,  $request->warehouse_id)->get();
 
     public function toggleMarkDraft(Request $request, Sale $invoice)
     {
+       // dd($request->all());
         $request->validate([
             'marked_to_draft' => 'required|boolean',
         ]);
@@ -403,7 +533,7 @@ $warehouse = Warehouse::where('id' ,  $request->warehouse_id)->get();
     }
 
 // الرد على Inertia form أو POST عادي
-return back()->with('success', 'تم تحديث حالة التسليم بنجاح');
+return back()->with('success', 'تم تحديث حالة المسودة بنجاح');
     }
       public function toggleDraft(Request $request, Sale $invoice)
     {

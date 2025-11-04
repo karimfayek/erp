@@ -97,7 +97,7 @@ export default function SalesCreate() {
   const addTechnician = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     // استخدم setData من useForm بشكل صريح لتجنب stale state
-    const newList = [...(data.technicians || []), { technician_id: '', commission_percent: 0 }];
+    const newList = [...(data.technicians || []), { technician_id: '', commission_percent: 0 , transportation :0}];
     setData('technicians', newList);
   };
 
@@ -111,7 +111,7 @@ export default function SalesCreate() {
   const updateTechnician = (index, field, value) => {
     const newList = [...(data.technicians || [])];
     // تأكد أن العنصر موجود
-    if (!newList[index]) newList[index] = { technician_id: '', commission_percent: 0 };
+    if (!newList[index]) newList[index] = { technician_id: '', commission_percent: 0 , transportation :0};
     // لو الحقل نسبة العمولة حول القيمة لرقم
     if (field === 'commission_percent') {
       // نقبل قيم عشرية
@@ -379,7 +379,7 @@ export default function SalesCreate() {
   }, [items, taxAmount, subtotal, postponed]);
   const submit = (e) => {
     e.preventDefault();
-    if(data.technicians.length === 0){
+    if(data.technicians.length === 0 && maintainance){
       const proceed = window.confirm("⚠️ لم تضف أى فنى ,هل تريد المتابعة رغم ذلك؟");
     if (!proceed) {
       
@@ -548,13 +548,14 @@ export default function SalesCreate() {
               
                   <div className="mt-6 border-t pt-4">
                   <h3 className="text-lg font-semibold mb-2">الفنيين</h3>
-                  <div className="grid grid-cols-3 gap-4 font-semibold mb-2">
+                  <div className="grid grid-cols-4 gap-4 font-semibold mb-2">
                       <Label>الفنى</Label>
                        <Label>نسبه العمولة</Label>
+                       <Label> انتقالات</Label>
                       <Label>حذف</Label>
                     </div>
                   {(data.technicians || []).map((tech, index) => (
-                    <div key={tech.technician_id ? `t-${tech.technician_id}-${index}` : `t-index-${index}`} className="grid grid-cols-3 gap-4 mb-2">
+                    <div key={tech.technician_id ? `t-${tech.technician_id}-${index}` : `t-index-${index}`} className="grid grid-cols-4 gap-4 mb-2">
                       {/* اختر الفني: نفعل stringify على القيم */}
                       <div>
 
@@ -580,6 +581,16 @@ export default function SalesCreate() {
                         onWheel={(e) =>e.target.blur()} 
                         value={tech.commission_percent !== undefined ? tech.commission_percent : ''}
                         onChange={(e) => updateTechnician(index, 'commission_percent', e.target.value)}
+                      />
+                      </div>
+                        <div>
+                      <Input
+                        type="number"
+                        placeholder="الانتقالات"
+                        //onmousewheel dont change number
+                        onWheel={(e) =>e.target.blur()} 
+                        value={tech.transportation !== undefined ? tech.transportation : ''}
+                        onChange={(e) => updateTechnician(index, 'transportation', e.target.value)}
                       />
                       </div>
 

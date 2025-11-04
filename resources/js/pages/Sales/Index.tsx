@@ -47,6 +47,7 @@ type Invoice = {
   postponed: string
   tax: string
   is_delivered: boolean
+  marked_to_draft: string | number
   expenses: string
   customer: {
     id: number
@@ -228,6 +229,7 @@ export const invoiceColumns: ColumnDef<Invoice>[] = [
     enableHiding: false,
     cell: ({ row }) => {
       const invoice = row.original
+
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -245,9 +247,16 @@ export const invoiceColumns: ColumnDef<Invoice>[] = [
             </DropdownMenuItem>
              <DropdownMenuItem>
                 <Link href={route('invoice.details' , invoice.id)}>
-              تفاصيل الفاتورة
+              تفاصيل الفاتورة { invoice.marked_to_draft === '0' && 'sdfsdf'}
                 </Link>
             </DropdownMenuItem>
+            {( can('invoice.mark.draft') &&( invoice.marked_to_draft === null || invoice.marked_to_draft === 0)    ) &&
+             <DropdownMenuItem>
+                <Link href={route('draft.mark.status' , invoice.id)} method="post" data={{ marked_to_draft: 1 }}>
+              تعليم كمتاح درافت
+                </Link>
+            </DropdownMenuItem>
+            }
            <DropdownMenuItem>
                 <Link href={route('invoice.draft', invoice.id)}>
            تفاصيل كـ مسودة
@@ -280,6 +289,7 @@ export default function SalesCreate() {
 if(!can('Invoices view') && !can('Maintenance sales')){
   return false
 }
+
 const { sales , title} = usePage().props as unknown as {
     sales: {
       data: Invoice[]

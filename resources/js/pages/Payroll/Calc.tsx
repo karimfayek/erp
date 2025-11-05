@@ -104,6 +104,7 @@ const openDetails = async (technician_id) => {
                 <TableHead  className='text-right'>الفني</TableHead>
                 <TableHead  className='text-right'>الراتب الأساسي</TableHead>
                 <TableHead  className='text-right'>العمولة (الفترة)</TableHead>
+                <TableHead  className='text-right'>الانتقالات (الفترة)</TableHead>
                 <TableHead  className='text-right'>الخصومات (الفترة)</TableHead>
                 <TableHead  className='text-right'>الصافي</TableHead>
                 <TableHead  className='text-right'>تفاصيل العمولة</TableHead>
@@ -115,6 +116,7 @@ const openDetails = async (technician_id) => {
                   <TableCell>{r.name}</TableCell>
                   <TableCell>{Number(r.base_salary).toFixed(2)}</TableCell>
                   <TableCell>{Number(r.total_commission).toFixed(2)}</TableCell>
+                  <TableCell>{Number(r.total_transportation).toFixed(2)}</TableCell>
                   <TableCell>{Number(r.total_deductions).toFixed(2)}</TableCell>
                   <TableCell>{Number(r.final_salary).toFixed(2)}</TableCell>
                   <TableCell>
@@ -148,7 +150,8 @@ const openDetails = async (technician_id) => {
               </div>
               <div className="text-right">
                 <div className="font-semibold">الربح (العناصر): {Number(inv.total_profit).toFixed(2)}</div>
-                <div>انتقالات ومصروفات: {Number(inv.expenses).toFixed(2)}</div>
+                <div> مصروفات: {Number(inv.expenses).toFixed(2)}</div>
+                <div> انتقالات: {Number(inv.transportation).toFixed(2)}</div>
                 <div>الخصم ({inv.discount_percentage}%): {Number(inv.discount_value).toFixed(2)}</div>
                 <div>ضرائب اخرى خصم ({inv.other_tax}%): {Number(inv.otherTaxValue).toFixed(2)}</div>
                 <div className="font-semibold">الربح بعد المصروفات: {Number(inv.profit_after_expenses).toFixed(2)}</div>

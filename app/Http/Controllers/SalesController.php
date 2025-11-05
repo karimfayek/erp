@@ -396,9 +396,16 @@ $warehouse = Warehouse::where('id' ,  $request->warehouse_id)->get();
             throw new \RuntimeException('Invoice not created, cannot attach technicians.');
         }
             foreach ($request->technicians as $tech) {
+                if(isset($tech['commission_percent'])){
+                    $transport = (float)($tech['transportation'] ?? 0);
+                } else{
+                      $transport = 0.00;
+                }
                 if (isset($tech['technician_id']) && isset($tech['commission_percent'])) {
+                    
                     $sale->technicians()->attach($tech['technician_id'], [
                         'commission_percent' => $tech['commission_percent'],
+                        'transportation' => $transport,
                     ]);
                 }
             }

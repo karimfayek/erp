@@ -81,17 +81,25 @@ class TechnicianPayrollController extends Controller
 
         // حساب العمولات: قاعدة البيانات عندك اسم جدول الفواتير sales، والعمولة تحسب من (subtotal - expenses)
         // نبحث في جدول invoice_technicians الذي يشير إلى sales.id عن الحقول الخاصة بكل فني في الفترة المحددة
-        $commissions = DB::table('invoice_technicians')
+            $commissions = DB::table('invoice_technicians')
             ->join('sales', 'invoice_technicians.invoice_id', '=', 'sales.id')
             ->select(
                 'invoice_technicians.technician_id',
-                DB::raw('SUM(COALESCE(invoice_technicians.commission_amount,
-                    ((sales.subtotal - COALESCE(sales.expenses,0)) * invoice_technicians.commission_percent / 100)
-                )) as total_commission'),
+                DB::raw('
+                    SUM(
+                        COALESCE(invoice_technicians.commission_amount,
+                            ((sales.subtotal - COALESCE(sales.expenses,0)) * invoice_technicians.commission_percent / 100)
+                        )
+                    ) as total_commission
+                '),
+                DB::raw('SUM(COALESCE(invoice_technicians.transportation,0)) as total_transportation'),
                 DB::raw('GROUP_CONCAT(sales.id) as invoice_ids')
             )
             ->whereBetween('sales.date', [$start->toDateString(), $end->toDateString()])
-            ->groupBy('invoice_technicians.technician_id');
+            ->when(!empty($techIds), fn($q) => $q->whereIn('invoice_technicians.technician_id', $techIds))
+            ->groupBy('invoice_technicians.technician_id')
+            ->get()
+            ->keyBy('technician_id');
 
         if (!empty($techIds)) $commissions->whereIn('invoice_technicians.technician_id', $techIds);
 
@@ -119,10 +127,11 @@ class TechnicianPayrollController extends Controller
 
             $total_commission = $commRow ? (float)$commRow->total_commission : 0.0;
             $total_deductions = $dedRow ? (float)$dedRow->total_deductions : 0.0;
+             $total_transportation = $commRow ? (float)$commRow->total_transportation : 0.0;
             $base_salary = $salRow ? (float)$salRow->base_salary : 0.0;
             $invoice_ids = $commRow ? explode(',', $commRow->invoice_ids) : [];
 
-            $final = round($base_salary + $total_commission - $total_deductions, 2);
+            $final = round($base_salary + $total_commission + $total_transportation  - $total_deductions, 2);
 
             return [
                 'id' => $t->id,
@@ -130,6 +139,7 @@ class TechnicianPayrollController extends Controller
                 'base_salary' => $base_salary,
                 'total_commission' => $total_commission,
                 'total_deductions' => $total_deductions,
+                'total_transportation' => $total_transportation,
                 'final_salary' => $final,
                 'invoice_ids' => $invoice_ids,
             ];
@@ -240,9 +250,19 @@ public function invoiceDetails(Request $request)
                 'technician_id' => $techId,
             ]);
         }
+         $transportationFees = 0.0;
+        if ($pivot && isset($pivot->transportation)) {
+            // بعض الأحيان commission_percent قد يكون نصي أو null
+            $transportationFees = floatval($pivot->transportation);
+        } else {
+            \Log::info("InvoiceDetail: pivot commission_percent missing or null", [
+                'sale_id' => $sale->id,
+                'technician_id' => $techId,
+            ]);
+        }
 
         $commissionAmount = $profitAfterExpenses * ($commissionPercent / 100.0);
-
+$commissionAmount += $transportationFees ;
         // تفاصيل البنود (لواجهة المستخدم)
         $items = [];
         foreach ($sale->items as $item) {
@@ -273,6 +293,7 @@ public function invoiceDetails(Request $request)
             'profit_after_expenses' => round($profitAfterExpenses, 2),
             'commission_percent' => round($commissionPercent, 2),
             'commission_amount' => round($commissionAmount, 2),
+            'transportation' => round($transportationFees, 2),
             'items' => $items,
         ];
     }

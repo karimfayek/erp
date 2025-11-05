@@ -50,7 +50,7 @@ export default function Index({ maintainance }: { maintainance: boolean }) {
     ];
     const [open, setOpen] = useState(false);
     const { products, flash, warehouses, errors = {} } = usePage().props;
-    console.log(warehouses, 'warehouses index')
+    const warhousesColumns = warehouses.filter((wh) => wh.code !== '5');
     // 📌 Columns
     const invoiceColumns: ColumnDef<Product>[] = [
         {
@@ -97,10 +97,10 @@ export default function Index({ maintainance }: { maintainance: boolean }) {
             cell: ({ row }) => <div>{row.getValue("total_quantity")}</div>,
         },
 
-        ...warehouses.map((wh) => ({
+        ...warhousesColumns.map((wh) => ({
 
             id: wh.name,
-
+            
             accessorFn: (row) => {
                 const inv = row.inventories?.find(
                     i => Number(i.warehouse_id) === Number(wh.id)

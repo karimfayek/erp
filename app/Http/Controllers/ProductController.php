@@ -19,12 +19,12 @@ class ProductController extends Controller
 
     public function index($m = null)
     {
+            $warehouses = Warehouse::with('branch')->latest()->get();
         if($m == 'maintainance'){
                  if (!\Auth::user()->canDO('maintenance.products')) {
             abort(403, 'ليس لديك صلاحية  للوصول إلى هذه الصفحة.');
          }
             $products = Product::with('inventory' , 'warehouses')->latest()->where('maintainance', true)->get();
-            $warehouses = Warehouse::with('branch')->latest()->where('maintainance', 1)->get();
            // dd($warehouses);
             $maintainance = true;
         } else {
@@ -32,7 +32,6 @@ class ProductController extends Controller
                 abort(403, 'ليس لديك صلاحية  للوصول إلى هذه الصفحة.');
             }
             $products = Product::with('inventory' , 'warehouses')->latest()->where('maintainance', false)->get();
-            $warehouses = Warehouse::with('branch')->latest()->where('maintainance', false)->get();
              $maintainance = false;
         }
         return Inertia::render('Products/Index', [

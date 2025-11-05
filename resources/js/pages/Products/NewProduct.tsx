@@ -13,7 +13,7 @@ export default function NewProduct({m, warehouses, onSuccess }) {
     }
     const { data, setData, post, reset, errors } = useForm({
         name: '',
-        item_code: '',
+        item_code: '0',
         item_type: 'EGS',
         unit_type: 'EA',
         description: '',
@@ -23,7 +23,7 @@ export default function NewProduct({m, warehouses, onSuccess }) {
         tax_percentage: 14,
         warehouse_id: '',
         brand_id : '',
-        internal_code: '',
+        internal_code: '0',
         is_service: false,
         maintainance: m ? true : false,
     });

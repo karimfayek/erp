@@ -39,7 +39,7 @@ interface DataTableProps<TData, TValue> {
 }
 
 export function DataTable<TData, TValue>({ columns, data }: DataTableProps<TData, TValue>) {
-    console.log(data , 'data')
+    console.log(columns , 'columns')
     const [sorting, setSorting] = React.useState<SortingState>([])
      const [globalFilter, setGlobalFilter] = React.useState("")
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(

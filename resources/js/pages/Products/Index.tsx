@@ -31,156 +31,140 @@ type Product = {
     sku: number
     price: number
     stock: number
-    internal_code:string
-    item_type:string 
-    unit_type:string
-    price_without_tax:number 
-    tax_percentage:number
+    internal_code: string
+    item_type: string
+    unit_type: string
+    price_without_tax: number
+    tax_percentage: number
 }
-export default function Index({maintainance}: {maintainance:boolean}) {
+export default function Index({ maintainance }: { maintainance: boolean }) {
     if (!can('Products view') && !can('Maintenance products')) {
         return false
     }
-   const title = maintainance ? 'منتجات وخدمات الصيانة' : 'المنتجات'; 
-const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: title,
-        href: '/products',
-    },
-];
+    const title = maintainance ? 'منتجات وخدمات الصيانة' : 'المنتجات';
+    const breadcrumbs: BreadcrumbItem[] = [
+        {
+            title: title,
+            href: '/products',
+        },
+    ];
     const [open, setOpen] = useState(false);
     const { products, flash, warehouses, errors = {} } = usePage().props;
-  console.log(warehouses , 'warehouses index')
-// 📌 Columns
- const invoiceColumns: ColumnDef<Product>[] = [
-    {
-        id: "select",
-        header: ({ table }) => (
-            <Checkbox
-                checked={
-                    table.getIsAllPageRowsSelected() ||
-                    (table.getIsSomePageRowsSelected() && "indeterminate")
-                }
-                onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                aria-label="Select all"
-            />
-        ),
-        cell: ({ row }) => (
-            <Checkbox
-                checked={row.getIsSelected()}
-                onCheckedChange={(value) => row.toggleSelected(!!value)}
-                aria-label="Select row"
-            />
-        ),
-        enableSorting: false,
-        enableHiding: false,
-    },
-       {
-    accessorKey: "name",
-    header: maintainance ? 'اسم المنتج / الخدمة' : 'اسم المنتج',
-    cell: info => <span className="font-medium">{info.getValue()}</span>,
-  },
-{
-        accessorKey: "internal_code",
-        header: ({ column }) => {
-            return (
+    console.log(warehouses, 'warehouses index')
+    // 📌 Columns
+    const invoiceColumns: ColumnDef<Product>[] = [
+        {
+            id: "select",
+            header: ({ table }) => (
+                <Checkbox
+                    checked={
+                        table.getIsAllPageRowsSelected() ||
+                        (table.getIsSomePageRowsSelected() && "indeterminate")
+                    }
+                    onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                    aria-label="Select all"
+                />
+            ),
+            cell: ({ row }) => (
+                <Checkbox
+                    checked={row.getIsSelected()}
+                    onCheckedChange={(value) => row.toggleSelected(!!value)}
+                    aria-label="Select row"
+                />
+            ),
+            enableSorting: false,
+            enableHiding: false,
+        },
+        {
+            accessorKey: "name",
+            id:'الاسم',
+            header: maintainance ? 'اسم المنتج / الخدمة' : 'اسم المنتج',
+            cell: info => <span className="font-medium">{info.getValue()}</span>,
+        },
+        {
+            accessorKey: "total_quantity",
+            header: ({ column }) => {
+                return (
+                    <Button
+                        variant="ghost"
+                        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                    >
+                        المخزون
+                        <ArrowUpDown />
+                    </Button>
+                )
+            },
+            cell: ({ row }) => <div>{row.getValue("total_quantity")}</div>,
+        },
+
+        ...warehouses.map((wh) => ({
+
+            id: wh.name,
+
+            accessorFn: (row) => {
+                const inv = row.inventories?.find(
+                    i => Number(i.warehouse_id) === Number(wh.id)
+                );
+                return inv ? Number(inv.quantity) : 0;
+            },
+
+
+            header: ({ column }) => (
                 <Button
                     variant="ghost"
-                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                    size="sm"
+                    onClick={column.getToggleSortingHandler()}
                 >
-                    كود 
-                    <ArrowUpDown />
+                    {wh.name}
+                    <ArrowUpDown className="mr-2 h-4 w-4" />
                 </Button>
-            )
+            ),
+
+
+            cell: ({ getValue }) => (
+                <div className="text-right">{getValue()}</div>
+            ),
+
+
+            enableSorting: true,
+        })),
+        {
+            id: "actions",
+            enableHiding: false,
+            cell: ({ row }) => {
+                const product = row.original
+                return (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                                <span className="sr-only">Open menu</span>
+                                <MoreHorizontal />
+                            </Button>
+                        </DropdownMenuTrigger>
+
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+
+                            {(can('Products edit') || can('Maintenance products')) &&
+
+                                <DropdownMenuItem asChild>
+                                    <Link href={route("products.edit", product.id)}>
+                                        تعديل
+                                    </Link>
+                                </DropdownMenuItem>
+                            }
+
+
+                            <DropdownMenuSeparator />
+                            {can('Products delete') &&
+                                <Delete id={product.id} routeName={"products.destroy"} />
+                            }
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                )
+            },
         },
-        cell: ({ row }) => <div>{row.getValue("internal_code")}</div>,
-        enableSorting: true,
-    },
-     {
-        accessorKey: "total_quantity",
-        header: ({ column }) => {
-            return (
-                <Button
-                    variant="ghost"
-                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                >
-                    المخزون
-                    <ArrowUpDown />
-                </Button>
-            )
-        },
-        cell: ({ row }) => <div>{row.getValue("total_quantity")}</div>,
-    },
-    
-  ...warehouses.map((wh) => ({
-   
-    id: `warehouse_${wh.id}`,
-
- 
-    accessorFn: (row) => {
-      const inv = row.inventories?.find(
-        i => Number(i.warehouse_id) === Number(wh.id)
-      );
-      return inv ? Number(inv.quantity) : 0;
-    },
-
-    
-    header: ({ column }) => (
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={column.getToggleSortingHandler()}
-      >
-        {wh.name}
-        <ArrowUpDown className="mr-2 h-4 w-4" />
-      </Button>
-    ),
-
-  
-    cell: ({ getValue }) => (
-      <div className="text-right">{getValue()}</div>
-    ),
-
-  
-    enableSorting: true,
-  })),
-     {
-        id: "actions",
-        enableHiding: false,
-        cell: ({ row }) => {
-            const product = row.original
-            return (
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
-                            <MoreHorizontal />
-                        </Button>
-                    </DropdownMenuTrigger>
-
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-
-                        {(can('Products edit') || can('Maintenance products')) &&
-
-                            <DropdownMenuItem asChild>
-                                <Link href={route("products.edit", product.id)}>
-                                    تعديل
-                                </Link>
-                            </DropdownMenuItem>
-                        }
-
-
-                        <DropdownMenuSeparator />
-                        {can('Products delete') &&
-                            <Delete id={product.id} routeName={"products.destroy"} />
-                        }
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            )
-        },
-    },
-]
+    ]
     useEffect(() => {
         if (flash.success) {
             toast({
@@ -215,22 +199,22 @@ const breadcrumbs: BreadcrumbItem[] = [
                         </DialogTrigger>
 
                         <DialogContent className='sm:max-w-[90vw] lg:max-w-[1400px] w-full h-auto max-h-[90vh] overflow-y-auto p-6' dir='rtl'>
-{!maintainance &&
+                            {!maintainance &&
 
-                            <DialogHeader>
-                                <DialogTitle className='text-center'>إضافة منتج جديد
-                                    {maintainance && ' - في وضع الصيانة'}
-                                </DialogTitle>
-                            </DialogHeader>
-}
+                                <DialogHeader>
+                                    <DialogTitle className='text-center'>إضافة منتج جديد
+                                        {maintainance && ' - في وضع الصيانة'}
+                                    </DialogTitle>
+                                </DialogHeader>
+                            }
 
-                            <NewProduct m = {maintainance} warehouses={warehouses} onSuccess={() => setOpen(false)} />
+                            <NewProduct m={maintainance} warehouses={warehouses} onSuccess={() => setOpen(false)} />
 
                         </DialogContent>
                     </Dialog>
                 }
                 <DataTable columns={invoiceColumns} data={products} />
-                
+
             </div>
         </AppLayout>
     );

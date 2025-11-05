@@ -24,14 +24,14 @@ class ProductController extends Controller
                  if (!\Auth::user()->canDO('maintenance.products')) {
             abort(403, 'ليس لديك صلاحية  للوصول إلى هذه الصفحة.');
          }
-            $products = Product::with('inventory' , 'warehouses')->latest()->where('maintainance', true)->get();
+            $products = Product::with('inventory' , 'warehouses')->where('maintainance', true)->get();
            // dd($warehouses);
             $maintainance = true;
         } else {
             if (!\Auth::user()->canDO('products.view')) {
                 abort(403, 'ليس لديك صلاحية  للوصول إلى هذه الصفحة.');
             }
-            $products = Product::with('inventory' , 'warehouses')->latest()->where('maintainance', false)->get();
+            $products = Product::with('inventory' , 'warehouses')->where('maintainance', false)->get();
              $maintainance = false;
         }
         return Inertia::render('Products/Index', [

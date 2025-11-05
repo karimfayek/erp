@@ -8,6 +8,6 @@ export function can(permission) {
   if(auth?.user?.role === 'super-admin'){
     return true
   }
-  
+  console.log(auth?.user?.permissions , 'permsion')
   return auth?.user?.permissions?.includes(permission);
 }

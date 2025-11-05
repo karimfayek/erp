@@ -62,6 +62,13 @@ type Invoice = {
     phone: string
     email: string
     address: string
+  },  
+   creator: {
+    id: number
+    name: string
+    phone: string
+    email: string
+    address: string
   }
 }
 // 📌 Columns
@@ -222,6 +229,23 @@ export const invoiceColumns: ColumnDef<Invoice>[] = [
       )
     },
     cell: ({ row }) => <div>{row.original.user?.name}</div>,
+ enableSorting: true,
+  },
+  
+   {
+    accessorKey: "creator.name",
+   header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          بواسطة
+          <ArrowUpDown />
+        </Button>
+      )
+    },
+    cell: ({ row }) => <div>{row.original.creator?.name}</div>,
  enableSorting: true,
   },
     {

@@ -86,7 +86,9 @@ const title = maintainance ? 'الفنيين' : 'المستخدمين';
                             <TableHead className="text-right">الاسم</TableHead>
                             {!maintainance &&
                             
+                            <>
                             <TableHead className="text-right">الايميل</TableHead>
+                            <TableHead className="text-right">مخزن</TableHead></>
                             }
                             <TableHead className="text-right">-</TableHead>
                         </TableRow>
@@ -96,7 +98,8 @@ const title = maintainance ? 'الفنيين' : 'المستخدمين';
                             <TableRow key={user.id}>
                                 <TableCell>{user.name}</TableCell>
                                   {!maintainance &&
-                                <TableCell>{user.email}</TableCell>
+                                <><TableCell>{user.email}</TableCell>
+                                <TableCell>{user.warehouse?.name}</TableCell></>
                                   }
 
                                 {/* عمود الأكشنز */}

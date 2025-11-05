@@ -67,7 +67,9 @@ export default function NewCustomer({ onCreated }) {
                 <Label>
                     اسم الشركة
                 </Label>
-                <Input placeholder="اسم الشركة" value={data.company_name} onChange={e => setData('company_name', e.target.value)} />
+                <Input placeholder="اسم الشركة" value={data.company_name} onChange={e => setData('company_name', e.target.value)}
+                  required={data.type === 'B'}
+                />
             </div>
             <div>
                 <Label>
@@ -91,7 +93,7 @@ export default function NewCustomer({ onCreated }) {
 
                     }
                 </Label>
-                <Input type="number" value={data.tax_id} onChange={e => setData('tax_id', e.target.value)} />
+                <Input type="number" value={data.tax_id} onChange={e => setData('tax_id', e.target.value)} required/>
 
             </div>
             <div>

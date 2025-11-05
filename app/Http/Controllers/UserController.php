@@ -11,6 +11,13 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Validation\Rule;
 class UserController extends Controller
 {
+     public function __construct()
+    {
+        $this->middleware('permission:users.view')->only(['index']);
+        $this->middleware('permission:users.edit')->only(['edit']);
+        $this->middleware('permission:users.create')->only(['create', 'store']);
+        $this->middleware('permission:users.delete')->only(['destroy']);
+    }
     public function index($maintainance = null)
     {
         
@@ -28,7 +35,7 @@ class UserController extends Controller
             if (!\Auth::user()->canDO('Users view') ) {
                 abort(403, 'ليس لديك صلاحية  للوصول إلى هذه الصفحة.');
             }
-          $users = User::latest()->where('type', 'user')->paginate(50);
+          $users = User::latest()->where('type', 'user')->with('warehouse')->paginate(50);
             $maintainance = false;
         }
        
@@ -101,7 +108,7 @@ class UserController extends Controller
             'max:255',
             Rule::unique('users', 'email')->ignore($user->id),
         ],
-            'password' => 'nullable|string|min:8|confirmed',
+            'password' => 'nullable|string|min:8',
             'salary' => 'nullable|numeric',
         ]);
 

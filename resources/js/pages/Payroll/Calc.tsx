@@ -55,7 +55,8 @@ const openDetails = async (technician_id) => {
       start,
       end,
     });
-    setInvoiceDetails(res.data); // يحتوي على invoices array
+    setInvoiceDetails(res.data); 
+    console.log(res.data)// يحتوي على invoices array
     setOpenDetail(true);
   } catch (err) {
     console.error(err);
@@ -151,7 +152,7 @@ const openDetails = async (technician_id) => {
               <div className="text-right">
                 <div className="font-semibold">الربح (العناصر): {Number(inv.total_profit).toFixed(2)}</div>
                 <div> مصروفات: {Number(inv.expenses).toFixed(2)}</div>
-                <div> انتقالات: {Number(inv.transportation).toFixed(2)}</div>
+                <div> انتقالات: {inv.transportation}</div>
                 <div>الخصم ({inv.discount_percentage}%): {Number(inv.discount_value).toFixed(2)}</div>
                 <div>ضرائب اخرى خصم ({inv.other_tax}%): {Number(inv.otherTaxValue).toFixed(2)}</div>
                 <div className="font-semibold">الربح بعد المصروفات: {Number(inv.profit_after_expenses).toFixed(2)}</div>

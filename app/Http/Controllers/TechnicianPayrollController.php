@@ -101,9 +101,9 @@ class TechnicianPayrollController extends Controller
             ->get()
             ->keyBy('technician_id');
 
-        if (!empty($techIds)) $commissions->whereIn('invoice_technicians.technician_id', $techIds);
+       // if (!empty($techIds)) $commissions->whereIn('invoice_technicians.technician_id', $techIds);
 
-        $commissions = $commissions->get()->keyBy('technician_id');
+        //$commissions = $commissions->get()->keyBy('technician_id');
 
         // جلب الخصومات داخل الفترة لكل فني (أو جلب من جدول الخصومات العام)
         $deductions = TechnicianDeduction::whereBetween('date', [$start->toDateString(), $end->toDateString()])
@@ -126,13 +126,13 @@ class TechnicianPayrollController extends Controller
             $salRow = $salaries->get($t->id);
 
             $total_commission = $commRow ? (float)$commRow->total_commission : 0.0;
-            $total_deductions = $dedRow ? (float)$dedRow->total_deductions : 0.0;
              $total_transportation = $commRow ? (float)$commRow->total_transportation : 0.0;
+            $total_deductions = $dedRow ? (float)$dedRow->total_deductions : 0.0;
             $base_salary = $salRow ? (float)$salRow->base_salary : 0.0;
             $invoice_ids = $commRow ? explode(',', $commRow->invoice_ids) : [];
 
             $final = round($base_salary + $total_commission + $total_transportation  - $total_deductions, 2);
-
+//dd($total_transportation);
             return [
                 'id' => $t->id,
                 'name' => $t->name,
@@ -262,6 +262,7 @@ public function invoiceDetails(Request $request)
         }
 
         $commissionAmount = $profitAfterExpenses * ($commissionPercent / 100.0);
+        //dd($transportation);
 $commissionAmount += $transportationFees ;
         // تفاصيل البنود (لواجهة المستخدم)
         $items = [];
@@ -293,7 +294,7 @@ $commissionAmount += $transportationFees ;
             'profit_after_expenses' => round($profitAfterExpenses, 2),
             'commission_percent' => round($commissionPercent, 2),
             'commission_amount' => round($commissionAmount, 2),
-            'transportation' => round($transportationFees, 2),
+            'transportation' => round($sale->transportation, 2),
             'items' => $items,
         ];
     }

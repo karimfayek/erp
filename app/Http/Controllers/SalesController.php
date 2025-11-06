@@ -307,7 +307,7 @@ $warehouse = Warehouse::where('id' ,  $request->warehouse_id)->get();
     public function store(Request $request)
     {
     
-   // dd($totalTransportation);
+ //dd($request->all());
         $validated = $request->validate([
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
@@ -323,6 +323,7 @@ $warehouse = Warehouse::where('id' ,  $request->warehouse_id)->get();
             'representative_id' => 'nullable|exists:representatives,id',
             'discount_percentage' => 'nullable|numeric|min:0|max:100',
             'subtotal' => 'required|numeric',
+            'other_tax_val'=> 'nullable|numeric',
             'total' => 'required|numeric',
             'collected' => 'nullable|numeric',
             'postponed' => 'required|numeric',
@@ -414,11 +415,15 @@ $warehouse = Warehouse::where('id' ,  $request->warehouse_id)->get();
                 return ($item->unit_price - $item->product->cost_price) * $item->qty;
             });   //1000
             $expenses = floatval($sale->expenses ?? 0); // 50
-            $discoutVal = ( floatval($sale->subtotal ?? 0) /100) * ( $sale->discount_percentage ?? 0) ; // 200
+              $subtotal = floatval($sale->subtotal ?? 0);
+            $transportation = $sale->transportation ; 
+             $discountPercent = floatval($sale->discount_percentage ?? 0);
+            $discoutValOld = ( floatval($sale->subtotal ?? 0) /100) * ( $sale->discount_percentage ?? 0) ; // 200
+            $discoutVal = ($subtotal * ($discountPercent / 100.0));
             $afterDiscount = floatval($sale->subtotal ?? 0) - ($discoutVal ?? 0); //1800
             $otherTax = floatval($sale->other_tax ?? 0) ; // 3%
             $otherTaxValue =  $afterDiscount / 100 * $otherTax ; // 1800 /100 *3 = 54
-            $profitAfterExpenses = $totalProfit - ($expenses) - ($discoutVal ?? 0) - ($otherTaxValue ?? 0); // 1000 - 50 - 200 - 54 = 696
+            $profitAfterExpenses = $totalProfit - ($expenses) - $transportation - ($discoutVal ?? 0) - ($otherTaxValue ?? 0); // 1000 - 50 - 200 - 54 = 696
 
             foreach ($sale->technicians as $tech) {
                 $amount = $profitAfterExpenses * ($tech->pivot->commission_percent / 100);

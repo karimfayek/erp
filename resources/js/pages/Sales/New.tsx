@@ -89,6 +89,7 @@ export default function SalesCreate() {
     invoice_type: 'T02',
     payment_method: 'C',
     total: 0,
+    other_tax_val: 0,
     notes: "",
     maintainance: maintainance,
     items: [],
@@ -372,6 +373,7 @@ export default function SalesCreate() {
       ...prev,
       items: items,
       tax: +taxAmount.toFixed(2),
+      other_tax_val : +OtherTaxAmount.toFixed(2),
       subtotal: +subtotal.toFixed(2),
       total: +grandTotal.toFixed(2),
       postponed: +postponed.toFixed(2),
@@ -391,6 +393,7 @@ export default function SalesCreate() {
       tax: +taxAmount.toFixed(2),
       subtotal: +subtotal.toFixed(2),
       total: +grandTotal.toFixed(2),
+      other_tax_val : +OtherTaxAmount.toFixed(2),
       postponed: +postponed.toFixed(2),
       items: items.map(({ tempId, ...r }) => ({
         ...r,
@@ -401,6 +404,7 @@ export default function SalesCreate() {
       })),
     };
 
+    console.log(payload , 'payload');
     if (payload.items.length === 0 || payload.items.every((r) => !r.product_id && !r.description)) {
       toast("أضف صنفًا واحدًا على الأقل");
 
@@ -647,7 +651,7 @@ export default function SalesCreate() {
                   <Label htmlFor="collected">محصل (ما تم تحصيله)</Label>
                   <Input 
                    onWheel={(e) =>e.target.blur()} 
-                  id="collected" type="number" step="0.01" value={data.collected} onChange={(e) => setData("collected", e.target.value)} />
+                  id="collected" type="number" step="0.01" value={Number(data.collected).toFixed(2)} onChange={(e) => setData("collected", e.target.value)} />
                 </div>
                 <div>
                   <Label>مؤجل (يُحسب تلقائيًا)</Label>

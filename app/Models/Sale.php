@@ -13,7 +13,7 @@ class Sale extends Model
       'issued_at' ,'internal_id' , 'date','customer_id','user_id','collected','subtotal','discount_percent',
       'tax','postponed','expenses','notes','invoice_number' ,'eta_status' ,'eta_uuid', 'representative_id','customer_branch_id',
       'document_type' , 'invoice_type' ,'payment_method','is_delivered','other_tax','discount_percentage','is_invoice','total' ,'created_by',
-      'maintainance','marked_to_draft','transportation'
+      'maintainance','marked_to_draft','transportation','other_tax_val'
     ];
 
     protected $casts = [
@@ -22,6 +22,7 @@ class Sale extends Model
         'postponed' => 'decimal:2',
         'collected' => 'decimal:2',
         'subtotal' => 'decimal:2',
+        'other_tax_val' => 'decimal:2',
         'total' => 'decimal:2',
         'tax' => 'decimal:2',
         'other_tax' => 'decimal:2',

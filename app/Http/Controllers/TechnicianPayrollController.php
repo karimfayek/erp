@@ -132,7 +132,8 @@ class TechnicianPayrollController extends Controller
             $invoice_ids = $commRow ? explode(',', $commRow->invoice_ids) : [];
 
             $final = round($base_salary + $total_commission + $total_transportation  - $total_deductions, 2);
-//dd($total_transportation);
+
+
             return [
                 'id' => $t->id,
                 'name' => $t->name,
@@ -144,7 +145,6 @@ class TechnicianPayrollController extends Controller
                 'invoice_ids' => $invoice_ids,
             ];
         });
-
         return response()->json([
             'period' => ['start' => $start->toDateString(), 'end' => $end->toDateString()],
             'results' => $result,

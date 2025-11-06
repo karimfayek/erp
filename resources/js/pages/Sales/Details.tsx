@@ -234,7 +234,8 @@ const handleSaveCollection = async () => {
    ((inv.discount_percentage || 0) / 100)) }
                 </span></div>
               <div className="flex justify-between"><span>الضريبة:</span><span className="font-semibold">{Number(inv.tax ?? 0).toFixed(2)}</span></div>
-              <div className="flex justify-between"><span>ضرائب أخرى:</span><span className="font-semibold">{Number(inv.other_tax ?? 0).toFixed(2)}</span></div>
+             
+              <div className="flex justify-between"><span>ضرائب أخرى {Number(inv.other_tax).toFixed(0) } %:</span><span className="font-semibold">{Number(inv.other_tax_val ?? 0).toFixed(2)}</span></div>
               <div className="flex justify-between"><span>المصروفات:</span><span className="font-semibold">{Number(inv.expenses ?? 0).toFixed(2)}</span></div>
               <Separator />
               <div className="flex justify-between text-lg font-bold"><span>الإجمالي النهائي:</span><span>

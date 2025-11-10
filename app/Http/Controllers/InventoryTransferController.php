@@ -20,7 +20,7 @@ class InventoryTransferController extends Controller
 
     public function index()
     {
-        $products = Product::with('warehouses')->get();
+        $products = Product::where('maintainance' , 0)->where('type' , 'product')->with('warehouses')->get();
         $movements = \App\Models\InventoryMovement::with('product' , 'fromWarehouse' , 'toWarehouse' , 'user')->paginate(100);
         $warehouses = Warehouse::with('branch')->get();
         return Inertia::render('Transfer/Index', [

@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/app-layout.js';
 import { type BreadcrumbItem } from '@/types';
 
+import { ProductCombobox } from "@/components/ProductCombobox";
 const breadcrumbs: BreadcrumbItem[] = [
   {
     title: 'نقل من مخزن لمخزن',
@@ -58,25 +59,14 @@ export default function TransferForm({ products, warehouses, movements }) {
       <form onSubmit={handleSubmit} className="space-y-2  p-4 rounded shadow ">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div colSpan={2} className="col-span-2">
-            <Label htmlFor="product">المنتج</Label>
-            <Select
-              id="product"
-              value={data.product_id}
-              onValueChange={(e) => setData('product_id', Number(e))}
-              required
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="اختر  منتج" />
-              </SelectTrigger>
-              <SelectContent>
-
-                {products?.map((product) => (
-                  <SelectItem key={product.id} value={product.id} className='dark:bg-black'>
-                    {product.name} - ({product.internal_code}) - {product.brand_id}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label htmlFor="product" className='block mb-3'>المنتج</Label>
+            <ProductCombobox
+            className="w-full"
+                products={products}
+                selectedId={data.product_id}
+                onSelect={(e) => setData('product_id', Number(e))}
+              />
+           
           </div>
 
           <div>

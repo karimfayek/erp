@@ -31,7 +31,10 @@ class User extends Authenticatable
         'password' => 'hashed',
         'salary' => 'decimal:2',
     ];
-
+   public function customers()
+        {
+         return $this->hasMany(Customer::class , 'created_by');
+        }
     // علاقات رول وصلاحيات
     public function roles()
     {

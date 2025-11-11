@@ -9,7 +9,17 @@ class CustomerController extends Controller
 {
     public function index()
     {
-        $customers = Customer::latest()->with('user')->get();
+        $user =  auth()->user();
+        $roleSlugs = $user->roles->pluck('slug')->toArray();
+        $isSuperAdmin = in_array('super-admin', $roleSlugs, true);
+         $isSuperAdmin = in_array('super-admin', $roleSlugs, true);
+            if($isSuperAdmin){
+        $customers = Customer::with('user')->latest()->get();  
+
+            } else {
+                
+            $customers = $user->customers()->with('user')->get();  
+            } 
         return Inertia::render('Customers/Index', [
             'customers' => $customers
         ]);
@@ -41,6 +51,11 @@ class CustomerController extends Controller
             'company_name' => 'nullable|string|max:255',
             
         ]);
+        $customerExist = Customer::where('phone' , $request->phone)->where('created_by' , auth()->id())->first();
+        //dd($customerExist);
+        if($customerExist) {
+            return back()->with('success' , 'العميل موجود بالفعل');
+        }
         $data['created_by'] = auth()->id();
         $customer = Customer::create($data);
 

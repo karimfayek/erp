@@ -210,7 +210,7 @@ const resetFilter = ()=>{
                                     {invoices.data.map((invoice, i) => (
                                         <tr key={invoice.id} className="border-b hover:bg-gray-50">
                                             <td className="p-2">{invoice.invoice_number}</td>
-                                            <td className="p-2">{invoice.customer.name}</td>
+                                            <td className="p-2">{invoice.customer?.name}</td>
                                             <td className="p-2"> {new Date(invoice.date).toLocaleDateString("ar-EG")}</td>
                                             <td className="p-2">{invoice.user?.name}</td>
                                             <td className="p-2">{invoice.total_formatted} ج.م</td>

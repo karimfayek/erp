@@ -26,8 +26,15 @@ class SalesController extends Controller
         
         $user = auth()->user();
         $inv = \App\Models\Warehouse::where('id', $user->warehouse_id)->first();
-       
-        $customers = Customer::with('representatives')->latest()->get();        
+         $roleSlugs = $user->roles->pluck('slug')->toArray();
+            $isSuperAdmin = in_array('super-admin', $roleSlugs, true);
+            if($isSuperAdmin){
+        $customers = Customer::with('representatives')->latest()->get();  
+
+            } else {
+                
+            $customers = $user->customers()->get();  
+            }  
         $users = \App\Models\User::with('warehouse')->where('type', 'user')->get();
         $technicians = \App\Models\User::with('warehouse')->where('type', 'technician')->get();
         $warehouses = Warehouse::where('id', $user->warehouse_id)->get();

@@ -320,6 +320,7 @@ $warehouse = Warehouse::where('id' ,  $request->warehouse_id)->get();
             'items.*.product_id' => 'required|exists:products,id',
             'items.*.inv' => 'required|exists:warehouses,id',
             'items.*.qty' => 'required|numeric|min:1',
+            'items.*.replacing' => 'nullable|boolean',
             'items.*.unit_price' => 'required|numeric|min:0',
         ]);
         $data = $request->validate([
@@ -376,10 +377,12 @@ $warehouse = Warehouse::where('id' ,  $request->warehouse_id)->get();
         $sale = Sale::create($data);
         // create items
         foreach ($validated['items'] as $item) {
+           // dd($item);
             $product = \App\Models\Product::find($item['product_id']);
             SalesItem::create([
                 'sale_id' => $sale->id,
                 'product_id' => $item['product_id'],
+                'replacing' => $item['replacing'],
                 'product_code' => $product->internal_code,
                 'qty' => $item['qty'],
                 'unit_price' => $item['unit_price'],
@@ -418,8 +421,8 @@ $warehouse = Warehouse::where('id' ,  $request->warehouse_id)->get();
                 }
             }
             $totalProfit = $sale->items->sum(function($item) {
-               // dd($item->unit_price - $item->product->cost_price);
-                return ($item->unit_price - $item->product->cost_price) * $item->qty;
+               $costprice = $item->replacing ? 0 : $item->product->cost_price ;
+                return ($item->unit_price -  $costprice) * $item->qty;
             });   //1000
             $expenses = floatval($sale->expenses ?? 0); // 50
               $subtotal = floatval($sale->subtotal ?? 0);

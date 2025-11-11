@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import axios from 'axios';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { can } from '@/utils/permissions';
+import { Badge, BadgeCheckIcon, X } from 'lucide-react';
 
 export default function Calc() {
     if(!can('Maintenance salary')){
@@ -171,6 +172,7 @@ const openDetails = async (technician_id) => {
                       <th className="w-1/6 pb-2 text-right">سعر البيع</th>
                       <th className="w-1/6 pb-2 text-right">سعر التكلفة</th>
                       <th className="w-1/6 pb-2 text-right">الكمية</th>
+                      <th className="w-1/6 pb-2 text-right">بدل ؟</th>
                       <th className="w-1/6 pb-2 text-right">ربح السطر</th>
                     </tr>
                   </thead>
@@ -181,6 +183,7 @@ const openDetails = async (technician_id) => {
                         <td>{Number(item.unit_price).toFixed(2)}</td>
                         <td>{Number(item.cost_price).toFixed(2)}</td>
                         <td>{Number(item.qty)}</td>
+                        <td>{item.replacing ? <Badge className="h-5 min-w-5 bg-green-700" > <BadgeCheckIcon /></Badge> :  <Badge variant="destructive"><X/> </Badge>}</td>
                         <td>{Number(item.line_profit).toFixed(2)}</td>
                       </tr>
                     ))}

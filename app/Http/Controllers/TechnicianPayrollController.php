@@ -211,7 +211,7 @@ public function invoiceDetails(Request $request)
 
             // تأكد من وجود المنتج وسعر التكلفة
             $costPrice = 0.0;
-            if (isset($item->product) && isset($item->product->cost_price)) {
+            if (isset($item->product) && isset($item->product->cost_price) && !$item->replacing) {
                 $costPrice = floatval($item->product->cost_price);
             } else {
                 // سجّل تحذير لو المنتج مفقود أو لا يوجد cost_price — يساعد في الـ debugging
@@ -269,7 +269,7 @@ $commissionAmount += $transportationFees ;
         foreach ($sale->items as $item) {
             $unitPrice = isset($item->unit_price) ? floatval($item->unit_price) : 0.0;
             $qty = isset($item->qty) ? floatval($item->qty) : 0.0;
-            $costPrice = (isset($item->product) && isset($item->product->cost_price)) ? floatval($item->product->cost_price) : 0.0;
+            $costPrice = (isset($item->product) && isset($item->product->cost_price) && !$item->replacing) ? floatval($item->product->cost_price) : 0.0;
             $lineProfit = ($unitPrice - $costPrice) * $qty;
 
             $items[] = [
@@ -277,6 +277,7 @@ $commissionAmount += $transportationFees ;
                 'product_name' => $item->product->name ?? ($item->description ?? ''),
                 'unit_price' => round($unitPrice, 2),
                 'cost_price' => round($costPrice, 2),
+                'replacing' => $item->replacing,
                 'qty' => $qty,
                 'line_profit' => round($lineProfit, 2),
             ];

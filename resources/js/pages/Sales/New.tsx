@@ -27,6 +27,7 @@ import { can } from "@/utils/permissions";
 import axios from "axios";
 import { NumberDisplay } from "@/lib/utils";
 import { ProductCombobox } from "@/components/ProductCombobox";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const breadcrumbs: BreadcrumbItem[] = [
   {
@@ -68,7 +69,7 @@ export default function SalesCreate() {
   console.log({ userInventory, currentWarehouses, warHouseName })
   const generateId = () => `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const [items, setItems] = useState([
-    { tempId: generateId(), product_id: "", product_code: "", serial_number: "", description: "", qty: 1, inv: userInventory, unit_price: 0, total: 0 },
+    { tempId: generateId(), replacing: false, product_id: "", product_code: "", serial_number: "", description: "", qty: 1, inv: userInventory, unit_price: 0, total: 0 },
   ]);
 
   const { data, setData, post, processing, reset } = useForm({
@@ -334,7 +335,7 @@ export default function SalesCreate() {
   const addRow = () => {
     setItems((prev) => [
       ...prev,
-      { tempId: generateId(), product_id: "", product_code: "", serial_number: "", description: "", qty: 1, inv: userInventory, unit_price: 0, total: 0 },
+      { tempId: generateId(), replacing: false, product_id: "", product_code: "", serial_number: "", description: "", qty: 1, inv: userInventory, unit_price: 0, total: 0 },
     ]);
   };
 
@@ -417,7 +418,7 @@ export default function SalesCreate() {
       onSuccess: () => {
         toast("تم حفظ عملية البيع بنجاح");
         reset();
-        setItems([{ tempId: generateId(), product_id: "", product_code: "", serial_number: "", description: "", qty: 1, inv: userInventory, unit_price: 0, total: 0 }]);
+        setItems([{ tempId: generateId(),replacing:false, product_id: "", product_code: "", serial_number: "", description: "", qty: 1, inv: userInventory, unit_price: 0, total: 0 }]);
       },
     });
   };
@@ -637,7 +638,7 @@ export default function SalesCreate() {
                 }
                 <div>
                   <Label htmlFor="expenses">
-                    {maintainance ? 'انتقالات ومصروفات' : 'مصروفات'}
+                    {'مصروفات'}
                   </Label>
                   <Input
                    onWheel={(e) =>e.target.blur()} 
@@ -680,6 +681,9 @@ export default function SalesCreate() {
                         <TableHead>الكمية</TableHead>
                         <TableHead>سعر الوحدة</TableHead>
                         <TableHead>الإجمالي</TableHead>
+                         {maintainance && 
+                        <TableHead>بدل</TableHead>
+                         }
                         <TableHead>إجراء</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -712,7 +716,24 @@ export default function SalesCreate() {
                           <TableCell>
                             <Input readOnly value={Number(row.total).toFixed(2)} />
                           </TableCell>
+                          {maintainance && 
+                          
+                           <TableCell>
+                           <Label className="hover:bg-accent/50 flex items-start gap-3 rounded-lg border p-3 has-[[aria-checked=true]]:border-blue-600 has-[[aria-checked=true]]:bg-blue-50 dark:has-[[aria-checked=true]]:border-blue-900 dark:has-[[aria-checked=true]]:bg-blue-950">
+                              <Checkbox
+                                id="replacing"
+                                 checked={!!row.replacing}                //  Boolean
+                                onCheckedChange={(checked) => {              // true أو false
+                                  updateRow(row.tempId, { replacing: checked }); 
+                                }}
+                                className="data-[state=checked]:border-blue-600 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white dark:data-[state=checked]:border-blue-700 dark:data-[state=checked]:bg-blue-700"
+                              />
+                              
+                            </Label>
+                          </TableCell>
+                          }
                           <TableCell>
+                             
                             <Button type="button" variant="destructive" onClick={() => removeRow(row.tempId)}>حذف</Button>
                           </TableCell>
                         </TableRow>

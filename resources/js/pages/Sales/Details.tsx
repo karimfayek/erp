@@ -104,8 +104,13 @@ const handleSaveCollection = async () => {
           <div>
             <CardTitle className="text-2xl">{inv.is_invoice ? 'فاتورة' : 'بيان أسعار'} <span className="text-sm text-muted-foreground ml-2">{inv.invoice_number}</span></CardTitle>
             <div className="mt-2 flex items-center gap-3">
-              <Badge variant="secondary">{inv.document_type || 'I'}</Badge>
+              {inv.is_invoice &&
+              <>
+               <Badge variant="secondary">{inv.document_type || 'I'}</Badge>
               <Badge variant="outline">{inv.invoice_type || 'T01'}</Badge>
+              </>
+              }
+             
               <div className="flex items-center gap-2" dir="ltr">
                 <Switch id="delivered" checked={isDelivered} onCheckedChange={handleToggleDelivery} className="data-[state=checked]:bg-green-500" />
                 <Label className="text-sm">{inv.is_delivered ? 'تم التسليم' : 'لم يتم التسليم'}</Label>

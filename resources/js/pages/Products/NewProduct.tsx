@@ -27,7 +27,6 @@ export default function NewProduct({m, warehouses, onSuccess }) {
         is_service: false,
         maintainance: m ? true : false,
     });
-    console.log(data.maintainance, 'maintainance')
     const handleWarehouseChange = (e) => {
         setData('warehouse_id', e)
     }
@@ -50,7 +49,7 @@ export default function NewProduct({m, warehouses, onSuccess }) {
 
             {(can('Products create') || can('Maintenance products')) &&
               <><div className="flex flex-col items-center justify-center mt-10">
-                    {data.maintainance &&
+                    
                     
                     <><div className=" border flex items-center justify-between p-4 space-x-2" dir="ltr">
 
@@ -69,7 +68,7 @@ export default function NewProduct({m, warehouses, onSuccess }) {
                                     <p> إضافة منتج جديد</p>}
                             </h2>
                         </div></>
-                     }
+                    
                 </div><form onSubmit={submit} className="space-y-2  p-4 rounded shadow md:grid grid-cols-2  gap-2">
                         <div>
                             <Label>اسم</Label>

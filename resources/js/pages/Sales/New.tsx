@@ -468,32 +468,35 @@ export default function SalesCreate() {
                   <Input id="date" type="date" value={data.date} onChange={(e) => setData("date", e.target.value)} />
                   {errors.date && <p className="text-red-600 text-sm mt-1">{errors.date}</p>}
                 </div>
+                {data.is_invoice &&
+                
+                <>
                 <div>
-                  <Label>نوع المستند</Label>
-                  <Select value={data.document_type} onValueChange={(v) => setData('document_type', v)}>
-                    <SelectTrigger className="w-full"><SelectValue placeholder="اختر نوع المستتند" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="I" className="text-blue-600">فاتورة ضريبية Invoice   </SelectItem>
-                      <SelectItem value="C" className="text-blue-600">إشعار دائن Credit Note  </SelectItem>
-                      <SelectItem value="D" className="text-blue-600"> إشعار مدين Debit Note   </SelectItem>
+                    <Label>نوع المستند</Label>
+                    <Select value={data.document_type} onValueChange={(v) => setData('document_type', v)}>
+                      <SelectTrigger className="w-full"><SelectValue placeholder="اختر نوع المستتند" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="I" className="text-blue-600">فاتورة ضريبية Invoice   </SelectItem>
+                        <SelectItem value="C" className="text-blue-600">إشعار دائن Credit Note  </SelectItem>
+                        <SelectItem value="D" className="text-blue-600"> إشعار مدين Debit Note   </SelectItem>
 
 
-                    </SelectContent>
-                  </Select>
-                  {errors.document_type && <p className="text-red-600 text-sm mt-1">{errors.document_type}</p>}
-                </div>
-                <div>
-                  <Label>نوع الفاتورة</Label>
-                  <Select value={data.invoice_type} onValueChange={(v) => setData('invoice_type', v)}>
-                    <SelectTrigger className="w-full"><SelectValue placeholder="اختر نوع المستتند" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="T01" className="text-blue-600">فاتورة ضريبية Invoice   </SelectItem>
-                      <SelectItem value="T02" className="text-blue-600">فاتورة مبسطة (Simplified Invoice)   </SelectItem>
-                      <SelectItem value="T03" className="text-blue-600"> فاتورة إيصال (Receipt)   </SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {errors.invoice_type && <p className="text-red-600 text-sm mt-1">{errors.invoice_type}</p>}
-                </div>
+                      </SelectContent>
+                    </Select>
+                    {errors.document_type && <p className="text-red-600 text-sm mt-1">{errors.document_type}</p>}
+                  </div><div>
+                      <Label>نوع الفاتورة</Label>
+                      <Select value={data.invoice_type} onValueChange={(v) => setData('invoice_type', v)}>
+                        <SelectTrigger className="w-full"><SelectValue placeholder="اختر نوع المستتند" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="T01" className="text-blue-600">فاتورة ضريبية Invoice   </SelectItem>
+                          <SelectItem value="T02" className="text-blue-600">فاتورة مبسطة (Simplified Invoice)   </SelectItem>
+                          <SelectItem value="T03" className="text-blue-600"> فاتورة إيصال (Receipt)   </SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {errors.invoice_type && <p className="text-red-600 text-sm mt-1">{errors.invoice_type}</p>}
+                    </div></>
+                }
                 <div>
                   <Label>طريقة الدفع </Label>
                   <Select value={data.payment_method} onValueChange={(v) => setData('payment_method', v)}>

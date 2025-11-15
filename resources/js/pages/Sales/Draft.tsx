@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import axios from "axios";
-import { toast ,Toaster } from "sonner";
+import { toast, Toaster } from "sonner";
 import { NumberDisplay } from "@/lib/utils";
 import { Link } from "@inertiajs/react";
 import { is } from "date-fns/locale";
@@ -31,29 +31,29 @@ export default function InvoiceDraft({ invoice }) {
   const inv = invoice || {};
   const items = inv.items || [];
   const eta_status = inv.eta_status; // 'draft', 'sent'
- const [isSent, setIsSent] = useState(eta_status)
+  const [isSent, setIsSent] = useState(eta_status)
 
- const handleToggleDelivery = async () => {
-  try {
-    if(isSent === 'sent'){
-      setIsSent(null);
-    }else{
-      setIsSent('sent');
+  const handleToggleDelivery = async () => {
+    try {
+      if (isSent === 'sent') {
+        setIsSent(null);
+      } else {
+        setIsSent('sent');
+      }
+
+      await axios.post(`/invoices/${invoice.id}/toggle-draft`, {
+        draft: isSent === 'sent' ? null : 'sent',
+      });
+      toast.success("تم تحديث الحالة بنجاح");
+    } catch (err) {
+      toast.error("حدث خطأ أثناء تحديث الحالة");
     }
-   
-    await axios.post(`/invoices/${invoice.id}/toggle-draft`, {
-      draft: isSent === 'sent' ? null : 'sent',
-    });
-    toast.success("تم تحديث الحالة بنجاح");
-  } catch (err) {
-    toast.error("حدث خطأ أثناء تحديث الحالة");
-  }
-};
+  };
 
 
   return (
     <div className="max-w-6xl mx-auto p-6" dir="rtl">
-           <Toaster />
+      <Toaster />
       <Card className="shadow-md">
         <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -62,9 +62,9 @@ export default function InvoiceDraft({ invoice }) {
               <Badge variant="secondary">{inv.document_type || 'I'}</Badge>
               <Badge variant="outline">{inv.invoice_type || 'T01'}</Badge>
               <div className="flex items-center gap-2" dir="ltr">
-                             <Switch id="delivered" checked={isSent === 'sent'} onCheckedChange={handleToggleDelivery} className="data-[state=checked]:bg-green-500" />
-                             <Label className="text-sm">{inv.eta_status === 'sent' || isSent === 'sent' ? 'تم الإرسال للمنظومة' : 'لم يتم الإرسال للمنظومة'}</Label>
-                           </div>
+                <Switch id="delivered" checked={isSent === 'sent'} onCheckedChange={handleToggleDelivery} className="data-[state=checked]:bg-green-500" />
+                <Label className="text-sm">{inv.eta_status === 'sent' || isSent === 'sent' ? 'تم الإرسال للمنظومة' : 'لم يتم الإرسال للمنظومة'}</Label>
+              </div>
             </div>
           </div>
 
@@ -76,7 +76,7 @@ export default function InvoiceDraft({ invoice }) {
 
             <div className="flex items-center gap-3">
               <Avatar className="w-10 h-10">
-                {inv.user?.avatar ? <AvatarImage src={inv.user.avatar} alt={inv.user?.name} /> : <AvatarFallback>{(inv.user?.name || 'U').slice(0,2)}</AvatarFallback>}
+                {inv.user?.avatar ? <AvatarImage src={inv.user.avatar} alt={inv.user?.name} /> : <AvatarFallback>{(inv.user?.name || 'U').slice(0, 2)}</AvatarFallback>}
               </Avatar>
               <div className="text-right">
                 <div className="text-xs text-muted-foreground">المستخدم</div>
@@ -93,20 +93,24 @@ export default function InvoiceDraft({ invoice }) {
             <div>
               <h4 className="text-sm font-semibold mb-2">العميل</h4>
               <div className="text-sm"> اسم العميل : {inv.customer?.name ?? '-'}</div>
-              <div> رقم التليفون : <span  className="text-sm text-muted-foreground">{inv.customer?.phone ?? ''}</span></div>
-              <div className="text-sm "> البريد الإلكتروني : <span  className="text-sm text-muted-foreground">{inv.customer?.email ?? ''}</span></div>
-              <div className="text-sm ">العنوان : <span  className="text-sm text-muted-foreground">{inv.customer?.address ?? ''}</span></div>
-              <div className="text-sm ">الرقم الضريبى : <span  className="text-sm text-muted-foreground">{inv.customer?.tax_id ?? ''}</span></div>
+              <div> رقم التليفون : <span className="text-sm text-muted-foreground">{inv.customer?.phone ?? ''}</span></div>
+              <div className="text-sm "> البريد الإلكتروني : <span className="text-sm text-muted-foreground">{inv.customer?.email ?? ''}</span></div>
+              <div className="text-sm ">العنوان : <span className="text-sm text-muted-foreground">{inv.customer?.address ?? ''}</span></div>
+              <div className="text-sm ">الرقم الضريبى : <span className="text-sm text-muted-foreground">{inv.customer?.tax_id ?? ''}</span></div>
             </div>
 
             <div>
               <h4 className="text-sm font-semibold mb-2">تفاصيل الفاتورة</h4>
-              <div className="text-sm">نوع المستند: <span className="font-medium">{inv.document_type ?? '-'}</span></div>
-              <div className="text-sm">نوع الفاتورة: <span className="font-medium">{inv.invoice_type ?? '-'}</span></div>
+              {inv.is_invoice &&
+                <>
+                  <div className="text-sm">نوع المستند: <span className="font-medium">{inv.document_type ?? '-'}</span></div>
+                  <div className="text-sm">نوع الفاتورة: <span className="font-medium">{inv.invoice_type ?? '-'}</span></div>
+                </>
+              }
               <div className="text-sm">طريقة الدفع: <span className="font-medium">{inv.payment_method ?? '-'}</span></div>
             </div>
 
-           
+
           </div>
 
           <div className="overflow-x-auto rounded-md border">
@@ -132,7 +136,7 @@ export default function InvoiceDraft({ invoice }) {
                     <TableCell>{row.description}</TableCell>
                     <TableCell className="text-right">{Number(row.qty ?? 0)}</TableCell>
                     <TableCell className="text-right">{Number(row.unit_price ?? 0).toFixed(2)}</TableCell>
-                    <TableCell className="text-right">{Number(row.total ?? (row.qty*row.unit_price) ).toFixed(2)}</TableCell>
+                    <TableCell className="text-right">{Number(row.total ?? (row.qty * row.unit_price)).toFixed(2)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -147,21 +151,21 @@ export default function InvoiceDraft({ invoice }) {
 
             <div className="space-y-2">
               <div className="flex justify-between"><span>الإجمالي (قبل الخصم):</span><span className="font-semibold">
-               {inv.subtotal}</span>
-               </div>
+                {inv.subtotal}</span>
+              </div>
 
               {Number(inv.discount_percentage ?? 0) > 0 && (
                 <>
-                <div className="flex justify-between"><span>قيمة الخصم ({Number(inv.discount_percentage).toFixed(0)} %):</span><span className="font-semibold">{(Number(inv.subtotal ?? 0) * Number(inv.discount_percentage ?? 0) / 100).toFixed(2)}</span></div><div className="flex justify-between"><span>بعد الخصم:</span><span className="font-semibold">
-                  {
-                  (parseFloat(inv.subtotal.replace(/,/g, '')) || 0) -
-                    ((parseFloat(inv.subtotal.replace(/,/g, '')) || 0) *
-                      ((inv.discount_percentage || 0) / 100))
-                      }
-                </span>
-                </div>
+                  <div className="flex justify-between"><span>قيمة الخصم ({Number(inv.discount_percentage).toFixed(0)} %):</span><span className="font-semibold">{(Number(inv.subtotal ?? 0) * Number(inv.discount_percentage ?? 0) / 100).toFixed(2)}</span></div><div className="flex justify-between"><span>بعد الخصم:</span><span className="font-semibold">
+                    {
+                      (parseFloat(inv.subtotal.replace(/,/g, '')) || 0) -
+                      ((parseFloat(inv.subtotal.replace(/,/g, '')) || 0) *
+                        ((inv.discount_percentage || 0) / 100))
+                    }
+                  </span>
+                  </div>
                 </>
-                   )}
+              )}
               <div className="flex justify-between"><span>الضريبة:</span><span className="font-semibold">{Number(inv.tax ?? 0).toFixed(2)}</span></div>
               {inv.other_tax > 0 && (
                 <div className="flex justify-between"><span>ضرائب أخرى خصم ({Number(inv.other_tax).toFixed(0)} %):</span><span className="font-semibold">{Number(inv.other_tax ?? 0).toFixed(2)}</span></div>
@@ -169,8 +173,8 @@ export default function InvoiceDraft({ invoice }) {
               <div className="flex justify-between"><span>المصروفات:</span><span className="font-semibold">{Number(inv.expenses ?? 0).toFixed(2)}</span></div>
               <Separator />
               <div className="flex justify-between text-lg font-bold"><span>الإجمالي النهائي:</span><span>
-             {inv.total_formatted}
-                </span></div>
+                {inv.total_formatted}
+              </span></div>
             </div>
           </div>
 
@@ -181,7 +185,7 @@ export default function InvoiceDraft({ invoice }) {
           </div>
         </CardContent>
       </Card>
-      
+
     </div>
   );
 }

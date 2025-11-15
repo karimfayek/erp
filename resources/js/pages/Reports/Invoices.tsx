@@ -223,7 +223,7 @@ const resetFilter = ()=>{
                                                 }
                                             </td>
                                             <td className="p-2">
-                                                {invoice.collected_number < invoice.total ?
+                                                {Number(invoice.collected) >= Number(invoice.total) ?
                                                     <Badge className="bg-green-100 text-green-700">تم </Badge>
                                                     :
                                                     <Badge className="bg-red-100 text-red-700"> جزئى</Badge>

@@ -1,5 +1,5 @@
 // resources/js/Pages/Inventory/TransferForm.tsx
-import { useForm } from '@inertiajs/react';
+import { router, useForm } from '@inertiajs/react';
 import { Button } from "@/components/ui/button";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,11 +16,16 @@ const breadcrumbs: BreadcrumbItem[] = [
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { can } from '@/utils/permissions';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+
 export default function TransferForm({ products, warehouses, movements }) {
   if (!can('Stock transfer')) {
     return false
   }
-  console.log(movements, 'movements')
+  const handlePageChange = (url) => {
+    if (!url) return;
+    router.get(url, {}, { preserveState: true, preserveScroll: false });
+  };
   const { data, setData, post, processing } = useForm({
     product_id: '',
     from_warehouse_id: '',
@@ -187,6 +192,24 @@ export default function TransferForm({ products, warehouses, movements }) {
               ))}
             </TableBody>
           </Table>
+            <div className="flex justify-center gap-2 pt-4 flex-wrap">
+        {movements.links.map((link, index) => (
+          <Button
+            key={index}
+            variant={link.active ? "default" : "outline"}
+            disabled={!link.url}
+            onClick={() => handlePageChange(link.url)}
+            className={`min-w-[40px] ${
+              link.active ? "bg-primary text-white" : ""
+            }`}
+          >
+            {link.label
+              .replace("&laquo;", "«")
+              .replace("&raquo;", "»")
+              .replace("&nbsp;", "")}
+          </Button>
+        ))}
+      </div>
         </div>
       }
     </AppLayout>

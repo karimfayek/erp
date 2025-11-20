@@ -1,5 +1,5 @@
-import { Head, Link,  usePage } from '@inertiajs/react';
-import {  Plus } from 'lucide-react';
+import { Head, Link, usePage } from '@inertiajs/react';
+import { Plus } from 'lucide-react';
 
 import { ArrowUpDown, MoreHorizontal } from "lucide-react"
 import { Button } from '@/components/ui/button';
@@ -29,7 +29,7 @@ import { DataTable } from '@/components/DataTable';
 import Delete from '@/components/includes/Delete';
 import { ColumnDef } from '@tanstack/react-table';
 import { Checkbox } from '@/components/ui/checkbox';
-
+import { User } from '@/types';
 type Customer = {
     id: number
     name: string
@@ -38,140 +38,141 @@ type Customer = {
     stock: number
 }
 
-export default function Customers() {
-    if(!can('Clients view')){
+export default function Customers({ users, user }: { users: User[], user: User }) {
+    if (!can('Clients view')) {
         return null
     }
     const { customers, flash, errors } = usePage().props;
     const [open, setOpen] = useState(false);
-    
 
-    
- const columns: ColumnDef<Customer>[] = [
-    {
-        id: "select",
-        header: ({ table }) => (
-            <Checkbox
-                checked={
-                    table.getIsAllPageRowsSelected() ||
-                    (table.getIsSomePageRowsSelected() && "indeterminate")
-                }
-                onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                aria-label="Select all"
-            />
-        ),
-        cell: ({ row }) => (
-            <Checkbox
-                checked={row.getIsSelected()}
-                onCheckedChange={(value) => row.toggleSelected(!!value)}
-                aria-label="Select row"
-            />
-        ),
-        enableSorting: false,
-        enableHiding: false,
-    },
-       {
-    accessorKey: "name",
-    header: "الاسم",
-    cell: info => <span className="font-medium">{info.getValue()}</span>,
-  },
-  {
-        accessorKey: "company_name",
-        header: ({ column }) => {
-            return (
-                <Button
-                    variant="ghost"
-                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                >
-                    اسم الشركة
-                    <ArrowUpDown />
-                </Button>
-            )
+
+
+    const columns: ColumnDef<Customer>[] = [
+        {
+            id: "select",
+            header: ({ table }) => (
+                <Checkbox
+                    checked={
+                        table.getIsAllPageRowsSelected() ||
+                        (table.getIsSomePageRowsSelected() && "indeterminate")
+                    }
+                    onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                    aria-label="Select all"
+                />
+            ),
+            cell: ({ row }) => (
+                <Checkbox
+                    checked={row.getIsSelected()}
+                    onCheckedChange={(value) => row.toggleSelected(!!value)}
+                    aria-label="Select row"
+                />
+            ),
+            enableSorting: false,
+            enableHiding: false,
         },
-        cell: ({ row }) => <div>{row.getValue("company_name")}</div>,
-    },
-     {
-        accessorKey: "discount_percentage",
-        header: ({ column }) => {
-            return (
-                <Button
-                    variant="ghost"
-                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                >
-                   نسبة الخصم
-                    <ArrowUpDown />
-                </Button>
-            )
+        {
+            accessorKey: "name",
+            header: "الاسم",
+            cell: info => <span className="font-medium">{info.getValue()}</span>,
         },
-        cell: ({ row }) => <div>{row.getValue("discount_percentage")}</div>,
-    },
-    {
-        accessorKey: "phone",
-        header: ({ column }) => {
-            return (
-                <Button
-                    variant="ghost"
-                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                >
-                   رقم التليفون
-                    <ArrowUpDown />
-                </Button>
-            )
+        {
+            accessorKey: "company_name",
+            header: ({ column }) => {
+                return (
+                    <Button
+                        variant="ghost"
+                        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                    >
+                        اسم الشركة
+                        <ArrowUpDown />
+                    </Button>
+                )
+            },
+            cell: ({ row }) => <div>{row.getValue("company_name")}</div>,
         },
-        cell: ({ row }) => <div>{row.getValue("phone")}</div>,
-    },
-    {
-        accessorKey: "user.name",
-        header: ({ column }) => {
-            return (
-                <Button
-                    variant="ghost"
-                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                >
-                  بواسطة
-                    <ArrowUpDown />
-                </Button>
-            )
+        {
+            accessorKey: "phone",
+            header: ({ column }) => {
+                return (
+                    <Button
+                        variant="ghost"
+                        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                    >
+                        رقم التليفون
+                        <ArrowUpDown />
+                    </Button>
+                )
+            },
+            cell: ({ row }) => <div>{row.getValue("phone")}</div>,
         },
-         cell: ({ row }) => <div>{row.original.user?.name}</div>,
-    },
-     {
-        id: "actions",
-        enableHiding: false,
-        cell: ({ row }) => {
-            const customer = row.original
-            return (
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
-                            <MoreHorizontal />
-                        </Button>
-                    </DropdownMenuTrigger>
-
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-
-                        {can('Clients edit') &&
-
-                            <DropdownMenuItem asChild>
-                                <Link href={route("customers.edit", customer.id)}>
-                                    تعديل
-                                </Link>
-                            </DropdownMenuItem>
-                        }
-
-
-                        <DropdownMenuSeparator />
-                        {can('Clients delete') &&
-                            <Delete id={customer.id} routeName={"customers.destroy"} />
-                        }
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            )
+        {
+            accessorKey: "user.name",
+            header: ({ column }) => {
+                return (
+                    <Button
+                        variant="ghost"
+                        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                    >
+                        تابع ل
+                        <ArrowUpDown />
+                    </Button>
+                )
+            },
+            cell: ({ row }) => <div>{row.original.user?.name}</div>,
         },
-    },
-]
+
+        {
+            accessorKey: "creator.name",
+            header: ({ column }) => {
+                return (
+                    <Button
+                        variant="ghost"
+                        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                    >
+                        بواسطة
+                        <ArrowUpDown />
+                    </Button>
+                )
+            },
+            cell: ({ row }) => <div>{row.original.creator?.name}</div>,
+        },
+        {
+            id: "actions",
+            enableHiding: false,
+            cell: ({ row }) => {
+                const customer = row.original
+                return (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                                <span className="sr-only">Open menu</span>
+                                <MoreHorizontal />
+                            </Button>
+                        </DropdownMenuTrigger>
+
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+
+                            {can('Clients edit') &&
+
+                                <DropdownMenuItem asChild>
+                                    <Link href={route("customers.edit", customer.id)}>
+                                        تعديل
+                                    </Link>
+                                </DropdownMenuItem>
+                            }
+
+
+                            <DropdownMenuSeparator />
+                            {can('Clients delete') &&
+                                <Delete id={customer.id} routeName={"customers.destroy"} />
+                            }
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                )
+            },
+        },
+    ]
 
     return (
 
@@ -187,24 +188,24 @@ export default function Customers() {
             <div className="mt-6  p-4 rounded shadow">
                 <div className='mb-4'>
                     {can('Clients create') &&
-                    
-                    <Button variant="outline" size="sm">
-                        <Plus />
-                        <span className="hidden lg:inline" onClick={() => setOpen(true)}>اضافه عميل </span>
-                    </Button>
+
+                        <Button variant="outline" size="sm">
+                            <Plus />
+                            <span className="hidden lg:inline" onClick={() => setOpen(true)}>اضافه عميل </span>
+                        </Button>
                     }
                 </div>
-                
-                                <DataTable columns={columns} data={customers} />
+
+                <DataTable columns={columns} data={customers} />
             </div>
 
             <Dialog open={open} onOpenChange={setOpen}>
-                 <DialogContent className='sm:max-w-[90vw] lg:max-w-[1400px] w-full h-auto max-h-[90vh] overflow-y-auto p-6' dir='rtl'>
-                      <DialogHeader>
+                <DialogContent className='sm:max-w-[90vw] lg:max-w-[1400px] w-full h-auto max-h-[90vh] overflow-y-auto p-6' dir='rtl'>
+                    <DialogHeader>
                         <DialogTitle>إضافة عميل جديد</DialogTitle>
                     </DialogHeader>
 
-                    <NewCustomer onCreated={() => setOpen(false)} />
+                    <NewCustomer onCreated={() => setOpen(false)} users={users} user={user} />
 
                 </DialogContent>
             </Dialog>

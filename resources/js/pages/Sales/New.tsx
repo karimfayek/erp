@@ -99,7 +99,7 @@ export default function SalesCreate() {
   const addTechnician = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     // استخدم setData من useForm بشكل صريح لتجنب stale state
-    const newList = [...(data.technicians || []), { technician_id: '', commission_percent: 0 , transportation :0}];
+    const newList = [...(data.technicians || []), { technician_id: '', commission_percent: 0, transportation: 0 }];
     setData('technicians', newList);
   };
 
@@ -113,7 +113,7 @@ export default function SalesCreate() {
   const updateTechnician = (index, field, value) => {
     const newList = [...(data.technicians || [])];
     // تأكد أن العنصر موجود
-    if (!newList[index]) newList[index] = { technician_id: '', commission_percent: 0 , transportation :0};
+    if (!newList[index]) newList[index] = { technician_id: '', commission_percent: 0, transportation: 0 };
     // لو الحقل نسبة العمولة حول القيمة لرقم
     if (field === 'commission_percent') {
       // نقبل قيم عشرية
@@ -311,7 +311,7 @@ export default function SalesCreate() {
         return {
           ...prev,
           customer_id: String(customerId),
-          discount_percentage: selected ? selected.discount_percentage ||  0 : prev.discount_percentage
+          discount_percentage: selected ? selected.discount_percentage || 0 : prev.discount_percentage
         };
       });
     }
@@ -374,7 +374,7 @@ export default function SalesCreate() {
       ...prev,
       items: items,
       tax: +taxAmount.toFixed(2),
-      other_tax_val : +OtherTaxAmount.toFixed(2),
+      other_tax_val: +OtherTaxAmount.toFixed(2),
       subtotal: +subtotal.toFixed(2),
       total: +grandTotal.toFixed(2),
       postponed: +postponed.toFixed(2),
@@ -382,19 +382,19 @@ export default function SalesCreate() {
   }, [items, taxAmount, subtotal, postponed]);
   const submit = (e) => {
     e.preventDefault();
-    if(data.technicians.length === 0 && maintainance){
+    if (data.technicians.length === 0 && maintainance) {
       const proceed = window.confirm("⚠️ لم تضف أى فنى ,هل تريد المتابعة رغم ذلك؟");
-    if (!proceed) {
-      
-      return;
-    }
+      if (!proceed) {
+
+        return;
+      }
     }
     const payload = {
       ...data,
       tax: +taxAmount.toFixed(2),
       subtotal: +subtotal.toFixed(2),
       total: +grandTotal.toFixed(2),
-      other_tax_val : +OtherTaxAmount.toFixed(2),
+      other_tax_val: +OtherTaxAmount.toFixed(2),
       postponed: +postponed.toFixed(2),
       items: items.map(({ tempId, ...r }) => ({
         ...r,
@@ -405,7 +405,7 @@ export default function SalesCreate() {
       })),
     };
 
-    console.log(payload , 'payload');
+    console.log(payload, 'payload');
     if (payload.items.length === 0 || payload.items.every((r) => !r.product_id && !r.description)) {
       toast("أضف صنفًا واحدًا على الأقل");
 
@@ -418,7 +418,7 @@ export default function SalesCreate() {
       onSuccess: () => {
         toast("تم حفظ عملية البيع بنجاح");
         reset();
-        setItems([{ tempId: generateId(),replacing:false, product_id: "", product_code: "", serial_number: "", description: "", qty: 1, inv: userInventory, unit_price: 0, total: 0 }]);
+        setItems([{ tempId: generateId(), replacing: false, product_id: "", product_code: "", serial_number: "", description: "", qty: 1, inv: userInventory, unit_price: 0, total: 0 }]);
       },
     });
   };
@@ -469,22 +469,22 @@ export default function SalesCreate() {
                   {errors.date && <p className="text-red-600 text-sm mt-1">{errors.date}</p>}
                 </div>
                 {data.is_invoice &&
-                
-                <>
-                <div>
-                    <Label>نوع المستند</Label>
-                    <Select value={data.document_type} onValueChange={(v) => setData('document_type', v)}>
-                      <SelectTrigger className="w-full"><SelectValue placeholder="اختر نوع المستتند" /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="I" className="text-blue-600">فاتورة ضريبية Invoice   </SelectItem>
-                        <SelectItem value="C" className="text-blue-600">إشعار دائن Credit Note  </SelectItem>
-                        <SelectItem value="D" className="text-blue-600"> إشعار مدين Debit Note   </SelectItem>
+
+                  <>
+                    <div>
+                      <Label>نوع المستند</Label>
+                      <Select value={data.document_type} onValueChange={(v) => setData('document_type', v)}>
+                        <SelectTrigger className="w-full"><SelectValue placeholder="اختر نوع المستتند" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="I" className="text-blue-600">فاتورة ضريبية Invoice   </SelectItem>
+                          <SelectItem value="C" className="text-blue-600">إشعار دائن Credit Note  </SelectItem>
+                          <SelectItem value="D" className="text-blue-600"> إشعار مدين Debit Note   </SelectItem>
 
 
-                      </SelectContent>
-                    </Select>
-                    {errors.document_type && <p className="text-red-600 text-sm mt-1">{errors.document_type}</p>}
-                  </div><div>
+                        </SelectContent>
+                      </Select>
+                      {errors.document_type && <p className="text-red-600 text-sm mt-1">{errors.document_type}</p>}
+                    </div><div>
                       <Label>نوع الفاتورة</Label>
                       <Select value={data.invoice_type} onValueChange={(v) => setData('invoice_type', v)}>
                         <SelectTrigger className="w-full"><SelectValue placeholder="اختر نوع المستتند" /></SelectTrigger>
@@ -549,57 +549,57 @@ export default function SalesCreate() {
                   />
                   <Label htmlFor="is_delivered">تم التسليم</Label>
                 </div>
-            
-                
+
+
               </div>
               {maintainance &&
-              
-                  <div className="mt-6 border-t pt-4">
+
+                <div className="mt-6 border-t pt-4">
                   <h3 className="text-lg font-semibold mb-2">الفنيين</h3>
                   <div className="grid grid-cols-4 gap-4 font-semibold mb-2">
-                      <Label>الفنى</Label>
-                       <Label>نسبه العمولة</Label>
-                       <Label> انتقالات</Label>
-                      <Label>حذف</Label>
-                    </div>
+                    <Label>الفنى</Label>
+                    <Label>نسبه العمولة</Label>
+                    <Label> انتقالات</Label>
+                    <Label>حذف</Label>
+                  </div>
                   {(data.technicians || []).map((tech, index) => (
                     <div key={tech.technician_id ? `t-${tech.technician_id}-${index}` : `t-index-${index}`} className="grid grid-cols-4 gap-4 mb-2">
                       {/* اختر الفني: نفعل stringify على القيم */}
                       <div>
 
-                      <Select
-                        value={tech.technician_id ? String(tech.technician_id) : ""}
-                        onValueChange={(v) => updateTechnician(index, 'technician_id', v)}
-                      >
-                        <SelectTrigger><SelectValue placeholder="اختر الفني" /></SelectTrigger>
-                        <SelectContent>
-                          {technicians.map((t) => (
-                            <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        <Select
+                          value={tech.technician_id ? String(tech.technician_id) : ""}
+                          onValueChange={(v) => updateTechnician(index, 'technician_id', v)}
+                        >
+                          <SelectTrigger><SelectValue placeholder="اختر الفني" /></SelectTrigger>
+                          <SelectContent>
+                            {technicians.map((t) => (
+                              <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
 
                       {/* نسبة العمولة - نخلي القيمة قابلة للكتابة ونحوّلها لرقم */}
                       <div>
-                      <Input
-                        type="number"
-                        placeholder="نسبة العمولة %"
-                        //onmousewheel dont change number
-                        onWheel={(e) =>e.target.blur()} 
-                        value={tech.commission_percent !== undefined ? tech.commission_percent : ''}
-                        onChange={(e) => updateTechnician(index, 'commission_percent', e.target.value)}
-                      />
+                        <Input
+                          type="number"
+                          placeholder="نسبة العمولة %"
+                          //onmousewheel dont change number
+                          onWheel={(e) => e.target.blur()}
+                          value={tech.commission_percent !== undefined ? tech.commission_percent : ''}
+                          onChange={(e) => updateTechnician(index, 'commission_percent', e.target.value)}
+                        />
                       </div>
-                        <div>
-                      <Input
-                        type="number"
-                        placeholder="الانتقالات"
-                        //onmousewheel dont change number
-                        onWheel={(e) =>e.target.blur()} 
-                        value={tech.transportation !== undefined ? tech.transportation : ''}
-                        onChange={(e) => updateTechnician(index, 'transportation', e.target.value)}
-                      />
+                      <div>
+                        <Input
+                          type="number"
+                          placeholder="الانتقالات"
+                          //onmousewheel dont change number
+                          onWheel={(e) => e.target.blur()}
+                          value={tech.transportation !== undefined ? tech.transportation : ''}
+                          onChange={(e) => updateTechnician(index, 'transportation', e.target.value)}
+                        />
                       </div>
 
                       {/* زر حذف - مهم: نوعه button حتى لا يرسل الفورم */}
@@ -616,7 +616,7 @@ export default function SalesCreate() {
                 <div>
                   <Label htmlFor="discount_percentage">نسبة الخصم %</Label>
                   <Input id="discount_percentage" type="number" step="1" value={data.discount_percentage}
-                   onWheel={(e) =>e.target.blur()} 
+                    onWheel={(e) => e.target.blur()}
                     onChange={(e) => setData((prev) => ({ ...prev, discount_percentage: e.target.value }))}
                   />
                 </div>
@@ -624,7 +624,7 @@ export default function SalesCreate() {
 
                   <><div>
                     <Label htmlFor="tax_percent">الضريبة %</Label>
-                    <Input id="tax_percent" type="number" step="1" value={data.is_invoice ? data.tax_percent : 0} onChange={(e) => setData("tax_percent", e.target.value)}  onWheel={(e) =>e.target.blur()}  />
+                    <Input id="tax_percent" type="number" step="1" value={data.is_invoice ? data.tax_percent : 0} onChange={(e) => setData("tax_percent", e.target.value)} onWheel={(e) => e.target.blur()} />
                   </div><div>
                       <Label htmlFor="tax_percent">ضرائب اخرى خصم   %</Label>
                       <Select value={data.is_invoice ? Number(data.other_tax || "") : 0} onValueChange={(v) => setData('other_tax', v)}>
@@ -644,8 +644,8 @@ export default function SalesCreate() {
                     {'مصروفات'}
                   </Label>
                   <Input
-                   onWheel={(e) =>e.target.blur()} 
-                  id="expenses" type="number" step="0.01" value={data.expenses} onChange={(e) => setData("expenses", e.target.value)} />
+                    onWheel={(e) => e.target.blur()}
+                    id="expenses" type="number" step="0.01" value={data.expenses} onChange={(e) => setData("expenses", e.target.value)} />
                 </div>
 
               </div>
@@ -653,9 +653,9 @@ export default function SalesCreate() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="collected">محصل (ما تم تحصيله)</Label>
-                  <Input 
-                   onWheel={(e) =>e.target.blur()} 
-                  id="collected" type="number" step="0.01" value={Number(data.collected).toFixed(2)} onChange={(e) => setData("collected", e.target.value)} />
+                  <Input
+                    onWheel={(e) => e.target.blur()}
+                    id="collected" type="number" step="0.01" value={Number(data.collected).toFixed(2)} onChange={(e) => setData("collected", e.target.value)} />
                 </div>
                 <div>
                   <Label>مؤجل (يُحسب تلقائيًا)</Label>
@@ -684,9 +684,9 @@ export default function SalesCreate() {
                         <TableHead>الكمية</TableHead>
                         <TableHead>سعر الوحدة</TableHead>
                         <TableHead>الإجمالي</TableHead>
-                         {maintainance && 
-                        <TableHead>بدل</TableHead>
-                         }
+                        {maintainance &&
+                          <TableHead>بدل</TableHead>
+                        }
                         <TableHead>إجراء</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -719,24 +719,24 @@ export default function SalesCreate() {
                           <TableCell>
                             <Input readOnly value={Number(row.total).toFixed(2)} />
                           </TableCell>
-                          {maintainance && 
-                          
-                           <TableCell>
-                           <Label className="hover:bg-accent/50 flex items-start gap-3 rounded-lg border p-3 has-[[aria-checked=true]]:border-blue-600 has-[[aria-checked=true]]:bg-blue-50 dark:has-[[aria-checked=true]]:border-blue-900 dark:has-[[aria-checked=true]]:bg-blue-950">
-                              <Checkbox
-                                id="replacing"
-                                 checked={!!row.replacing}                //  Boolean
-                                onCheckedChange={(checked) => {              // true أو false
-                                  updateRow(row.tempId, { replacing: checked }); 
-                                }}
-                                className="data-[state=checked]:border-blue-600 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white dark:data-[state=checked]:border-blue-700 dark:data-[state=checked]:bg-blue-700"
-                              />
-                              
-                            </Label>
-                          </TableCell>
+                          {maintainance &&
+
+                            <TableCell>
+                              <Label className="hover:bg-accent/50 flex items-start gap-3 rounded-lg border p-3 has-[[aria-checked=true]]:border-blue-600 has-[[aria-checked=true]]:bg-blue-50 dark:has-[[aria-checked=true]]:border-blue-900 dark:has-[[aria-checked=true]]:bg-blue-950">
+                                <Checkbox
+                                  id="replacing"
+                                  checked={!!row.replacing}                //  Boolean
+                                  onCheckedChange={(checked) => {              // true أو false
+                                    updateRow(row.tempId, { replacing: checked });
+                                  }}
+                                  className="data-[state=checked]:border-blue-600 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white dark:data-[state=checked]:border-blue-700 dark:data-[state=checked]:bg-blue-700"
+                                />
+
+                              </Label>
+                            </TableCell>
                           }
                           <TableCell>
-                             
+
                             <Button type="button" variant="destructive" onClick={() => removeRow(row.tempId)}>حذف</Button>
                           </TableCell>
                         </TableRow>
@@ -779,7 +779,7 @@ export default function SalesCreate() {
         </Card>
 
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogContent>
+          <DialogContent className='sm:max-w-[90vw] lg:max-w-[1400px] w-full h-auto max-h-[90vh] overflow-y-auto p-6' dir='rtl'>
             <DialogHeader>
               <DialogTitle>إضافة عميل جديد</DialogTitle>
             </DialogHeader>
@@ -800,6 +800,8 @@ export default function SalesCreate() {
                 // اقفل الـ dialog
                 setOpen(false);
               }}
+              users={users}
+              user={user}
             />
 
           </DialogContent>

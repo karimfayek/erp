@@ -33,6 +33,10 @@ class User extends Authenticatable
     ];
    public function customers()
         {
+         return $this->hasMany(Customer::class , 'user_id');
+        }
+        public function customersBy()
+        {
          return $this->hasMany(Customer::class , 'created_by');
         }
     // علاقات رول وصلاحيات

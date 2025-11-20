@@ -5,14 +5,31 @@ import { Input } from "@/components/ui/input";
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { can } from '@/utils/permissions';
+import { User } from '@/types';
 
+interface FormData {
+    name: string;
+    email: string;
+    phone: string;
+    discount_percentage: string;
+    country: string;
+    governate: string;
+    city: string;
+    street: string;
+    building_number: string;
+    type: string;
+    tax_id: string;
+    company_name: string;
+    address: string;
+    user_id: string;
+}
 
-export default function NewCustomer({ onCreated }) {
+export default function NewCustomer({ onCreated, users, user }: { onCreated: (customer: any) => void, users: User[], user: User }) {
     if (!can('Clients create')) {
         return null
     }
     const { errors } = usePage().props;
-    const { data, setData, post, reset } = useForm({
+    const { data, setData, post, reset } = useForm<FormData>({
         name: '',
         email: '',
         phone: '',
@@ -26,6 +43,7 @@ export default function NewCustomer({ onCreated }) {
         tax_id: '',
         company_name: '',
         address: '',
+        user_id: user?.id ? String(user.id) : '',
     });
     console.log(errors, 'errors')
     const submit = (e: any) => {
@@ -44,19 +62,35 @@ export default function NewCustomer({ onCreated }) {
             }
         });
     };
-    const handleTypeChange = (e) => {
-        setData('type', e)
-        if (e === 'F') {
-            setData('tax_id', '000000000')
+    const handleTypeChange = (value: string) => {
+        setData('type', value);
+        if (value === 'F') {
+            setData('tax_id', '000000000');
         } else {
-            setData('tax_id', '')
+            setData('tax_id', '');
         }
-    }
+    };
     return (
 
 
 
         <form onSubmit={submit} className="space-y-2 p-4 rounded shadow md:grid grid-cols-2  gap-2">
+            {can('Invoice for others') &&
+
+                <div>
+                    <Label>
+                        تابع للمندوب
+                    </Label>
+                    <Select value={String(data.user_id || "")} onValueChange={(value) => setData('user_id', value)} required >
+                        <SelectTrigger className="w-full"><SelectValue placeholder=" تابع للمندوب " /></SelectTrigger>
+                        <SelectContent>
+                            {users?.map((user) => (
+                                <SelectItem key={user.id} value={String(user.id)}>{user.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+            }
             <div>
                 <Label>
                     اسم العميل
@@ -68,7 +102,7 @@ export default function NewCustomer({ onCreated }) {
                     اسم الشركة
                 </Label>
                 <Input placeholder="اسم الشركة" value={data.company_name} onChange={e => setData('company_name', e.target.value)}
-                  required={data.type === 'B'}
+                    required={data.type === 'B'}
                 />
             </div>
             <div>
@@ -93,7 +127,7 @@ export default function NewCustomer({ onCreated }) {
 
                     }
                 </Label>
-                <Input type="number" value={data.tax_id} onChange={e => setData('tax_id', e.target.value)} required/>
+                <Input type="number" value={data.tax_id} onChange={e => setData('tax_id', e.target.value)} required />
 
             </div>
             <div>
@@ -115,7 +149,7 @@ export default function NewCustomer({ onCreated }) {
                 <Input type="text" placeholder="التليفون" value={data.phone} onChange={e => setData('phone', e.target.value)} required />
             </div>
 
-            <div>
+            {/*<div>
                 <Label>
                     الدولة
                 </Label>
@@ -141,10 +175,10 @@ export default function NewCustomer({ onCreated }) {
                 </Label>
                 <Input type="number" placeholder="رقم المبنى" value={data.building_number} onChange={e => setData('building_number', e.target.value)} />
             </div>
-            
+            */}
             <div>
                 <Label>
-                   العنوان الكامل
+                    العنوان الكامل
                 </Label>
                 <Input type="text" placeholder="العنوان الكامل" value={data.address} onChange={e => setData('address', e.target.value)} />
             </div>

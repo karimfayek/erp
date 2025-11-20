@@ -14,6 +14,7 @@ import {
   CommandItem,
 } from "@/components/ui/command";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "./ui/scroll-area";
 
 export default function CustomerCombobox({ customersList, data, handleCustomerChange }) {
   const [open, setOpen] = useState(false);
@@ -40,37 +41,41 @@ export default function CustomerCombobox({ customersList, data, handleCustomerCh
           <CommandEmpty>لا يوجد نتائج.</CommandEmpty>
 
           <CommandGroup>
-            {customersList.map((c) => (
+            <ScrollArea className="h-24">
+
+              {/* زر إضافة عميل جديد */}
               <CommandItem
-                key={c.id}
-                 value={`${c.name} ${c.phone || ""} ${c.email || ""} ${c.address || ""}`}
+                value="new"
                 onSelect={() => {
+                  handleCustomerChange("new");
+                  setOpen(false);
+                }}
+                className="text-blue-600"
+              >
+                <PlusCircle className="mr-2 h-4 w-4" /> + إضافة عميل جديد
+              </CommandItem>
+              {customersList.map((c) => (
+                <CommandItem
+                  key={c.id}
+                  value={`${c.name} ${c.phone || ""} ${c.email || ""} ${c.address || ""}`}
+                  onSelect={() => {
                     const customer = customersList.find((x) => x.name === c.name);
                     handleCustomerChange(customer ? String(customer.id) : "");
                     setOpen(false);
-                }}
-              >
-                 <Check
-                className={cn(
-                "mr-2 h-4 w-4",
-                String(data.customer_id) === String(c.id) ? "opacity-100" : "opacity-0"
-                )}
-            />
-                {c.name}
-              </CommandItem>
-            ))}
+                  }}
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      String(data.customer_id) === String(c.id) ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                  {c.name}
+                </CommandItem>
+              ))}
 
-            {/* زر إضافة عميل جديد */}
-            <CommandItem
-              value="new"
-              onSelect={() => {
-                handleCustomerChange("new");
-                setOpen(false);
-              }}
-              className="text-blue-600"
-            >
-              <PlusCircle className="mr-2 h-4 w-4" /> + إضافة عميل جديد
-            </CommandItem>
+
+            </ScrollArea>
           </CommandGroup>
         </Command>
       </PopoverContent>

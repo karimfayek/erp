@@ -10,11 +10,11 @@ class CustomerController extends Controller
 {
     public function index()
     {
-        $customers = Customer::all();
-        foreach ($customers as $customer) {
-            $customer->user_id = $customer->created_by;
-            $customer->save();
-        }
+        /*  $customers = Customer::all();
+         foreach($customers as $customer){
+             $customer->user_id = $customer->created_by;
+             $customer->save();
+         } */
         $user = auth()->user();
         $users = User::where('type', 'user')->get();
         $roleSlugs = $user->roles->pluck('slug')->toArray();

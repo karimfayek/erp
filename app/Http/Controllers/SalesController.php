@@ -260,10 +260,20 @@ class SalesController extends Controller
                                     ->paginate(50);
                     } else {
                         // غير درافت: يرى فقط فواتيره الخاصة
-                        $sales = $query->where('user_id', $user->id)
+                        if($user->hasPermission('invoices.show.others')){
+                            
+                        $sales = $query->where('created_by', $user->id)->orWhere('user_id', $user->id)
                                     ->with(['customer', 'user', 'creator'])
                                     ->latest()
                                     ->paginate(50);
+
+                        }else {
+                            $sales = $query->where('user_id', $user->id)
+                            ->with(['customer', 'user', 'creator'])
+                            ->latest()
+                            ->paginate(50);
+                        }
+                        
                     }
                 } else {
                     // ليس له أي صلاحية على فروع أخرى → يرى فواتيره الخاصة فقط

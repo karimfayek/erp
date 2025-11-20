@@ -11,8 +11,9 @@ import { format } from "date-fns";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import AppLayout from "@/layouts/app-layout";
 import { Link, router } from "@inertiajs/react";
+import { can } from "@/utils/permissions";
 
-export default function InvoiceReports({ invoices, reps, branches, customers ,info }) {
+export default function InvoiceReports({ invoices, reps, branches, customers, info }) {
     console.log(invoices, 'inv')
     const [filters, setFilters] = useState({
         status: "",
@@ -23,33 +24,33 @@ export default function InvoiceReports({ invoices, reps, branches, customers ,in
         from_date: "",
         to_date: "",
     });
-const resetFilter = ()=>{
-    setFilters({
-         status: "",
-        rep: "all",
-        branch: "all",
-        search: "",
-        customer: "all",
-        from_date: "",
-        to_date: "",
-    })
-    router.get(route("reports.invoices"), {
-         status: "",
-        rep: "all",
-        branch: "all",
-        search: "",
-        customer: "all",
-        from_date: "",
-        to_date: "",
-    }, { preserveState: true })
-}
+    const resetFilter = () => {
+        setFilters({
+            status: "",
+            rep: "all",
+            branch: "all",
+            search: "",
+            customer: "all",
+            from_date: "",
+            to_date: "",
+        })
+        router.get(route("reports.invoices"), {
+            status: "",
+            rep: "all",
+            branch: "all",
+            search: "",
+            customer: "all",
+            from_date: "",
+            to_date: "",
+        }, { preserveState: true })
+    }
     const handleFilterChange = (key, value) => {
         setFilters({ ...filters, [key]: value });
     };
-  const handlePageChange = (url) => {
-    if (!url) return;
-    router.get(url, {}, { preserveState: true, preserveScroll: true });
-  };
+    const handlePageChange = (url) => {
+        if (!url) return;
+        router.get(url, {}, { preserveState: true, preserveScroll: true });
+    };
     return (
         <AppLayout>
             <div className="p-6 space-y-6" >
@@ -79,6 +80,7 @@ const resetFilter = ()=>{
                                 <SelectValue placeholder="المندوب" />
                             </SelectTrigger>
                             <SelectContent>
+
                                 <SelectItem value={'all'}>{'الكل'}</SelectItem>
                                 {reps.map((r) => (
                                     <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
@@ -102,7 +104,9 @@ const resetFilter = ()=>{
                                 <SelectValue placeholder="الفرع" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value={'all'}>{'الكل'}</SelectItem>
+                                {can('bypass') && (
+                                    <SelectItem value={'all'}>{'الكل'}</SelectItem>
+                                )}
                                 {branches.map((p) => (
                                     <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                                 ))}
@@ -110,75 +114,75 @@ const resetFilter = ()=>{
                         </Select>
 
                         <div className="flex items-center gap-2">
-                            <Search className="h-4 w-4 text-gray-500" />
+                            <Search className="h-4 w-4 " />
                             <Input
                                 placeholder="بحث عن عميل أو رقم فاتورة"
                                 value={filters.search}
                                 onChange={(e) => handleFilterChange("search", e.target.value)}
                             />
                         </div>
-<div className="flex gap-2 col-span-3">
-<Popover>
-  <PopoverTrigger asChild>
-    <Button
-      variant="outline"
-      className="w-[200px] justify-start text-left font-normal"
-    >
-      <CalendarIcon className="mr-2 h-4 w-4" />
-      {filters.from_date
-        ? format(new Date(filters.from_date), "yyyy-MM-dd")
-        : "من تاريخ"}
-    </Button>
-  </PopoverTrigger>
-  <PopoverContent
-    className="w-auto p-0"
-    align="start"
-    sideOffset={8}
-  >
-    <Calendar
-     className="rounded-md border shadow-lg w-[300px]"
-      mode="single"
-      selected={filters.from_date ? new Date(filters.from_date) : undefined}
-      onSelect={(date) => handleFilterChange("from_date", format(date, "yyyy-MM-dd"))}
-    />
-  </PopoverContent>
-</Popover>
+                        <div className="flex gap-2 col-span-3">
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        className="w-[200px] justify-start text-left font-normal"
+                                    >
+                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                        {filters.from_date
+                                            ? format(new Date(filters.from_date), "yyyy-MM-dd")
+                                            : "من تاريخ"}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent
+                                    className="w-auto p-0"
+                                    align="start"
+                                    sideOffset={8}
+                                >
+                                    <Calendar
+                                        className="rounded-md border shadow-lg w-[300px]"
+                                        mode="single"
+                                        selected={filters.from_date ? new Date(filters.from_date) : undefined}
+                                        onSelect={(date) => handleFilterChange("from_date", format(date, "yyyy-MM-dd"))}
+                                    />
+                                </PopoverContent>
+                            </Popover>
 
-<Popover>
-  <PopoverTrigger asChild>
-    <Button
-      variant="outline"
-      className="w-[200px] justify-start text-left font-normal"
-    >
-      <CalendarIcon className="mr-2 h-4 w-4" />
-      {filters.to_date
-        ? format(new Date(filters.to_date), "yyyy-MM-dd")
-        : "إلى تاريخ"}
-    </Button>
-  </PopoverTrigger>
-  <PopoverContent className="w-auto p-0" align="start">
-    <Calendar
-     className="rounded-md border shadow-lg w-[300px]"
-      mode="single"
-      selected={filters.to_date ? new Date(filters.to_date) : undefined}
-      onSelect={(date) => handleFilterChange("to_date", format(date, "yyyy-MM-dd"))}
-    />
-  </PopoverContent>
-</Popover>
-</div>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        className="w-[200px] justify-start text-left font-normal"
+                                    >
+                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                        {filters.to_date
+                                            ? format(new Date(filters.to_date), "yyyy-MM-dd")
+                                            : "إلى تاريخ"}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                    <Calendar
+                                        className="rounded-md border shadow-lg w-[300px]"
+                                        mode="single"
+                                        selected={filters.to_date ? new Date(filters.to_date) : undefined}
+                                        onSelect={(date) => handleFilterChange("to_date", format(date, "yyyy-MM-dd"))}
+                                    />
+                                </PopoverContent>
+                            </Popover>
+                        </div>
                         <Button
-                            className="bg-primary text-white"
+                            className="bg-primary "
                             onClick={() => {
                                 router.get(route("reports.invoices"), filters, { preserveState: true });
                             }}
                         >
                             تطبيق الفلاتر
                         </Button>
-                         <Button
-                            className="bg-red-600 text-white"
+                        <Button
+                            className="bg-red-600 "
                             onClick={() => resetFilter()}
                         >
-                          اعادة الفلاتر
+                            اعادة الفلاتر
                         </Button>
                     </CardContent>
                 </Card>
@@ -190,7 +194,7 @@ const resetFilter = ()=>{
                     </CardHeader>
                     <CardContent>
                         <div className="overflow-x-auto">
-                            <table className="min-w-full text-sm text-gray-700">
+                            <table className="min-w-full text-sm ">
                                 <thead className="bg-gray-100 text-gray-900">
                                     <tr>
                                         <th className="p-2 text-right">#</th>
@@ -208,7 +212,7 @@ const resetFilter = ()=>{
                                 </thead>
                                 <tbody>
                                     {invoices.data.map((invoice, i) => (
-                                        <tr key={invoice.id} className="border-b hover:bg-gray-50">
+                                        <tr key={invoice.id} className="border-b hover:bg-gray-20">
                                             <td className="p-2">{invoice.invoice_number}</td>
                                             <td className="p-2">{invoice.customer?.name}</td>
                                             <td className="p-2"> {new Date(invoice.date).toLocaleDateString("ar-EG")}</td>
@@ -229,21 +233,21 @@ const resetFilter = ()=>{
                                                     <Badge className="bg-red-100 text-red-700"> جزئى</Badge>
                                                 }
                                             </td>
-                                              <td className="p-2">
-                                                { invoice.collected  }
+                                            <td className="p-2">
+                                                {invoice.collected}
                                             </td>
-                                             <td className="p-2">
+                                            <td className="p-2">
                                                 {Number(invoice.postponed).toFixed(2)
-                                                      }
+                                                }
                                             </td>
                                             <td className="p-2">
                                                 <Button variant="outline" size="sm">
                                                     <Link href={"/invoice/" + invoice.id}>
-                                                    عرض الفاتورة
+                                                        عرض الفاتورة
                                                     </Link>
-                                                    
+
                                                 </Button>
-                                                
+
                                             </td>
                                         </tr>
                                     ))}
@@ -252,12 +256,12 @@ const resetFilter = ()=>{
                         </div>
                     </CardContent>
                 </Card>
-            <Card>
-                <CardHeader>
+                <Card>
+                    <CardHeader>
                         <CardTitle className="text-lg font-semibold"> معلومات</CardTitle>
                     </CardHeader>
-                <CardContent>
-                    <div className="flex gap-3">
+                    <CardContent>
+                        <div className="flex gap-3">
                             <div className="flex flex-col">
                                 <b>عدد الفواتير المفلترة</b>
                                 <p>{invoices?.total}</p>
@@ -267,41 +271,40 @@ const resetFilter = ()=>{
                                 <p>{Number(info?.invoicesTotals).toFixed(2)}</p>
                             </div>
                             <div className="flex flex-col">
-                            <b>  اجمالى المبلغ المحصل</b>
-                            <p>{info?.collected}</p>
-                        </div>
-                         <div className="flex flex-col">
-                            <b>  اجمالى المبلغ المؤجل</b>
-                            <p>{Number(info?.postponed).toFixed(2)}</p>
-                        </div>
-                         <div className="flex flex-col">
-                            <b>  اجمالى  المصاريف</b>
-                            <p>{info?.expenses}</p>
+                                <b>  اجمالى المبلغ المحصل</b>
+                                <p>{info?.collected}</p>
+                            </div>
+                            <div className="flex flex-col">
+                                <b>  اجمالى المبلغ المؤجل</b>
+                                <p>{Number(info?.postponed).toFixed(2)}</p>
+                            </div>
+                            <div className="flex flex-col">
+                                <b>  اجمالى  المصاريف</b>
+                                <p>{info?.expenses}</p>
+                            </div>
+
                         </div>
 
-                    </div>
-
-                </CardContent>
-            </Card>
-            <div className="flex justify-center gap-2 pt-4 flex-wrap">
-        {invoices.links.map((link, index) => (
-          <Button
-            key={index}
-            variant={link.active ? "default" : "outline"}
-            disabled={!link.url}
-            onClick={() => handlePageChange(link.url)}
-            className={`min-w-[40px] ${
-              link.active ? "bg-primary text-white" : ""
-            }`}
-          >
-            {link.label
-              .replace("&laquo;", "«")
-              .replace("&raquo;", "»")
-              .replace("&nbsp;", "")}
-          </Button>
-        ))}
-      </div>
-    </div>
+                    </CardContent>
+                </Card>
+                <div className="flex justify-center gap-2 pt-4 flex-wrap">
+                    {invoices.links.map((link, index) => (
+                        <Button
+                            key={index}
+                            variant={link.active ? "default" : "outline"}
+                            disabled={!link.url}
+                            onClick={() => handlePageChange(link.url)}
+                            className={`min-w-[40px] ${link.active ? "bg-primary " : ""
+                                }`}
+                        >
+                            {link.label
+                                .replace("&laquo;", "«")
+                                .replace("&raquo;", "»")
+                                .replace("&nbsp;", "")}
+                        </Button>
+                    ))}
+                </div>
+            </div>
         </AppLayout>
     );
 }

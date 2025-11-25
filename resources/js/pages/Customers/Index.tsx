@@ -38,11 +38,13 @@ type Customer = {
     stock: number
 }
 
-export default function Customers({ users, user }: { users: User[], user: User }) {
+export default function Customers({ users, user, customers }: { users: User[], user: User, customers: Customer[] }) {
     if (!can('Clients view')) {
         return null
     }
-    const { customers, flash, errors } = usePage().props;
+    const { flash, errors } = usePage().props;
+
+    console.log(customers, 'customers')
     const [open, setOpen] = useState(false);
 
 

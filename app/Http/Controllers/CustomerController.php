@@ -20,7 +20,7 @@ class CustomerController extends Controller
         $roleSlugs = $user->roles->pluck('slug')->toArray();
         $isSuperAdmin = in_array('super-admin', $roleSlugs, true);
         if ($isSuperAdmin) {
-            $customers = Customer::with('user')->latest()->get();
+            $customers = Customer::with('user', 'creator')->latest()->get();
 
         } else {
             if ($user->hasPermission('clients.show.others')) {

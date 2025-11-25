@@ -2,7 +2,8 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts"
-import { useForm } from "@inertiajs/react"
+import { Link, useForm } from "@inertiajs/react"
+import { can } from "@/utils/permissions"
 
 export default function Dashboard({ totalSales, dailySales, userSales, latestInvoices, filters }) {
   const { data, setData, get } = useForm({
@@ -74,7 +75,7 @@ export default function Dashboard({ totalSales, dailySales, userSales, latestInv
             <BarChart data={userSales}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="user" />
-             <YAxis domain={[0, (dataMax) => dataMax * 1.2]} />
+              <YAxis domain={[0, (dataMax) => dataMax * 1.2]} />
               <Tooltip />
               <Bar dataKey="total" fill="#82ca9d" />
             </BarChart>
@@ -99,9 +100,19 @@ export default function Dashboard({ totalSales, dailySales, userSales, latestInv
               {latestInvoices.map((inv) => (
                 <tr key={inv.id}>
                   <td className="p-2 border">{inv.id}</td>
-                  <td className="p-2 border">{inv.customer?.name || "-"}</td>
+                  <td className="p-2 border">
+                    {can('Clients edit') ?
+                      <Link href={route("customers.edit", inv.customer.id)} className="text-blue-500 hover:underline">
+                        {inv.customer?.company_name || inv.customer?.name}
+                      </Link>
+                      :
+                      <span className="text-gray-600">{inv.customer?.company_name || inv.customer?.name}</span>
+                    }
+
+
+                  </td>
                   <td className="p-2 border">{inv.subtotal}</td>
-                    <td className="p-2 border">{new Date(inv.created_at).toLocaleString("ar-EG")}</td>
+                  <td className="p-2 border">{new Date(inv.created_at).toLocaleString("ar-EG")}</td>
                 </tr>
               ))}
             </tbody>

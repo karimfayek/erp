@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { toast   } from "sonner";
+import { toast } from "sonner";
 import AppLayout from "@/layouts/app-layout";
 import {
   ColumnDef,
@@ -31,10 +31,10 @@ import Delete from "@/components/includes/Delete";
 import { Badge } from "@/components/ui/badge";
 
 const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'Sales',
-        href: '/sales',
-    },
+  {
+    title: 'Sales',
+    href: '/sales',
+  },
 ];
 // 📌 Fake Data
 type Invoice = {
@@ -55,15 +55,16 @@ type Invoice = {
     phone: string
     email: string
     address: string
+    company_name: string
   },
-   user: {
+  user: {
     id: number
     name: string
     phone: string
     email: string
     address: string
-  },  
-   creator: {
+  },
+  creator: {
     id: number
     name: string
     phone: string
@@ -73,7 +74,7 @@ type Invoice = {
 }
 // 📌 Columns
 export const invoiceColumns: ColumnDef<Invoice>[] = [
-     {
+  {
     id: "select",
     header: ({ table }) => (
       <Checkbox
@@ -97,7 +98,7 @@ export const invoiceColumns: ColumnDef<Invoice>[] = [
   },
   {
     accessorKey: "invoice_number",
-     header: ({ column }) => {
+    header: ({ column }) => {
       return (
         <Button
           variant="ghost"
@@ -112,7 +113,7 @@ export const invoiceColumns: ColumnDef<Invoice>[] = [
   },
   {
     accessorKey: "is_invoice",
-     header: ({ column }) => {
+    header: ({ column }) => {
       return (
         <Button
           variant="ghost"
@@ -127,7 +128,7 @@ export const invoiceColumns: ColumnDef<Invoice>[] = [
   },
   {
     accessorKey: "date",
-   header: ({ column }) => {
+    header: ({ column }) => {
       return (
         <Button
           variant="ghost"
@@ -147,7 +148,7 @@ export const invoiceColumns: ColumnDef<Invoice>[] = [
   {
     accessorKey: "customer.name",
     header: "العميل",
-    cell: ({ row }) => <div>{row.original.customer?.name}</div>,
+    cell: ({ row }) => <div>{row.original.customer?.company_name || row.original.customer?.name}</div>,
 
   },
 
@@ -165,18 +166,18 @@ export const invoiceColumns: ColumnDef<Invoice>[] = [
       )
     },
     cell: ({ row }) => <div>{row.getValue("subtotal")}</div>,
-     enableSorting: true,
+    enableSorting: true,
   },
   {
     accessorKey: "discount_percentage",
     header: "خصم %",
     cell: ({ row }) => <div>{row.getValue("discount_percentage")}%</div>,
-     enableSorting: true,
+    enableSorting: true,
   },
-  
+
   {
     accessorKey: "tax",
-   header: ({ column }) => {
+    header: ({ column }) => {
       return (
         <Button
           variant="ghost"
@@ -209,15 +210,15 @@ export const invoiceColumns: ColumnDef<Invoice>[] = [
     header: "مؤجل",
     cell: ({ row }) => <div>{row.getValue("postponed")} EGP</div>,
   },
-    {
+  {
     accessorKey: "user.name",
     header: "التسليم",
-    cell: ({ row }) => <div>{row.original.is_delivered ? <Badge className="h-5 min-w-5 bg-green-700" > <BadgeCheckIcon /></Badge> :  <Badge variant="destructive"><X/> </Badge>}</div>,
+    cell: ({ row }) => <div>{row.original.is_delivered ? <Badge className="h-5 min-w-5 bg-green-700" > <BadgeCheckIcon /></Badge> : <Badge variant="destructive"><X /> </Badge>}</div>,
 
   },
-   {
+  {
     accessorKey: "user.name",
-   header: ({ column }) => {
+    header: ({ column }) => {
       return (
         <Button
           variant="ghost"
@@ -229,12 +230,12 @@ export const invoiceColumns: ColumnDef<Invoice>[] = [
       )
     },
     cell: ({ row }) => <div>{row.original.user?.name}</div>,
- enableSorting: true,
+    enableSorting: true,
   },
-  
-   {
+
+  {
     accessorKey: "creator.name",
-   header: ({ column }) => {
+    header: ({ column }) => {
       return (
         <Button
           variant="ghost"
@@ -246,9 +247,9 @@ export const invoiceColumns: ColumnDef<Invoice>[] = [
       )
     },
     cell: ({ row }) => <div>{row.original.creator?.name}</div>,
- enableSorting: true,
+    enableSorting: true,
   },
-    {
+  {
     id: "actions",
     enableHiding: false,
     cell: ({ row }) => {
@@ -265,44 +266,44 @@ export const invoiceColumns: ColumnDef<Invoice>[] = [
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             <DropdownMenuItem>
-                <Link href={route('invoice.show' , invoice.id)}>
-              طباعه الفاتورة
-                </Link>
+              <Link href={route('invoice.show', invoice.id)}>
+                طباعه الفاتورة
+              </Link>
             </DropdownMenuItem>
-             <DropdownMenuItem>
-                <Link href={route('invoice.details' , invoice.id)}>
-              تفاصيل الفاتورة { invoice.marked_to_draft === '0' && 'sdfsdf'}
-                </Link>
+            <DropdownMenuItem>
+              <Link href={route('invoice.details', invoice.id)}>
+                تفاصيل الفاتورة {invoice.marked_to_draft === '0' && 'sdfsdf'}
+              </Link>
             </DropdownMenuItem>
-            {( can('invoice.mark.draft') &&( invoice.marked_to_draft === null || invoice.marked_to_draft === 0)    ) &&
-             <DropdownMenuItem>
-                <Link href={route('draft.mark.status' , invoice.id)} method="post" data={{ marked_to_draft: 1 }}>
-              تعليم كمتاح درافت
-                </Link>
-            </DropdownMenuItem>
-            }
-           <DropdownMenuItem>
-                <Link href={route('invoice.draft', invoice.id)}>
-           تفاصيل كـ مسودة
+            {(can('invoice.mark.draft') && (invoice.marked_to_draft === null || invoice.marked_to_draft === 0)) &&
+              <DropdownMenuItem>
+                <Link href={route('draft.mark.status', invoice.id)} method="post" data={{ marked_to_draft: 1 }}>
+                  تعليم كمتاح درافت
                 </Link>
               </DropdownMenuItem>
-    
-    {!row.original.is_delivered &&
-  <DropdownMenuItem>
-  <Link
-    href={route('delivery.status', invoice.id)}
-    method="post"
-    data={{ delivered: true }}
-  >
-    تم التسليم
-  </Link>
-</DropdownMenuItem>
-    }
-              <DropdownMenuSeparator />
-              {can('Invoices delete') &&
+            }
+            <DropdownMenuItem>
+              <Link href={route('invoice.draft', invoice.id)}>
+                تفاصيل كـ مسودة
+              </Link>
+            </DropdownMenuItem>
+
+            {!row.original.is_delivered &&
+              <DropdownMenuItem>
+                <Link
+                  href={route('delivery.status', invoice.id)}
+                  method="post"
+                  data={{ delivered: true }}
+                >
+                  تم التسليم
+                </Link>
+              </DropdownMenuItem>
+            }
+            <DropdownMenuSeparator />
+            {can('Invoices delete') &&
               <Delete id={invoice.id} routeName={'sales.destroy'} />
-              }
-              
+            }
+
           </DropdownMenuContent>
         </DropdownMenu>
       )
@@ -310,11 +311,11 @@ export const invoiceColumns: ColumnDef<Invoice>[] = [
   },
 ]
 export default function SalesCreate() {
-if(!can('Invoices view') && !can('Maintenance sales')){
-  return false
-}
+  if (!can('Invoices view') && !can('Maintenance sales')) {
+    return false
+  }
 
-const { sales , title} = usePage().props as unknown as {
+  const { sales, title } = usePage().props as unknown as {
     sales: {
       data: Invoice[]
       links: { url: string | null; label: string; active: boolean }[]
@@ -330,27 +331,27 @@ const { sales , title} = usePage().props as unknown as {
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
 
-   
-    <div className="p-6 space-y-6">
-      <Head title="  عرض الفواتير" />
 
-       <div className="p-6">
-                  <b> {title} </b>
-                
-         <DataTable columns={invoiceColumns} data={sales.data} />
-         <div className="flex space-x-2 rtl:space-x-reverse">
-        {sales.links.map((link, i) => (
-          <Button
-            key={i}
-            variant={link.active ? "default" : "outline"}
-            disabled={!link.url}
-            onClick={() => handlePageChange(link.url)}
-            dangerouslySetInnerHTML={{ __html: link.label }} 
-          />
-        ))}
-      </div>
+      <div className="p-6 space-y-6">
+        <Head title="  عرض الفواتير" />
+
+        <div className="p-6">
+          <b> {title} </b>
+
+          <DataTable columns={invoiceColumns} data={sales.data} />
+          <div className="flex space-x-2 rtl:space-x-reverse">
+            {sales.links.map((link, i) => (
+              <Button
+                key={i}
+                variant={link.active ? "default" : "outline"}
+                disabled={!link.url}
+                onClick={() => handlePageChange(link.url)}
+                dangerouslySetInnerHTML={{ __html: link.label }}
+              />
+            ))}
+          </div>
         </div>
-    </div>
+      </div>
     </AppLayout>
   );
 }

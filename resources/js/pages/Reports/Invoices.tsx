@@ -214,7 +214,15 @@ export default function InvoiceReports({ invoices, reps, branches, customers, in
                                     {invoices.data.map((invoice, i) => (
                                         <tr key={invoice.id} className="border-b hover:bg-gray-20">
                                             <td className="p-2">{invoice.invoice_number}</td>
-                                            <td className="p-2">{invoice.customer?.name}</td>
+                                            <td className="p-2">
+                                                {can('Clients edit') ?
+                                                    <Link href={route("customers.edit", invoice.customer.id)} className="text-blue-500 hover:underline">
+                                                        {invoice.customer?.company_name || invoice.customer?.name}
+                                                    </Link>
+                                                    :
+                                                    <span className="text-gray-600">{invoice.customer?.company_name || invoice.customer?.name}</span>
+                                                }
+                                            </td>
                                             <td className="p-2"> {new Date(invoice.date).toLocaleDateString("ar-EG")}</td>
                                             <td className="p-2">{invoice.user?.name}</td>
                                             <td className="p-2">{invoice.total_formatted} ج.م</td>

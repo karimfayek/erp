@@ -105,7 +105,7 @@ class ReportController extends Controller
 
         // Latest invoices
         $latestInvoices = (clone $invoicesQuery)
-            ->with('customer:id,name')
+            ->with('customer:id,name,phone,company_name,address')
             ->latest()
             ->take(10)
             ->get();
@@ -181,7 +181,7 @@ class ReportController extends Controller
             });
 
         // Latest invoices
-        $latestInvoices = Invoice::with('customer:id,name')
+        $latestInvoices = Invoice::with('customer:id,name,phone,company_name,address')
             ->whereHas('user.warehouse', function ($query) use ($branch_id) {
                 $query->where('branch_id', $branch_id);
             })
@@ -242,7 +242,7 @@ class ReportController extends Controller
                 ];
             });
         // Latest invoices
-        $latestInvoices = Invoice::with('customer:id,name')
+        $latestInvoices = Invoice::with('customer:id,name,phone,company_name,address')
             ->where('user_id', $user_id)
             ->latest()->take(10)->get();
 
@@ -265,7 +265,7 @@ class ReportController extends Controller
         $isSuperAdmin = $user->hasPermission('bypass');
         if ($isSuperAdmin) {
             $reps = \App\Models\User::select('id', 'name')->get();
-            $customers = \App\Models\Customer::select('id', 'name')->get();
+            $customers = \App\Models\Customer::select('id', 'name', 'phone', 'company_name', 'address')->get();
             $branches = \App\Models\Branch::select('id', 'name')->get();
             $query = Invoice::with(['user', 'items.product', 'customer']);
         } else {
@@ -275,7 +275,7 @@ class ReportController extends Controller
             })->select('id', 'name')->get();
             $customers = \App\Models\Customer::whereHas('user.warehouse', function ($q) use ($branchId) {
                 $q->where('branch_id', $branchId);
-            })->select('id', 'name')->get();
+            })->select('id', 'name', 'phone', 'company_name', 'address')->get();
             $branches = \App\Models\Branch::where('id', $user->warehouse->branch_id)->select('id', 'name')->get();
             $branchId = $user->warehouse->branch_id;
 
@@ -330,7 +330,7 @@ class ReportController extends Controller
         //dd($invoicesInfo);
 
 
-        $customers = \App\Models\Customer::select('id', 'name')->get();
+        $customers = \App\Models\Customer::select('id', 'name', 'phone', 'company_name', 'address')->get();
         //dd($collected);
         return Inertia::render('Reports/Invoices', [
             'invoices' => $invoices,

@@ -15,6 +15,7 @@ use App\Http\Controllers\UserRoleController;
 use App\Http\Controllers\UserPermissionController;
 use App\Http\Controllers\TaxInvoiceController;
 use App\Http\Controllers\TechnicianPayrollController;
+use App\Http\Controllers\BackupController;
 use Inertia\Inertia;
 Route::get('/', function () {
     return Inertia::render('welcome');
@@ -90,6 +91,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/payroll/deductions', [TechnicianPayrollController::class, 'deductionsIndex'])->name('payroll.deductions.index');
     Route::post('/payroll/deductions', [TechnicianPayrollController::class, 'deductionsStore'])->name('payroll.deductions.store');
     Route::delete('/payroll/deductions/{deduction}', [TechnicianPayrollController::class, 'deductionsDestroy'])->name('deduction.delete');
+    Route::post('/backup/download-db', [BackupController::class, 'downloadDb'])
+        ->middleware('permission:super');
 });
 
 require __DIR__ . '/settings.php';

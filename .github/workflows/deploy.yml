@@ -23,6 +23,14 @@ jobs:
 
     - name: Build assets (Vite)
       run: npm run build
+    - name: Set up PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.3' 
+        extensions: mbstring, pdo_mysql, dom, curl, json, gd
+        coverage: none
+    - name: Install PHP dependencies (Composer)
+      run: composer install --no-dev --prefer-dist
 
     - name: Deploy to Hostinger via SSH
       uses: easingthemes/ssh-deploy@main
@@ -33,4 +41,4 @@ jobs:
         REMOTE_USER: ${{ secrets.HOSTINGER_SSH_USER }}
         TARGET: /home/u371733502/domains/rafcosystem.com/public_html
         EXCLUDE: "/node_modules/, /.github/, /.git/, /.env.example ,/vite.config.ts,/vendor"
-        ARGS: "-avru --delete"
+        ARGS: "-avru"

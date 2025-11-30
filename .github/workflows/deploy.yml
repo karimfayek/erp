@@ -1,0 +1,44 @@
+name: Deploy Laravel App on Push
+
+on:
+  push:
+    branches:
+      - master 
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Use Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+
+    - name: Install dependencies (npm)
+      run: npm install
+
+    - name: Build assets (Vite)
+      run: npm run build
+    - name: Set up PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.3' 
+        extensions: mbstring, pdo_mysql, dom, curl, json, gd
+        coverage: none
+    - name: Install PHP dependencies (Composer)
+      run: composer install --no-dev --prefer-dist
+
+    - name: Deploy to Hostinger via SSH
+      uses: easingthemes/ssh-deploy@main
+      with:
+        SSH_PRIVATE_KEY: ${{ secrets.HOSTINGER_SSH_PRIVATE_KEY }}
+        REMOTE_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        REMOTE_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+        REMOTE_USER: ${{ secrets.HOSTINGER_SSH_USER }}
+        TARGET: /home/u371733502/domains/rafcosystem.com/public_html
+        EXCLUDE: "/node_modules/, /.github/, /.git/, /.env.example ,/vite.config.ts"
+        ARGS: "-avru"

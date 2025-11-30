@@ -93,7 +93,7 @@ export default function BackupButtonAxios() {
                         message = 'Backup failed: ' + (text.slice ? text.slice(0, 500) : text);
                     }
                 } catch (readErr) {
-                    // لا فائدة من قراءة البايناري
+                    // no need to handle
                 }
             }
 

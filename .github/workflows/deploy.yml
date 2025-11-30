@@ -29,6 +29,7 @@ jobs:
       with:
         SSH_PRIVATE_KEY: ${{ secrets.HOSTINGER_SSH_PRIVATE_KEY }}
         REMOTE_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+        REMOTE_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
         REMOTE_USER: ${{ secrets.HOSTINGER_SSH_USER }}
         TARGET: /home/u371733502/domains/rafcosystem.com # المسار الكامل لموقعك على Hostinger
         EXCLUDE: "/node_modules/, /.github/, /.git/, /.env.example"

@@ -31,6 +31,6 @@ jobs:
         REMOTE_HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
         REMOTE_PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
         REMOTE_USER: ${{ secrets.HOSTINGER_SSH_USER }}
-        TARGET: /home/u371733502/domains/rafcosystem.com
-        EXCLUDE: "/node_modules/, /.github/, /.git/, /.env.example"
+        TARGET: /home/u371733502/domains/rafcosystem.com/public_html
+        EXCLUDE: "/node_modules/, /.github/, /.git/, /.env.example ,/vite.config.ts,/vendor"
         ARGS: "-avru --delete"

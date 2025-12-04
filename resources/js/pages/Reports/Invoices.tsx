@@ -215,7 +215,7 @@ export default function InvoiceReports({ invoices, reps, branches, customers, in
                                         <tr key={invoice.id} className="border-b hover:bg-gray-20">
                                             <td className="p-2">{invoice.invoice_number}</td>
                                             <td className="p-2">
-                                                {can('Clients edit') ?
+                                                {can('Clients edit') && invoice.customer ?
                                                     <Link href={route("customers.edit", invoice.customer?.id)} className="text-blue-500 hover:underline">
                                                         {invoice.customer?.company_name || invoice.customer?.name}
                                                     </Link>

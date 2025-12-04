@@ -216,7 +216,7 @@ export default function InvoiceReports({ invoices, reps, branches, customers, in
                                             <td className="p-2">{invoice.invoice_number}</td>
                                             <td className="p-2">
                                                 {can('Clients edit') ?
-                                                    <Link href={route("customers.edit", invoice.customer.id)} className="text-blue-500 hover:underline">
+                                                    <Link href={route("customers.edit", invoice.customer?.id)} className="text-blue-500 hover:underline">
                                                         {invoice.customer?.company_name || invoice.customer?.name}
                                                     </Link>
                                                     :
@@ -250,7 +250,7 @@ export default function InvoiceReports({ invoices, reps, branches, customers, in
                                             </td>
                                             <td className="p-2">
                                                 <Button variant="outline" size="sm">
-                                                    <Link href={"/invoice/" + invoice.id}>
+                                                    <Link href={"/invoice/" + invoice?.id}>
                                                         عرض الفاتورة
                                                     </Link>
 

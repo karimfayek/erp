@@ -18,7 +18,7 @@ use App\Http\Controllers\TechnicianPayrollController;
 use App\Http\Controllers\BackupController;
 use Inertia\Inertia;
 Route::get('/', function () {
-    return Inertia::render('welcome');
+    return redirect()->route('dashboard');
 })->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {

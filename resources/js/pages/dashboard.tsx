@@ -20,7 +20,7 @@ export default function Dashboard({ stats, dailySales }) {
     { title: "المخازن", value: stats.warehouses, icon: Warehouse, hrefs: "/warehouses", can: "Warehouses view" },
     { title: "المنتجات", value: stats.products, icon: Package, hrefs: "/products", can: 'Products view', mntnce: 'Maintenance products' },
     { title: "نقل اليوم", value: stats.transfers, icon: ArrowLeftRight, hrefs: "/inventory-transfers", can: 'Stock transfer' },
-    { title: "المبيعات", value: stats.sales, icon: ShoppingCart, hrefs: "/sales", can: 'Reports show branch' },
+    { title: "مبيعات اليوم", value: stats.sales, icon: ShoppingCart, hrefs: "/sales", can: 'Reports show branch' },
   ];
   return (
     <AppLayout breadcrumbs={breadcrumbs}>

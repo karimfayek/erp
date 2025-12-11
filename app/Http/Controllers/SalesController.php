@@ -342,6 +342,7 @@ class SalesController extends Controller
             'customer_id' => 'required|exists:customers,id',
             'user_id' => 'required|exists:users,id',
             'representative_id' => 'nullable|exists:representatives,id',
+            'notes' => 'nullable|string',
             'discount_percentage' => 'nullable|numeric|min:0|max:100',
             'subtotal' => 'required|numeric',
             'other_tax_val' => 'nullable|numeric',

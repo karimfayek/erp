@@ -15,7 +15,7 @@ class ReportController extends Controller
 
         // هل المستخدم سوبر أدمن وله صلاحية تجاوز الفلترة؟
         $isSuperAdmin = $user->hasPermission('bypass');
-        $invoicesQuery = Invoice::query();
+        $invoicesQuery = Invoice::query()->whereDate('created_at', Carbon::today());
 
         // لو ليس سوبر أدمن يتم فلترة الفواتير حسب الـ branch_id
         if (!$isSuperAdmin) {

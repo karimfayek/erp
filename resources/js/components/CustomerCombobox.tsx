@@ -57,7 +57,7 @@ export default function CustomerCombobox({ customersList, data, handleCustomerCh
               {customersList.map((c) => (
                 <CommandItem
                   key={c.id}
-                  value={`${c.name} ${c.phone || ""} ${c.email || ""} ${c.address || ""}`}
+                  value={`${c.name} ${c.phone || ""} ${c.company_name || ""} ${c.address || ""}`}
                   onSelect={() => {
                     const customer = customersList.find((x) => x.name === c.name);
                     handleCustomerChange(customer ? String(customer.id) : "");
@@ -70,7 +70,7 @@ export default function CustomerCombobox({ customersList, data, handleCustomerCh
                       String(data.customer_id) === String(c.id) ? "opacity-100" : "opacity-0"
                     )}
                   />
-                  {c.name}
+                  {c.company_name || c.name}
                 </CommandItem>
               ))}
 

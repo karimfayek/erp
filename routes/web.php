@@ -16,7 +16,9 @@ use App\Http\Controllers\UserPermissionController;
 use App\Http\Controllers\TaxInvoiceController;
 use App\Http\Controllers\TechnicianPayrollController;
 use App\Http\Controllers\BackupController;
+use App\Http\Controllers\CollectionController;
 use Inertia\Inertia;
+
 Route::get('/', function () {
     return redirect()->route('dashboard');
 })->name('home');
@@ -93,6 +95,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/payroll/deductions/{deduction}', [TechnicianPayrollController::class, 'deductionsDestroy'])->name('deduction.delete');
     Route::post('/backup/download-db', [BackupController::class, 'downloadDb'])
         ->middleware('permission:super');
+
+    //collections
+    Route::get('/collections/{sale}', [CollectionController::class, 'show'])->name('collections.show');
+    Route::post('/collections', [CollectionController::class, 'store'])->name('collections.store');
+    Route::put('/collections/{collection}', [CollectionController::class, 'update'])->name('collections.update');
+    Route::delete('/collections/{collection}', [CollectionController::class, 'destroy'])->name('collections.destroy');
+
 });
 
 require __DIR__ . '/settings.php';

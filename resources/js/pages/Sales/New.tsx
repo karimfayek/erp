@@ -655,7 +655,7 @@ export default function SalesCreate() {
                   <Label htmlFor="collected">محصل (ما تم تحصيله)</Label>
                   <Input
                     onWheel={(e) => e.target.blur()}
-                    id="collected" type="number" step="0.01" value={Number(data.collected).toFixed(2)} onChange={(e) => setData("collected", e.target.value)} />
+                    id="collected" type="number" value={data.collected} onChange={(e) => setData("collected", e.target.value)} />
                 </div>
                 <div>
                   <Label>مؤجل (يُحسب تلقائيًا)</Label>

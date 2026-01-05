@@ -270,25 +270,33 @@ export default function InvoiceReports({ invoices, reps, branches, customers, in
                     </CardHeader>
                     <CardContent>
                         <div className="flex gap-3">
-                            <div className="flex flex-col">
-                                <b>عدد الفواتير المفلترة</b>
+                            <div className="flex flex-col border-l">
+                                <b className=" ml-2">عدد الفواتير المفلترة</b>
                                 <p>{invoices?.total}</p>
                             </div>
-                            <div className="flex flex-col">
-                                <b>  اجمالى المبلغ للفواتير</b>
+                            <div className="flex flex-col border-l">
+                                <b className=" ml-2">  اجمالى المبلغ للفواتير</b>
                                 <p>{Number(info?.invoicesTotals).toFixed(2)}</p>
                             </div>
-                            <div className="flex flex-col">
-                                <b>  اجمالى المبلغ المحصل</b>
+                            <div className="flex flex-col border-l">
+                                <b className=" ml-2">  اجمالى المبلغ المحصل</b>
                                 <p>{info?.collected}</p>
                             </div>
-                            <div className="flex flex-col">
-                                <b>  اجمالى المبلغ المؤجل</b>
+                            <div className="flex flex-col border-l">
+                                <b className=" ml-2">  اجمالى المبلغ المؤجل</b>
                                 <p>{Number(info?.postponed).toFixed(2)}</p>
                             </div>
-                            <div className="flex flex-col">
-                                <b>  اجمالى  المصاريف</b>
+                            <div className="flex flex-col border-l">
+                                <b className=" ml-2">  اجمالى  المصاريف</b>
                                 <p>{info?.expenses}</p>
+                            </div>
+                            <div className="flex flex-col border-l">
+                                <b className=" ml-2">  اجمالى  الضرائب</b>
+                                <p>{info?.taxAmount}</p>
+                            </div>
+                            <div className="flex flex-col border-l">
+                                <b className=" ml-2">  اجمالى  ضرائب اخرى</b>
+                                <p>{info?.OtherTaxAmount}</p>
                             </div>
 
                         </div>

@@ -299,10 +299,18 @@ export const invoiceColumns: ColumnDef<Invoice>[] = [
                 </Link>
               </DropdownMenuItem>
             }
+            {can('Invoices collections') &&
+              <DropdownMenuItem>
+                <Link href={route('collections.show', invoice.id)}>
+                  تحصيلات
+                </Link>
+              </DropdownMenuItem>
+            }
             <DropdownMenuSeparator />
             {can('Invoices delete') &&
               <Delete id={invoice.id} routeName={'sales.destroy'} />
             }
+
 
           </DropdownMenuContent>
         </DropdownMenu>

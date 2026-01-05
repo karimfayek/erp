@@ -6,11 +6,12 @@ import { defineConfig } from 'vite';
 import path from 'path'
 export default defineConfig({
     server: {
-        host: 'erp.eit-host.com',  // Add this to force IPv4 only
+        host: '65.109.22.164',  // Add this to force IPv4 only
        // https: {
         //    key: fs.readFileSync('C:/certs/elfisalt.key'),
          //   cert: fs.readFileSync('C:/certs/elfisalt.crt'),
         //},
+        allowedHosts: ['erp.eit-host.com'],
     },
     plugins: [
         laravel({

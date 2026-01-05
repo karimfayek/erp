@@ -388,7 +388,16 @@ class SalesController extends Controller
 
         $totalTransportation = collect($request['technicians'])->sum('transportation');
         $data['transportation'] = ($totalTransportation ?? 0);
+
         $sale = Sale::create($data);
+        if ($request->collected > 0) {
+            \App\Models\Collection::create([
+                'sale_id' => $sale->id,
+                'amount' => $request->collected,
+                'collection_date' => now(),
+                'created_by' => auth()->id(),
+            ]);
+        }
         // create items
         foreach ($validated['items'] as $item) {
             // dd($item);

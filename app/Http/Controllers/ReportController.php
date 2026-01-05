@@ -321,6 +321,8 @@ class ReportController extends Controller
 
         $invoicesInfo = $query->get();
         $collected = $query->sum('collected');
+        $taxAmount = $query->sum('tax');
+        $OtherTaxAmount = $query->sum('other_tax_val');
         $expenses = $query->sum('expenses');
         $invoices = $query
             ->latest()
@@ -342,6 +344,8 @@ class ReportController extends Controller
                 'collected' => number_format((float) $collected, 2, '.', ','),
                 'postponed' => $invoicesInfo->sum('postponed'),
                 'expenses' => number_format((float) $expenses, 2, '.', ','),
+                'taxAmount' => number_format((float) $taxAmount, 2, '.', ','),
+                'OtherTaxAmount' => number_format((float) $OtherTaxAmount, 2, '.', ','),
             ]
         ]);
     }

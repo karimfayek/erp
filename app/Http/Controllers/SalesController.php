@@ -614,15 +614,14 @@ class SalesController extends Controller
             'collected_amount' => 'required|numeric|min:0',
         ]);
 
-        $invoice->collected = $request->collected_amount;
-        $invoice->postponed = $invoice->total - $invoice->collected;
+        $invoice->expenses = $request->collected_amount;
+        // $invoice->postponed = $invoice->total - $invoice->collected;
         $invoice->save();
 
         return response()->json([
             'success' => true,
-            'message' => 'تم تحديث المبلغ المحصل بنجاح',
-            'collected_amount' => $invoice->collected_amount,
-            'postponed' => $invoice->postponed,
+            'message' => 'تم تحديث المصروفات بنجاح',
+            'collected_amount' => $invoice->expenses,
         ]);
     }
 }

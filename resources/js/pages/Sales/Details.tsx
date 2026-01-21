@@ -29,14 +29,14 @@ import { Link } from "@inertiajs/react";
 export default function InvoicePreview({ invoice }) {
   const inv = invoice || {};
   const items = inv.items || [];
-  const [collected, setCollected] = useState(inv.collected)
+  const [collected, setCollected] = useState(inv.expenses)
   const [isDelivered, setIsDelivered] = useState(invoice.is_delivered)
   const [markDraft, setMarkDraft] = useState(invoice.marked_to_draft)
 
   const eta_status = inv.eta_status; // 'draft', 'sent'
   const [isSent, setIsSent] = useState(eta_status)
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [collectedAmount, setCollectedAmount] = useState(invoice.collected_amount || 0)
+  const [collectedAmount, setCollectedAmount] = useState(invoice.expenses || 0)
   const [postponedAmount, setPostponedAmount] = useState(invoice.postponed || 0)
   const [newCollected, setNewCollected] = useState(collectedAmount)
 
@@ -91,9 +91,9 @@ export default function InvoicePreview({ invoice }) {
       setCollectedAmount(Number(newCollected));
       setIsModalOpen(false);
       setCollected(newCollected)
-      toast.success("تم تحديث المبلغ المحصل بنجاح");
+      toast.success("تم تحديث المصروفات بنجاح");
     } catch (err) {
-      toast.error("حدث خطأ أثناء تحديث المبلغ");
+      toast.error("حدث خطأ أثناء تحديث المصروفات");
     }
   };
   return (
@@ -182,7 +182,8 @@ export default function InvoicePreview({ invoice }) {
 
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
-                <div className="text-sm">المصروفات: <span className="font-medium">{Number(inv.expenses ?? 0).toFixed(2)}</span></div>
+                <div className="text-sm">المصروفات: <span className="font-medium">{Number(collected).toFixed(2)}</span></div>
+                <Button onClick={() => setIsModalOpen(true)}>تعديل المصروفات</Button>
               </div>
 
             </div>
@@ -241,7 +242,7 @@ export default function InvoicePreview({ invoice }) {
               <div className="flex justify-between"><span>الضريبة:</span><span className="font-semibold">{Number(inv.tax ?? 0).toFixed(2)}</span></div>
 
               <div className="flex justify-between"><span>ضرائب أخرى {Number(inv.other_tax).toFixed(0)} %:</span><span className="font-semibold">{Number(inv.other_tax_val ?? 0).toFixed(2)}</span></div>
-              <div className="flex justify-between"><span>المصروفات:</span><span className="font-semibold">{Number(inv.expenses ?? 0).toFixed(2)}</span></div>
+              <div className="flex justify-between"><span>المصروفات:</span><span className="font-semibold">{Number(collected).toFixed(2)}</span></div>
               <Separator />
               <div className="flex justify-between text-lg font-bold"><span>الإجمالي النهائي:</span><span>
                 {inv.total_formatted}
@@ -259,7 +260,7 @@ export default function InvoicePreview({ invoice }) {
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>تعديل المبلغ المحصل</DialogTitle>
+            <DialogTitle>تعديل المصروفات</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <Label>المبلغ الجديد</Label>

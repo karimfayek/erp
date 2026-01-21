@@ -196,9 +196,9 @@ export const invoiceColumns: ColumnDef<Invoice>[] = [
     cell: ({ row }) => <div>{row.getValue("expenses")} EGP</div>,
   },
   {
-    accessorKey: "collected",
+    accessorKey: "collected_amount",
     header: "محصل",
-    cell: ({ row }) => <div>{row.getValue("collected")} EGP</div>,
+    cell: ({ row }) => <div>{row.getValue("collected_amount")} EGP</div>,
   },
   {
     accessorKey: "expenses",
@@ -206,9 +206,9 @@ export const invoiceColumns: ColumnDef<Invoice>[] = [
     cell: ({ row }) => <div>{row.getValue("expenses")} EGP</div>,
   },
   {
-    accessorKey: "postponed",
+    accessorKey: "remaining_amount",
     header: "مؤجل",
-    cell: ({ row }) => <div>{row.getValue("postponed")} EGP</div>,
+    cell: ({ row }) => <div>{row.getValue("remaining_amount")} EGP</div>,
   },
   {
     accessorKey: "user.name",
@@ -299,7 +299,7 @@ export const invoiceColumns: ColumnDef<Invoice>[] = [
                 </Link>
               </DropdownMenuItem>
             }
-            {can('Invoices collections') &&
+            {can('invoices.collections') &&
               <DropdownMenuItem>
                 <Link href={route('collections.show', invoice.id)}>
                   تحصيلات

@@ -55,7 +55,14 @@ class Sale extends Model
         'expenses' => 'decimal:2',
         'discount_percentage' => 'decimal:2',
     ];
-    protected $appends = ['total_formatted', 'collected_formatted', 'postponed_formatted', 'subtotal_formatted'];
+    protected $appends = [
+        'total_formatted',
+        'collected_formatted',
+        'postponed_formatted',
+        'subtotal_formatted',
+        'collected_amount',
+        'remaining_amount'
+    ];
 
     public function getTotalFormattedAttribute()
     {
@@ -110,13 +117,28 @@ class Sale extends Model
         return $this->hasMany(Collection::class);
     }
 
-    public function collectedAmount()
+    public function getCollectedAmountAttribute()
     {
         return $this->collections()->sum('amount');
     }
 
-    public function remainingAmount()
+    public function getRemainingAmountAttribute()
     {
-        return $this->total_amount - $this->collectedAmount();
+        return $this->total - $this->collected_amount;
+    }
+    public function collectedAmount(): float
+    {
+        return $this->collections()->sum('amount');
+    }
+
+    public function isCollected(): bool
+    {
+        return $this->collectedAmount() >= $this->total;
+    }
+
+    public function isPartial(): bool
+    {
+        $collected = $this->collectedAmount();
+        return $collected > 0 && $collected < $this->total;
     }
 }

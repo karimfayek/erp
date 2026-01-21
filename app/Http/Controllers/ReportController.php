@@ -6,7 +6,7 @@ use App\Models\Sale as Invoice;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-
+use Illuminate\Support\Facades\DB;
 class ReportController extends Controller
 {
     public function Dashboard()
@@ -284,13 +284,22 @@ class ReportController extends Controller
                     $q->where('branch_id', $branchId);
                 });
         }
-
+        // $query->withSum('collections', 'amount');
+        //dd($query->collections_sum_amount);
         if ($request->status === 'delivered') {
             $query->where('is_delivered', 1);
         } elseif ($request->status === 'pending') {
             $query->where('is_delivered', 0);
         } elseif ($request->status === 'partial') {
-            $query->whereColumn('collected', '<', 'total');
+            $newquery = $query->clone()->with('collections');
+            $n = $newquery->get();
+            $ids = [];
+            foreach ($n as $invoice) {
+                if ($invoice->collectedAmount() < $invoice->total) {
+                    $ids[] = $invoice->id;
+                }
+            }
+            $query->whereIn('id', $ids);
         }
         if ($request->rep && $request->rep != 'all') {
             $query->where('user_id', $request->rep);
@@ -318,9 +327,23 @@ class ReportController extends Controller
         if ($request->filled('to_date')) {
             $query->whereDate('date', '<=', $request->to_date);
         }
+        $from = $request->from_date;
+        $to = $request->to_date;
+        // $query->withSum('collections as collected_amount', 'amount');
+        $query->with([
+            'collections' => function ($q) use ($from, $to) {
+                $q->when($from, fn($q2) => $q2->whereDate('collection_date', '>=', $from))
+                    ->when($to, fn($q2) => $q2->whereDate('collection_date', '<=', $to));
+            }
+        ]);
 
         $invoicesInfo = $query->get();
-        $collected = $query->sum('collected');
+
+        $collected = $invoicesInfo
+            ->flatMap(fn($invoice) => $invoice->collections)
+            ->sum('amount');
+        //dd($invoicesInfo);
+
         $taxAmount = $query->sum('tax');
         $OtherTaxAmount = $query->sum('other_tax_val');
         $expenses = $query->sum('expenses');
@@ -330,7 +353,29 @@ class ReportController extends Controller
             ->withQueryString();
 
         //dd($invoicesInfo);
+        $totals = $invoicesInfo->reduce(function ($carry, $invoice) {
 
+            $collected = $invoice->collectedAmount();
+
+            if ($collected <= 0 || $invoice->total <= 0) {
+                return $carry;
+            }
+
+            $ratio = $collected / $invoice->total;
+
+            $carry['vat'] += $ratio * $invoice->tax;
+            $carry['other_tax'] += $ratio * $invoice->other_tax_val;
+
+            return $carry;
+
+        }, [
+            'vat' => 0,
+            'other_tax' => 0,
+        ]);
+        $totalCollectedTax = $totals['vat'];
+        $totalCollectedOtherTax = $totals['other_tax'];
+
+        //dd($totalCollectedTax);
 
         $customers = \App\Models\Customer::select('id', 'name', 'phone', 'company_name', 'address')->get();
         //dd($collected);
@@ -346,6 +391,8 @@ class ReportController extends Controller
                 'expenses' => number_format((float) $expenses, 2, '.', ','),
                 'taxAmount' => number_format((float) $taxAmount, 2, '.', ','),
                 'OtherTaxAmount' => number_format((float) $OtherTaxAmount, 2, '.', ','),
+                'totalCollectedTax' => number_format((float) $totalCollectedTax, 2, '.', ','),
+                'totalCollectedOtherTax' => number_format((float) $totalCollectedOtherTax, 2, '.', ','),
             ]
         ]);
     }

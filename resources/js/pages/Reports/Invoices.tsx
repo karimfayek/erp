@@ -235,17 +235,17 @@ export default function InvoiceReports({ invoices, reps, branches, customers, in
                                                 }
                                             </td>
                                             <td className="p-2">
-                                                {Number(invoice.collected) >= Number(invoice.total) ?
+                                                {Number(invoice.remaining_amount) < 1 ?
                                                     <Badge className="bg-green-100 text-green-700">تم </Badge>
                                                     :
                                                     <Badge className="bg-red-100 text-red-700"> جزئى</Badge>
                                                 }
                                             </td>
                                             <td className="p-2">
-                                                {invoice.collected}
+                                                {invoice.collected_amount}
                                             </td>
                                             <td className="p-2">
-                                                {Number(invoice.postponed).toFixed(2)
+                                                {Number(invoice.remaining_amount).toFixed(2)
                                                 }
                                             </td>
                                             <td className="p-2">
@@ -295,8 +295,16 @@ export default function InvoiceReports({ invoices, reps, branches, customers, in
                                 <p>{info?.taxAmount}</p>
                             </div>
                             <div className="flex flex-col border-l">
+                                <b className=" ml-2">  اجمالى  الضرائب المحصلة</b>
+                                <p>{info?.totalCollectedTax}</p>
+                            </div>
+                            <div className="flex flex-col border-l">
                                 <b className=" ml-2">  اجمالى  ضرائب اخرى</b>
                                 <p>{info?.OtherTaxAmount}</p>
+                            </div>
+                            <div className="flex flex-col border-l">
+                                <b className=" ml-2">  اجمالى  ضرائب اخرى المحصلة</b>
+                                <p>{info?.totalCollectedOtherTax}</p>
                             </div>
 
                         </div>

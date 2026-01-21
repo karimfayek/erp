@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button"
+import { can } from "@/utils/permissions"
 import {
     Popover,
     PopoverContent,
@@ -7,9 +8,9 @@ import {
 import { Calendar } from "@/components/ui/calendar"
 import { format } from "date-fns"
 
-export default function DatePicker({ date, setDate }) {
+export default function DatePicker({ date, setDate }: { date: Date | null, setDate: (date: Date) => void }) {
     const selectedDate = date ? new Date(date) : null
-
+    if (!can('invoices.collections')) return null;
     return (
         <div className="w-full">
             <Popover>

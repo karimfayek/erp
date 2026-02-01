@@ -299,7 +299,7 @@ export const invoiceColumns: ColumnDef<Invoice>[] = [
                 </Link>
               </DropdownMenuItem>
             }
-            {can('invoices.collections') &&
+            {can('Invoices collections') &&
               <DropdownMenuItem>
                 <Link href={route('collections.show', invoice.id)}>
                   تحصيلات

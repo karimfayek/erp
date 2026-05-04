@@ -96,7 +96,7 @@ export default function InvoiceShow({ invoice }) {
         <div>
           <Card>
             <CardHeader>
-              <CardTitle>ملخص الفاتورة</CardTitle>
+              <CardTitle>ملخص</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 text-sm">
               <div className="flex justify-between"><span>الإجمالي الفرعى :</span> <span>{invoice.subtotal}</span>

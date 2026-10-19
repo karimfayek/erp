@@ -46,6 +46,11 @@ export function AppSidebar() {
             href: '/inventory-transfers',
             icon: ArrowLeftRight,
         },
+        can('Expenses view') && {
+            title: 'المصاريف',
+            href: '/expenses',
+            icon: BanknoteIcon,
+        },
     ].filter(Boolean) as NavItem[];
 
     const maintenanceNavItems: NavItem[] = [
@@ -213,6 +218,11 @@ export function AppSidebar() {
                 can("Reports show branch") && {
                     title: "الفواتير",
                     url: "/reports/invoices",
+                    icon: Users,
+                },
+                can("Expenses reports") && {
+                    title: "المصاريف",
+                    url: "/reports/expenses",
                     icon: Users,
                 },
                 can("super") && {

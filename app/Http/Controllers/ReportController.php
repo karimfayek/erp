@@ -259,6 +259,134 @@ class ReportController extends Controller
             'userSales' => $userSales
         ]);
     }
+
+    // تقرير المصاريف: كل فرع صرف كام / كل الفروع من تاريخ لتاريخ + حسب التصنيف والمستخدم
+    public function expenses(Request $request)
+    {
+        $user = auth()->user();
+        $canChooseBranch = $user->canDo('Expenses choose branch');
+
+        $from = $request->filled('from_date') ? Carbon::parse($request->from_date)->startOfDay() : Carbon::now()->startOfMonth();
+        $to = $request->filled('to_date') ? Carbon::parse($request->to_date)->endOfDay() : Carbon::now()->endOfMonth();
+
+        $query = \App\Models\Expense::with(['branch:id,name', 'category:id,name', 'user:id,name'])
+            ->whereBetween('date', [$from->toDateString(), $to->toDateString()]);
+
+        // غير المخول لاختيار الفرع → فرعه فقط
+        $myBranchId = $user->warehouse?->branch_id;
+        if (! $canChooseBranch) {
+            if ($myBranchId) {
+                $query->where('branch_id', $myBranchId);
+            }
+            $branches = \App\Models\Branch::where('id', $myBranchId)->select('id', 'name')->get();
+        } else {
+            $branches = \App\Models\Branch::select('id', 'name')->orderBy('name')->get();
+            if ($request->filled('branch_id') && $request->branch_id !== 'all') {
+                $query->where('branch_id', $request->branch_id);
+            }
+        }
+
+        $categories = \App\Models\ExpenseCategory::select('id', 'name')->orderBy('name')->get();
+        if ($request->filled('category_id') && $request->category_id !== 'all') {
+            $query->where('category_id', $request->category_id);
+        }
+        if ($request->filled('user_id') && $request->user_id !== 'all') {
+            $query->where('user_id', $request->user_id);
+        }
+
+        // المستخدمين للفلتر (حسب الصلاحية: فرعي أو الكل)
+        if ($canChooseBranch) {
+            $users = \App\Models\User::select('id', 'name')->orderBy('name')->get();
+        } else {
+            $users = \App\Models\User::whereHas('warehouse', function ($q) use ($myBranchId) {
+                $q->where('branch_id', $myBranchId);
+            })->select('id', 'name')->orderBy('name')->get();
+        }
+
+        // الإجمالي
+        $totalExpenses = (clone $query)->sum('amount');
+        $countExpenses = (clone $query)->count();
+
+        // مصروف كل فرع
+        $byBranch = (clone $query)
+            ->selectRaw('branch_id, SUM(amount) as total, COUNT(*) as cnt')
+            ->groupBy('branch_id')
+            ->with('branch:id,name')
+            ->get()
+            ->map(fn ($row) => [
+                'branch' => $row->branch?->name ?? 'بدون فرع',
+                'branch_id' => $row->branch_id,
+                'total' => (float) $row->total,
+                'count' => (int) $row->cnt,
+            ])
+            ->sortByDesc('total')->values();
+
+        // حسب التصنيف
+        $byCategory = (clone $query)
+            ->selectRaw('category_id, SUM(amount) as total, COUNT(*) as cnt')
+            ->groupBy('category_id')
+            ->with('category:id,name')
+            ->get()
+            ->map(fn ($row) => [
+                'category' => $row->category?->name ?? 'بدون تصنيف',
+                'total' => (float) $row->total,
+                'count' => (int) $row->cnt,
+            ])
+            ->sortByDesc('total')->values();
+
+        // يومي
+        $daily = (clone $query)
+            ->selectRaw('DATE(date) as date, SUM(amount) as total')
+            ->groupBy(\DB::raw('DATE(date)'))
+            ->orderBy('date')
+            ->get()
+            ->map(fn ($row) => [
+                'date' => Carbon::parse($row->date)->toDateString(),
+                'total' => (float) $row->total,
+            ]);
+
+        // حسب المستخدم (توب)
+        $byUser = (clone $query)
+            ->selectRaw('user_id, SUM(amount) as total, COUNT(*) as cnt')
+            ->groupBy('user_id')
+            ->with('user:id,name')
+            ->get()
+            ->map(fn ($row) => [
+                'user' => $row->user?->name ?? 'غير محدد',
+                'total' => (float) $row->total,
+                'count' => (int) $row->cnt,
+            ])
+            ->sortByDesc('total')->values()->take(10);
+
+        $days = max(1, $from->diffInDays($to) + 1);
+
+        $expensesList = (clone $query)->latest('date')->latest('id')->paginate(15)->withQueryString();
+
+        return Inertia::render('Reports/Expenses', [
+            'filters' => [
+                'from_date' => $from->toDateString(),
+                'to_date' => $to->toDateString(),
+                'branch_id' => $request->get('branch_id', 'all'),
+                'category_id' => $request->get('category_id', 'all'),
+                'user_id' => $request->get('user_id', 'all'),
+            ],
+            'branches' => $branches,
+            'categories' => $categories,
+            'users' => $users,
+            'canChooseBranch' => $canChooseBranch,
+            'info' => [
+                'total' => (float) $totalExpenses,
+                'count' => (int) $countExpenses,
+                'avgDaily' => round((float) $totalExpenses / $days, 2),
+                'maxExpense' => (float) ((clone $query)->max('amount') ?? 0),
+            ],
+            'byBranch' => $byBranch,
+            'byCategory' => $byCategory,
+            'daily' => $daily,
+            'byUser' => $byUser,
+            'expenses' => $expensesList,
+        ]);
+    }
     public function invoices(Request $request)
     {
         $user = auth()->user();

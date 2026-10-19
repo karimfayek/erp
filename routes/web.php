@@ -17,6 +17,8 @@ use App\Http\Controllers\TaxInvoiceController;
 use App\Http\Controllers\TechnicianPayrollController;
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\CollectionController;
+use App\Http\Controllers\ExpenseController;
+use App\Http\Controllers\ExpenseCategoryController;
 use Inertia\Inertia;
 
 Route::get('/', function () {
@@ -81,6 +83,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/user/activity/login/{id?}', [\App\Http\Controllers\ActivityController::class, 'login'])->name('user.login.activity')->middleware('permission:super');
 
     //payroll
+    //expenses - المصاريف (صلاحيات منفصلة لكل عملية)
+    Route::get('/expenses', [ExpenseController::class, 'index'])->name('expenses.index')->middleware('permission:Expenses view');
+    Route::post('/expenses', [ExpenseController::class, 'store'])->name('expenses.store')->middleware('permission:Expenses create');
+    Route::put('/expenses/{expense}', [ExpenseController::class, 'update'])->name('expenses.update')->middleware('permission:Expenses edit');
+    Route::delete('/expenses/{expense}', [ExpenseController::class, 'destroy'])->name('expenses.destroy')->middleware('permission:Expenses delete');
+    // تصنيفات المصاريف (صلاحيات منفصلة)
+    Route::post('/expense-categories', [ExpenseCategoryController::class, 'store'])->name('expense-categories.store')->middleware('permission:Expense categories create');
+    Route::put('/expense-categories/{expenseCategory}', [ExpenseCategoryController::class, 'update'])->name('expense-categories.update')->middleware('permission:Expense categories edit');
+    Route::delete('/expense-categories/{expenseCategory}', [ExpenseCategoryController::class, 'destroy'])->name('expense-categories.destroy')->middleware('permission:Expense categories delete');
+    // تقرير المصاريف
+    Route::get('/reports/expenses', [\App\Http\Controllers\ReportController::class, 'expenses'])->name('reports.expenses')->middleware('permission:Expenses reports');
+
     Route::get('/payroll/calc', [TechnicianPayrollController::class, 'calcIndex'])->name('payroll.calc.index');
     // Endpoint AJAX/POST لحساب النتائج (يرجع Inertia أو JSON)
     Route::post('/payroll/calc', [TechnicianPayrollController::class, 'calcCompute'])->name('payroll.calc.compute');

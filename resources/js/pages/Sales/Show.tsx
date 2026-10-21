@@ -26,9 +26,10 @@ export default function InvoiceShow({ invoice }) {
         </div>
         <div className="text-right space-y-1 text-sm">
           <p>التاريخ: {new Date(invoice.date).toLocaleDateString("ar-EG")}</p>
-          <p>المندوب: <span className="font-semibold">{invoice.user?.name || "غير محدد"}</span></p>
+          <p>مسؤول المبيعات : <span className="font-semibold">{invoice.user?.name || "غير محدد"}</span></p>
           <p>الفرع: <span className="font-semibold">{invoice.user?.warehouse?.branch?.name || "غير محدد"}</span></p>
-          {invoice.maintainance &&
+          <p> تليفون : <span className="font-semibold"> 01001448447</span></p>
+          {invoice.maintainance == "1" &&
             <p>
               {invoice.technicians?.length === 1 ? "الفني" : "الفنيين"}: <span className="font-semibold">
                 {invoice.technicians?.map(tech => tech.name).join(", ") || "غير محدد"}

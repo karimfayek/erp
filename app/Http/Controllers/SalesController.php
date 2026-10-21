@@ -4,14 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\Customer;
 use App\Models\Product;
-use App\Models\Representative;
+use App\Models\ProductInventory;
 use App\Models\Sale;
 use App\Models\SalesItem;
 use App\Models\Warehouse;
 use App\Services\InventoryService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-
+use Illuminate\Support\Facades\DB;
 class SalesController extends Controller
 {
     protected $inventoryService;
@@ -412,15 +412,27 @@ class SalesController extends Controller
                 'total' => $item['unit_price'] * $item['qty'],
                 'product_name' => $product->name,
             ]);
+            if (!$request->is_delivered) {
+                $this->inventoryService->recordMovement([
+                    'product_id' => $item['product_id'],
+                    'type' => 'sale',
+                    'quantity' => 0,
+                    'prev_quantity' => $product->total_quantity,
+                    'movement_type' => 'adjustment',
+                    'from_warehouse_id' => $user->warehouse_id,
+                    'notes' => 'لم يتم التسليم',
+                ]);
+            } else {
 
-            $this->inventoryService->recordMovement([
-                'product_id' => $item['product_id'],
-                'type' => 'sale',
-                'quantity' => $item['qty'],
-                'prev_quantity' => $product->total_quantity,
-                'movement_type' => 'deduction',
-                'from_warehouse_id' => $user->warehouse_id,
-            ]);
+                $this->inventoryService->recordMovement([
+                    'product_id' => $item['product_id'],
+                    'type' => 'sale',
+                    'quantity' => $item['qty'],
+                    'prev_quantity' => $product->total_quantity,
+                    'movement_type' => 'deduction',
+                    'from_warehouse_id' => $user->warehouse_id,
+                ]);
+            }
         }
         if ($request->maintainance) {
             // تسجيل عمولة الفنيين
@@ -536,25 +548,115 @@ class SalesController extends Controller
 
         return redirect()->back()->with('success', 'تم حذف الفاتورة');
     }
+
     public function toggleDelivery(Request $request, Sale $invoice)
     {
-        $request->validate([
+        $validated = $request->validate([
             'delivered' => 'required|boolean',
         ]);
 
-        $invoice->is_delivered = $request->delivered;
-        $invoice->save();
+        $delivered = (bool) $validated['delivered'];
+
+        try {
+            $invoice = DB::transaction(function () use ($invoice, $delivered) {
+                $invoice = Sale::whereKey($invoice->id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
+                // منع تكرار تنفيذ نفس العملية.
+                if ((bool) $invoice->is_delivered === $delivered) {
+                    return $invoice;
+                }
+
+                // عروض الأسعار لا تؤثر على المخزون.
+                if ((bool) $invoice->is_invoice) {
+                    $invoice->load(['items.product', 'user']);
+
+                    foreach ($invoice->items as $item) {
+                        $product = $item->product;
+
+                        if (!$product || $product->type === 'service') {
+                            continue;
+                        }
+
+                        $warehouseId = $item->warehouse_id
+                            ?: $invoice->user?->warehouse_id;
+
+                        if (!$warehouseId) {
+                            throw new \RuntimeException(
+                                "تعذر تحديد مخزن الصنف: {$item->product_name}"
+                            );
+                        }
+
+                        $warehouseId = (int) $warehouseId;
+                        $quantity = (int) $item->qty;
+
+                        $prevQuantity = $this->lockWarehouseQuantity(
+                            (int) $item->product_id,
+                            $warehouseId
+                        );
+
+                        if ($delivered) {
+                            // تسليم الفاتورة: خصم الكمية مرة واحدة.
+                            $this->inventoryService->recordMovement([
+                                'product_id' => $item->product_id,
+                                'type' => 'sale',
+                                'quantity' => $quantity,
+                                'prev_quantity' => $prevQuantity,
+                                'movement_type' => 'deduction',
+                                'from_warehouse_id' => $warehouseId,
+                                'notes' => 'تم التسليم لاحقًا',
+                            ]);
+                        } else {
+                            // إلغاء التسليم: إعادة الكمية وتسجيل الحركة العكسية.
+                            $this->inventoryService->recordMovement([
+                                'product_id' => $item->product_id,
+                                'type' => 'in',
+                                'quantity' => $quantity,
+                                'prev_quantity' => $prevQuantity,
+                                'movement_type' => 'addition',
+                                'to_warehouse_id' => $warehouseId,
+                                'notes' => 'عكس خصم المخزون بسبب إلغاء التسليم',
+                            ]);
+                        }
+                    }
+                }
+
+                $invoice->is_delivered = $delivered;
+                $invoice->save();
+
+                return $invoice;
+            });
+        } catch (\Throwable $e) {
+            dd($e);
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'تعذر تحديث حالة التسليم والمخزون.',
+                ], 500);
+            }
+
+            return redirect()->back()->with(
+                'error',
+                'تعذر تحديث حالة التسليم والمخزون.'
+            );
+        }
 
         if ($request->expectsJson()) {
-            // الرد على axios أو fetch أو أي API call
-
             return response()->json([
                 'success' => true,
                 'message' => 'تم تحديث حالة التسليم بنجاح',
-                'is_delivered' => $invoice->is_delivered,
+                'is_delivered' => (bool) $invoice->is_delivered,
             ]);
         }
+
+        return redirect()->back()->with(
+            'success',
+            'تم تحديث حالة التسليم بنجاح'
+        );
     }
+
 
     public function toggleMarkDraft(Request $request, Sale $invoice)
     {
@@ -623,5 +725,24 @@ class SalesController extends Controller
             'message' => 'تم تحديث المصروفات بنجاح',
             'collected_amount' => $invoice->expenses,
         ]);
+    }
+    private function lockWarehouseQuantity(
+        int $productId,
+        int $warehouseId
+    ): int {
+        ProductInventory::firstOrCreate(
+            [
+                'product_id' => $productId,
+                'warehouse_id' => $warehouseId,
+            ],
+            [
+                'quantity' => 0,
+            ]
+        );
+
+        return (int) ProductInventory::where('product_id', $productId)
+            ->where('warehouse_id', $warehouseId)
+            ->lockForUpdate()
+            ->value('quantity');
     }
 }

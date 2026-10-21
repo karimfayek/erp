@@ -274,7 +274,7 @@ class ReportController extends Controller
 
         // غير المخول لاختيار الفرع → فرعه فقط
         $myBranchId = $user->warehouse?->branch_id;
-        if (! $canChooseBranch) {
+        if (!$canChooseBranch) {
             if ($myBranchId) {
                 $query->where('branch_id', $myBranchId);
             }
@@ -313,7 +313,7 @@ class ReportController extends Controller
             ->groupBy('branch_id')
             ->with('branch:id,name')
             ->get()
-            ->map(fn ($row) => [
+            ->map(fn($row) => [
                 'branch' => $row->branch?->name ?? 'بدون فرع',
                 'branch_id' => $row->branch_id,
                 'total' => (float) $row->total,
@@ -327,7 +327,7 @@ class ReportController extends Controller
             ->groupBy('category_id')
             ->with('category:id,name')
             ->get()
-            ->map(fn ($row) => [
+            ->map(fn($row) => [
                 'category' => $row->category?->name ?? 'بدون تصنيف',
                 'total' => (float) $row->total,
                 'count' => (int) $row->cnt,
@@ -340,7 +340,7 @@ class ReportController extends Controller
             ->groupBy(\DB::raw('DATE(date)'))
             ->orderBy('date')
             ->get()
-            ->map(fn ($row) => [
+            ->map(fn($row) => [
                 'date' => Carbon::parse($row->date)->toDateString(),
                 'total' => (float) $row->total,
             ]);
@@ -351,7 +351,7 @@ class ReportController extends Controller
             ->groupBy('user_id')
             ->with('user:id,name')
             ->get()
-            ->map(fn ($row) => [
+            ->map(fn($row) => [
                 'user' => $row->user?->name ?? 'غير محدد',
                 'total' => (float) $row->total,
                 'count' => (int) $row->cnt,
@@ -431,6 +431,9 @@ class ReportController extends Controller
         }
         if ($request->rep && $request->rep != 'all') {
             $query->where('user_id', $request->rep);
+        }
+        if ($request->invoice_q && $request->invoice_q != 'all') {
+            $query->where('is_invoice', $request->invoice_q);
         }
         if ($request->branch && $request->branch != 'all') {
             // dd($request->branch);

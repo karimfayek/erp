@@ -18,6 +18,7 @@ export default function InvoiceReports({ invoices, reps, branches, customers, in
     const [filters, setFilters] = useState({
         status: "",
         rep: "",
+        invoice_q: "",
         branch: "",
         search: "",
         customer: "",
@@ -28,6 +29,7 @@ export default function InvoiceReports({ invoices, reps, branches, customers, in
         setFilters({
             status: "",
             rep: "all",
+            invoice_q: "all",
             branch: "all",
             search: "",
             customer: "all",
@@ -36,6 +38,7 @@ export default function InvoiceReports({ invoices, reps, branches, customers, in
         })
         router.get(route("reports.invoices"), {
             status: "",
+            invoice_q: "",
             rep: "all",
             branch: "all",
             search: "",
@@ -72,6 +75,16 @@ export default function InvoiceReports({ invoices, reps, branches, customers, in
                                 <SelectItem value="delivered">تم التسليم</SelectItem>
                                 <SelectItem value="pending">لم يتم التسليم</SelectItem>
                                 <SelectItem value="partial">تحصيل جزئي</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <Select onValueChange={(val) => handleFilterChange("invoice_q", val)} value={filters.invoice_q}>
+                            <SelectTrigger>
+                                <SelectValue placeholder=" فاتورة/ بيان" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value={'all'}>{'الكل'}</SelectItem>
+                                <SelectItem value="1">فاتورة </SelectItem>
+                                <SelectItem value="0">  بيان</SelectItem>
                             </SelectContent>
                         </Select>
 

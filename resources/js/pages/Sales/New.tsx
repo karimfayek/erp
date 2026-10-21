@@ -504,11 +504,9 @@ export default function SalesCreate() {
                     <SelectContent>
                       <SelectItem value="C" className="text-blue-600"> كاش   </SelectItem>
                       <SelectItem value="T" className="text-blue-600"> تحويل بنكى  </SelectItem>
-                      <SelectItem value="CC" className="text-blue-600">  كارت ائتمان Credit Card  </SelectItem>
-                      <SelectItem value="DB" className="text-blue-600"> كارت خصم Debit Card   </SelectItem>
-                      <SelectItem value="CH" className="text-blue-600"> شيك   </SelectItem>
-                      <SelectItem value="V" className="text-blue-600"> Voucher / Coupon   </SelectItem>
+                      <SelectItem value="CC" className="text-blue-600">  فيزا  </SelectItem>
                       <SelectItem value="INSTA" className="text-blue-600">  انستا باى   </SelectItem>
+                      <SelectItem value="CH" className="text-blue-600"> شيك   </SelectItem>
                       <SelectItem value="O" className="text-blue-600">  أخرى  </SelectItem>
                     </SelectContent>
                   </Select>

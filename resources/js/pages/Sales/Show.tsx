@@ -44,7 +44,12 @@ export default function InvoiceShow({ invoice }) {
           <CardTitle>بيانات العميل</CardTitle>
         </CardHeader>
         <CardContent className="space-y-1 text-sm">
-          <p><span className="font-semibold">الاسم:</span> {invoice.customer?.name}</p>
+          {invoice.customer?.company_name != null &&
+
+            <p><span className="font-semibold">اسم الشركه:</span> {invoice.customer?.company_name}</p>
+
+          }
+          <p><span className="font-semibold">اسم العميل:</span> {invoice.customer?.name}</p>
           <p><span className="font-semibold">الهاتف:</span> {invoice.customer?.phone}</p>
           <p><span className="font-semibold">العنوان:</span> {invoice.customer?.address}</p>
 

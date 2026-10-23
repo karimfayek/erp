@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/table"
 import AppLayout from "@/layouts/app-layout"
 import { type BreadcrumbItem } from '@/types';
+import { Wallet } from "lucide-react"
 
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -222,6 +223,32 @@ export default function Collections({ sale, collections }) {
                         ))}
                     </TableBody>
                 </Table>
+            </div>
+            <div className="mt-5 flex justify-end">
+                <div className="w-full sm:w-80 rounded-xl border border-green-200
+                  bg-green-50 p-5 shadow-sm">
+                    <div className="flex items-center justify-between gap-4">
+                        <div>
+                            <p className="text-sm font-medium text-green-800">
+                                إجمالي التحصيلات
+                            </p>
+
+                            <p className="mt-2 text-2xl font-bold text-green-700">
+                                {collections
+                                    .reduce((total, item) => total + Number(item.amount || 0), 0)
+                                    .toLocaleString("en-US", {
+                                        minimumFractionDigits: 2,
+                                        maximumFractionDigits: 2,
+                                    })}
+                            </p>
+                        </div>
+
+                        <div className="flex h-12 w-12 shrink-0 items-center
+                      justify-center rounded-xl bg-green-100">
+                            <Wallet className="h-6 w-6 text-green-700" />
+                        </div>
+                    </div>
+                </div>
             </div>
         </AppLayout>
     )

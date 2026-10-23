@@ -20,6 +20,16 @@ return new class extends Migration
             $table->decimal('tax_rate', 5, 2)->default(0); // %
             $table->integer('reorder_level')->default(0);
             $table->text('description')->nullable();
+            $table->string('internal_code')->nullable();
+            $table->string('item_code')->nullable();
+            $table->string('item_type')->nullable();
+            $table->decimal('cost_price', 12, 2)->default(0);
+            $table->decimal('price_without_tax', 12, 2)->default(0);
+            $table->decimal('tax_percentage', 5, 2)->default(0);
+            $table->string('type')->nullable();
+            $table->boolean('maintainance')->default(false);
+            $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('brand_id')->nullable();
             $table->timestamps();
         });
     }

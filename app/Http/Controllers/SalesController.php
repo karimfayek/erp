@@ -345,13 +345,15 @@ class SalesController extends Controller
             'notes' => 'nullable|string',
             'discount_percentage' => 'nullable|numeric|min:0|max:100',
             'subtotal' => 'required|numeric',
+            // The money columns below are recalculated on the server, so the
+            // client values are accepted but never trusted.
             'other_tax_val' => 'nullable|numeric',
-            'total' => 'required|numeric',
+            'total' => 'nullable|numeric',
             'collected' => 'nullable|numeric',
-            'postponed' => 'required|numeric',
+            'postponed' => 'nullable|numeric',
             'tax' => 'required|numeric',
             'other_tax' => 'nullable|numeric',
-            'expenses' => 'required|numeric',
+            'expenses' => 'nullable|numeric',
             'document_type' => 'required',
             'invoice_type' => 'required',
             'payment_method' => 'required',
@@ -389,15 +391,38 @@ class SalesController extends Controller
         $totalTransportation = collect($request['technicians'])->sum('transportation');
         $data['transportation'] = ($totalTransportation ?? 0);
 
-        $sale = Sale::create($data);
-        if ($request->collected > 0) {
-            \App\Models\Collection::create([
-                'sale_id' => $sale->id,
-                'amount' => $request->collected,
-                'collection_date' => now(),
-                'created_by' => auth()->id(),
-            ]);
-        }
+        // The money columns are never trusted from the client: they are derived
+        // from the subtotal, the discount and the tax rates.
+        $data['subtotal'] = round((float) $data['subtotal'], 2);
+        $data['tax'] = round((float) $data['tax'], 2);
+        $data['other_tax'] = (float) ($data['other_tax'] ?? 0);
+        $data['discount_percentage'] = (float) ($data['discount_percentage'] ?? 0);
+        $data['expenses'] = round((float) ($data['expenses'] ?? 0), 2);
+
+        $afterDiscount = $data['subtotal'] - ($data['subtotal'] * $data['discount_percentage'] / 100);
+        $data['other_tax_val'] = round($afterDiscount * $data['other_tax'] / 100, 2);
+        $data['total'] = round($afterDiscount - $data['other_tax_val'] + $data['tax'], 2);
+        $data['collected'] = 0;
+        $data['postponed'] = $data['total'];
+
+        $sale = DB::transaction(function () use ($data, $request) {
+            $sale = Sale::create($data);
+
+            if ($request->collected > 0 && (float) $request->collected <= (float) $data['total']) {
+                \App\Models\Collection::create([
+                    'sale_id' => $sale->id,
+                    'amount' => $request->collected,
+                    'collection_date' => now(),
+                    'created_by' => auth()->id(),
+                ]);
+            }
+
+            // Keep the stored collected/postponed columns in sync with the
+            // collections table instead of trusting the submitted values.
+            $sale->syncCollectionTotals()->save();
+
+            return $sale;
+        });
         // create items
         foreach ($validated['items'] as $item) {
             // dd($item);
@@ -716,14 +741,22 @@ class SalesController extends Controller
             'collected_amount' => 'required|numeric|min:0',
         ]);
 
-        $invoice->expenses = $request->collected_amount;
-        // $invoice->postponed = $invoice->total - $invoice->collected;
-        $invoice->save();
+        $amount = round((float) $request->collected_amount, 2);
+
+        DB::transaction(function () use ($invoice, $amount) {
+            // The collected amount is the sum of the collection rows: adjust
+            // them so the stored column and the collections table stay in sync.
+            $invoice->applyCollectedAmount($amount)->save();
+        });
+
+        $invoice->refresh();
 
         return response()->json([
             'success' => true,
-            'message' => 'تم تحديث المصروفات بنجاح',
-            'collected_amount' => $invoice->expenses,
+            'message' => 'تم تحديث المبلغ المحصل بنجاح',
+            'collected_amount' => (float) $invoice->collected,
+            'postponed' => (float) $invoice->postponed,
+            'remaining_amount' => (float) $invoice->remaining_amount,
         ]);
     }
     private function lockWarehouseQuantity(

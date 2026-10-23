@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { DataTable } from "@/components/DataTable";// لو عندك جدول جاهز
 import { Calendar } from "@/components/ui/calendar";
-import { Filter, Search, CalendarIcon } from "lucide-react";
+import { Filter, Search, CalendarIcon, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import AppLayout from "@/layouts/app-layout";
@@ -15,8 +15,20 @@ import { can } from "@/utils/permissions";
 
 export default function InvoiceReports({ invoices, reps, branches, customers, info }) {
     console.log(invoices, 'inv')
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        const startHandler = router.on('start', () => setLoading(true));
+        const finishHandler = router.on('finish', () => setLoading(false));
+        return () => {
+            startHandler();
+            finishHandler();
+        };
+    }, []);
+
     const [filters, setFilters] = useState({
-        status: "",
+        delivery: "",
+        collection: "",
         rep: "",
         invoice_q: "",
         branch: "",
@@ -27,7 +39,8 @@ export default function InvoiceReports({ invoices, reps, branches, customers, in
     });
     const resetFilter = () => {
         setFilters({
-            status: "",
+            delivery: "",
+            collection: "",
             rep: "all",
             invoice_q: "all",
             branch: "all",
@@ -37,7 +50,8 @@ export default function InvoiceReports({ invoices, reps, branches, customers, in
             to_date: "",
         })
         router.get(route("reports.invoices"), {
-            status: "",
+            delivery: "",
+            collection: "",
             invoice_q: "",
             rep: "all",
             branch: "all",
@@ -66,15 +80,25 @@ export default function InvoiceReports({ invoices, reps, branches, customers, in
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="grid grid-cols-1 md:grid-cols-5 gap-3">
-                        <Select onValueChange={(val) => handleFilterChange("status", val)} value={filters.status}>
+                        <Select onValueChange={(val) => handleFilterChange("delivery", val)} value={filters.delivery}>
                             <SelectTrigger>
-                                <SelectValue placeholder="حالة الفاتورة" />
+                                <SelectValue placeholder="حالة التسليم" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value={'all'}>{'الكل'}</SelectItem>
+                                <SelectItem value={'all'}>{'التسليم -الكل  '}</SelectItem>
                                 <SelectItem value="delivered">تم التسليم</SelectItem>
                                 <SelectItem value="pending">لم يتم التسليم</SelectItem>
-                                <SelectItem value="partial">تحصيل جزئي</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <Select onValueChange={(val) => handleFilterChange("collection", val)} value={filters.collection}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="حالة التحصيل" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value={'all'}>{'التحصيل - الكل'}</SelectItem>
+                                <SelectItem value="collected">تم التحصيل بالكامل</SelectItem>
+                                <SelectItem value="partial">تحصيل جزئى  </SelectItem>
+                                <SelectItem value="uncollected"> غير محصل نهائيا  </SelectItem>
                             </SelectContent>
                         </Select>
                         <Select onValueChange={(val) => handleFilterChange("invoice_q", val)} value={filters.invoice_q}>
@@ -184,12 +208,20 @@ export default function InvoiceReports({ invoices, reps, branches, customers, in
                             </Popover>
                         </div>
                         <Button
-                            className="bg-primary "
+                            className="bg-primary"
+                            disabled={loading}
                             onClick={() => {
                                 router.get(route("reports.invoices"), filters, { preserveState: true });
                             }}
                         >
-                            تطبيق الفلاتر
+                            {loading ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    جارى المعالجة...
+                                </>
+                            ) : (
+                                "تطبيق الفلاتر"
+                            )}
                         </Button>
                         <Button
                             className="bg-red-600 "
@@ -201,10 +233,16 @@ export default function InvoiceReports({ invoices, reps, branches, customers, in
                 </Card>
 
                 {/* ✅ جدول الفواتير */}
-                <Card className="shadow-sm border border-gray-200">
+                <Card className="shadow-sm border border-gray-200 relative">
                     <CardHeader>
                         <CardTitle className="text-lg font-semibold">قائمة الفواتير</CardTitle>
                     </CardHeader>
+                    {loading && (
+                        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center rounded-lg bg-background/70 backdrop-blur-sm gap-3">
+                            <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                            <span className="text-sm text-muted-foreground font-medium">جارى تحميل البيانات...</span>
+                        </div>
+                    )}
                     <CardContent>
                         <div className="overflow-x-auto">
                             <table className="min-w-full text-sm ">
@@ -215,6 +253,8 @@ export default function InvoiceReports({ invoices, reps, branches, customers, in
                                         <th className="p-2 text-right">التاريخ</th>
                                         <th className="p-2 text-right">المندوب</th>
                                         <th className="p-2 text-right">المبلغ</th>
+                                        <th className="p-2 text-right">ض 14%</th>
+                                        <th className="p-2 text-right">ض اخرى</th>
                                         <th className="p-2 text-right">المصاريف</th>
                                         <th className="p-2 text-right">التسليم</th>
                                         <th className="p-2 text-right">التحصيل</th>
@@ -239,19 +279,21 @@ export default function InvoiceReports({ invoices, reps, branches, customers, in
                                             <td className="p-2"> {new Date(invoice.date).toLocaleDateString("ar-EG")}</td>
                                             <td className="p-2">{invoice.user?.name}</td>
                                             <td className="p-2">{invoice.total_formatted} ج.م</td>
+                                            <td className="p-2">{invoice.tax} ج.م</td>
+                                            <td className="p-2">{invoice.other_tax_val} ج.م</td>
                                             <td className="p-2">{invoice.expenses || 0}</td>
                                             <td className="p-2">
                                                 {invoice.is_delivered ?
-                                                    <Badge className="bg-green-100 text-green-700">تم التسليم</Badge>
+                                                    <Badge className="bg-green-100 text-green-700 overflow-hidden">تم </Badge>
                                                     :
-                                                    <Badge className="bg-red-100 text-red-700"> لا</Badge>
+                                                    <Badge className="bg-red-100 text-red-700 overflow-hidden"> لا</Badge>
                                                 }
                                             </td>
                                             <td className="p-2">
                                                 {Number(invoice.remaining_amount) < 1 ?
-                                                    <Badge className="bg-green-100 text-green-700">تم </Badge>
+                                                    <Badge className="bg-green-100 text-green-700 overflow-hidden">تم </Badge>
                                                     :
-                                                    <Badge className="bg-red-100 text-red-700"> جزئى</Badge>
+                                                    <Badge className="bg-red-100 text-red-700 overflow-hidden"> جزئى</Badge>
                                                 }
                                             </td>
                                             <td className="p-2">
@@ -280,49 +322,192 @@ export default function InvoiceReports({ invoices, reps, branches, customers, in
                 <Card>
                     <CardHeader>
                         <CardTitle className="text-lg font-semibold"> معلومات</CardTitle>
+                        <p className="text-xs text-muted-foreground leading-6">نتائج الفواتير المفلترة</p>
                     </CardHeader>
-                    <CardContent>
-                        <div className="flex gap-3">
-                            <div className="flex flex-col border-l">
-                                <b className=" ml-2">عدد الفواتير المفلترة</b>
-                                <p>{invoices?.total}</p>
+                    <CardContent className="space-y-6">
+                        {/* 1. الملخص العام */}
+                        <section className="space-y-3">
+                            <h3 className="text-base font-bold">الملخص العام</h3>
+
+                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                                {[
+                                    {
+                                        label: "عدد الفواتير المفلترة",
+                                        value: invoices?.total,
+                                    },
+                                    {
+                                        label: "إجمالي كل الفواتير",
+                                        value: Number(info?.invoicesTotals ?? 0).toFixed(2),
+                                    },
+                                    {
+                                        label: "إجمالي المبالغ المحصلة",
+                                        value: info?.collected,
+                                    },
+                                    {
+                                        label: "إجمالي المبلغ المؤجل",
+                                        value: Number(info?.postponed ?? 0).toFixed(2),
+                                    },
+                                    {
+                                        label: "إجمالي المصاريف",
+                                        value: info?.expenses,
+                                    },
+                                ].map((item, index) => (
+                                    <div
+                                        key={index}
+                                        className="flex min-w-0 flex-col justify-center gap-2 rounded-lg border bg-muted/30 p-3 min-h-[100px]"
+                                    >
+                                        <b className="text-sm leading-6 text-muted-foreground">
+                                            {item.label}
+                                        </b>
+                                        <p className="text-xl font-bold break-words" dir="ltr">
+                                            {item.value ?? 0}
+                                        </p>
+                                    </div>
+                                ))}
                             </div>
-                            <div className="flex flex-col border-l">
-                                <b className=" ml-2">  اجمالى المبلغ للفواتير</b>
-                                <p>{Number(info?.invoicesTotals).toFixed(2)}</p>
-                            </div>
-                            <div className="flex flex-col border-l">
-                                <b className=" ml-2">  اجمالى المبلغ المحصل</b>
-                                <p>{info?.collected}</p>
-                            </div>
-                            <div className="flex flex-col border-l">
-                                <b className=" ml-2">  اجمالى المبلغ المؤجل</b>
-                                <p>{Number(info?.postponed).toFixed(2)}</p>
-                            </div>
-                            <div className="flex flex-col border-l">
-                                <b className=" ml-2">  اجمالى  المصاريف</b>
-                                <p>{info?.expenses}</p>
-                            </div>
-                            <div className="flex flex-col border-l">
-                                <b className=" ml-2">  اجمالى  الضرائب</b>
-                                <p>{info?.taxAmount}</p>
-                            </div>
-                            <div className="flex flex-col border-l">
-                                <b className=" ml-2">  اجمالى  الضرائب المحصلة</b>
-                                <p>{info?.totalCollectedTax}</p>
-                            </div>
-                            <div className="flex flex-col border-l">
-                                <b className=" ml-2">  اجمالى  ضرائب اخرى</b>
-                                <p>{info?.OtherTaxAmount}</p>
-                            </div>
-                            <div className="flex flex-col border-l">
-                                <b className=" ml-2">  اجمالى  ضرائب اخرى المحصلة</b>
-                                <p>{info?.totalCollectedOtherTax}</p>
+                        </section>
+
+                        {/* 2. ضرائب القيمة المضافة 14% */}
+                        <section className="space-y-3">
+                            <div>
+                                <h3 className="text-base font-bold">ضرائب القيمة المضافة 14%</h3>
+                                <p className="text-sm text-muted-foreground">
+                                    توزيع الضريبة حسب حالة تحصيل الفواتير
+                                </p>
                             </div>
 
-                        </div>
+                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                                {[
+                                    {
+                                        label: "إجمالي ضرائب 14%",
+                                        hint: "كل الفواتير",
+                                        value: info?.taxAmount,
+                                    },
+                                    {
+                                        label: "ضرائب 14% المحصلة",
+                                        hint: "الفواتير المحصلة بالكامل",
+                                        value: info?.vat14Collected,
+                                    },
+                                    {
+                                        label: "ضرائب 14% المعلقة",
+                                        hint: "الفواتير غير المحصلة أو المحصلة جزئيًا",
+                                        value: info?.vat14Pending,
+                                    },
+                                ].map((item, index) => (
+                                    <div
+                                        key={index}
+                                        className="flex min-w-0 flex-col justify-center gap-2 rounded-lg border border-blue-200 bg-blue-50/50 p-4 min-h-[110px] dark:border-blue-900 dark:bg-blue-950/20"
+                                    >
+                                        <b className="text-sm leading-6 text-muted-foreground">
+                                            {item.label}
+                                        </b>
+                                        <p className="text-xs leading-5 text-muted-foreground">
+                                            {item.hint}
+                                        </p>
+                                        <p className="text-xl font-bold break-words" dir="ltr">
+                                            {item.value ?? 0}
+                                        </p>
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
 
+                        {/* 3. الضرائب الأخرى */}
+                        <section className="space-y-3">
+                            <div>
+                                <h3 className="text-base font-bold">الضرائب الأخرى</h3>
+                                <p className="text-sm text-muted-foreground">
+                                    إجمالي الضرائب الأخرى وتفاصيلها حسب حالة التحصيل
+                                </p>
+                            </div>
+
+                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                                {[
+                                    {
+                                        label: "إجمالي الضرائب الأخرى",
+                                        hint: "كل الفواتير",
+                                        value: info?.OtherTaxAmount,
+                                    },
+                                    {
+                                        label: "ضرائب أخرى 1%",
+                                        hint: "الفواتير المحصلة بالكامل",
+                                        value: info?.otherTax1Collected,
+                                    },
+                                    {
+                                        label: "ضرائب أخرى 3%",
+                                        hint: "الفواتير المحصلة بالكامل",
+                                        value: info?.otherTax3Collected,
+                                    },
+                                    {
+                                        label: "ضرائب أخرى 1%",
+                                        hint: "الفواتير غير المحصلة أو المحصلة جزئيًا",
+                                        value: info?.otherTax1Pending,
+                                    },
+                                    {
+                                        label: "ضرائب أخرى 3%",
+                                        hint: "الفواتير غير المحصلة أو المحصلة جزئيًا",
+                                        value: info?.otherTax3Pending,
+                                    },
+                                ].map((item, index) => (
+                                    <div
+                                        key={index}
+                                        className="flex min-w-0 flex-col justify-center gap-2 rounded-lg border bg-muted/30 p-4 min-h-[110px]"
+                                    >
+                                        <b className="text-sm leading-6 text-muted-foreground">
+                                            {item.label}
+                                        </b>
+                                        <p className="text-xs leading-5 text-muted-foreground">
+                                            {item.hint}
+                                        </p>
+                                        <p className="text-xl font-bold break-words" dir="ltr">
+                                            {item.value ?? 0}
+                                        </p>
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
+
+                        {/* 4. صافي الضرائب */}
+                        <section className="space-y-3">
+                            <div>
+                                <h3 className="text-base font-bold">صافي الضرائب</h3>
+                                <p className="text-sm text-muted-foreground">
+                                    صافي الضرائب حسب حالة تحصيل الفواتير
+                                </p>
+                            </div>
+
+                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-2">
+                                {[
+                                    {
+                                        label: "صافي الضرائب المحصلة",
+                                        hint: "الفواتير المحصلة بالكامل",
+                                        value: info?.netTaxCollected,
+                                    },
+                                    {
+                                        label: "صافي الضرائب المعلقة",
+                                        hint: "الفواتير غير المحصلة أو المحصلة جزئيًا",
+                                        value: info?.netTaxPending,
+                                    },
+                                ].map((item, index) => (
+                                    <div
+                                        key={index}
+                                        className="flex min-w-0 flex-col justify-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50/50 p-4 min-h-[110px] dark:border-emerald-900 dark:bg-emerald-950/20"
+                                    >
+                                        <b className="text-sm leading-6 text-muted-foreground">
+                                            {item.label}
+                                        </b>
+                                        <p className="text-xs leading-5 text-muted-foreground">
+                                            {item.hint}
+                                        </p>
+                                        <p className="text-xl font-bold break-words" dir="ltr">
+                                            {item.value ?? 0}
+                                        </p>
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
                     </CardContent>
+
                 </Card>
                 <div className="flex justify-center gap-2 pt-4 flex-wrap">
                     {invoices.links.map((link, index) => (

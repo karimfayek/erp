@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Collection;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use App\Models\Sale;
 class CollectionController extends Controller
@@ -24,10 +25,15 @@ class CollectionController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        Collection::create([
-            ...$data,
-            'created_by' => auth()->id(),
-        ]);
+        DB::transaction(function () use ($data) {
+            Collection::create([
+                ...$data,
+                'created_by' => auth()->id(),
+            ]);
+
+            // Keep the sale totals in sync with the new collection row.
+            Sale::whereKey($data['sale_id'])->first()->syncCollectionTotals()->save();
+        });
 
         return back()->with('success', 'تم إضافة التحصيل بنجاح');
     }
@@ -40,14 +46,25 @@ class CollectionController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        $collection->update($data);
+        DB::transaction(function () use ($collection, $data) {
+            $collection->update($data);
+
+            // Keep the sale totals in sync with the updated collection row.
+            $collection->sale->syncCollectionTotals()->save();
+        });
 
         return back()->with('success', 'تم تعديل التحصيل بنجاح');
     }
 
     public function destroy(Collection $collection)
     {
-        $collection->delete();
+        DB::transaction(function () use ($collection) {
+            $sale = $collection->sale;
+            $collection->delete();
+
+            // Keep the sale totals in sync after the collection row is removed.
+            $sale->syncCollectionTotals()->save();
+        });
 
         return back()->with('success', 'تم حذف التحصيل');
     }

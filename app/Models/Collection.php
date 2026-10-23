@@ -14,6 +14,8 @@ class Collection extends Model
         'amount',
         'collection_date',
         'notes',
+        'method',
+        'reference_number',
         'created_by',
     ];
 

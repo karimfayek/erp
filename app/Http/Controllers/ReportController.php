@@ -17,8 +17,8 @@ class ReportController extends Controller
         $isSuperAdmin = $user->hasPermission('bypass');
         $invoicesQuery = Invoice::query()->whereDate('date', Carbon::today());
 
-        // لو ليس سوبر أدمن يتم فلترة الفواتير حسب الـ branch_id
-        if (!$isSuperAdmin) {
+        //  لو ليس سوبر أدمن يتم فلترة الفواتير حسب الـ branch_id
+        if (!$isSuperAdmin && $user->warehouse) {
             $branchId = $user->warehouse->branch_id;
 
             $invoicesQuery->whereHas('user.warehouse', function ($q) use ($branchId) {
@@ -63,7 +63,7 @@ class ReportController extends Controller
         $invoicesQuery = Invoice::query();
 
         // لو مش سوبر أدمن نفلتر بالـ branch_id
-        if (!$isSuperAdmin) {
+        if (!$isSuperAdmin && $user->warehouse) {
             $branchId = $user->warehouse->branch_id;
 
             $invoicesQuery->whereHas('user.warehouse', function ($q) use ($branchId) {
@@ -414,20 +414,43 @@ class ReportController extends Controller
         }
         // $query->withSum('collections', 'amount');
         //dd($query->collections_sum_amount);
-        if ($request->status === 'delivered') {
-            $query->where('is_delivered', 1);
-        } elseif ($request->status === 'pending') {
-            $query->where('is_delivered', 0);
-        } elseif ($request->status === 'partial') {
-            $newquery = $query->clone()->with('collections');
-            $n = $newquery->get();
-            $ids = [];
-            foreach ($n as $invoice) {
-                if ($invoice->collectedAmount() < $invoice->total) {
-                    $ids[] = $invoice->id;
-                }
+        // فلتر التسليم
+        if ($request->filled('delivery') && $request->delivery !== 'all') {
+            if ($request->delivery === 'delivered') {
+                $query->where('is_delivered', 1);
+            } elseif ($request->delivery === 'pending') {
+                $query->where('is_delivered', 0);
             }
-            $query->whereIn('id', $ids);
+        }
+
+        // فلتر التحصيل
+        if ($request->filled('collection') && $request->collection !== 'all') {
+            if ($request->collection === 'collected') {
+                // محصلة بالكامل
+                $query->whereRaw('total <= (
+            SELECT COALESCE(SUM(amount), 0)
+            FROM collections
+            WHERE collections.sale_id = sales.id
+        )');
+            } elseif ($request->collection === 'partial') {
+                // محصلة جزئياً
+                $query->whereRaw('
+            (SELECT COALESCE(SUM(amount), 0)
+             FROM collections
+             WHERE collections.sale_id = sales.id) > 0
+            AND
+            (SELECT COALESCE(SUM(amount), 0)
+             FROM collections
+             WHERE collections.sale_id = sales.id) < sales.total
+        ');
+            } elseif ($request->collection === 'uncollected') {
+                // غير محصلة نهائياً
+                $query->whereRaw('
+            (SELECT COALESCE(SUM(amount), 0)
+             FROM collections
+             WHERE collections.sale_id = sales.id) <= 0
+        ');
+            }
         }
         if ($request->rep && $request->rep != 'all') {
             $query->where('user_id', $request->rep);
@@ -506,6 +529,69 @@ class ReportController extends Controller
         $totalCollectedTax = $totals['vat'];
         $totalCollectedOtherTax = $totals['other_tax'];
 
+        // Calculate tax breakdown fields for report footer
+        $otherTax1Collected = 0;
+        $otherTax3Collected = 0;
+        $otherTax1Pending = 0;
+        $otherTax3Pending = 0;
+        $netTaxCollected = 0;
+        $netTaxPending = 0;
+        $vat14Collected = 0;
+        $vat14Pending = 0;
+        foreach ($invoicesInfo as $invoice) {
+            $collectedAmount = (float) $invoice->collectedAmount();
+            $invoiceTotal = (float) $invoice->total;
+
+            $isCollectedFully = $invoiceTotal > 0
+                && $collectedAmount >= $invoiceTotal;
+
+            $taxVal = (float) ($invoice->tax ?? 0);
+
+            if ($isCollectedFully) {
+                $vat14Collected += $taxVal;
+            } else {
+                $vat14Pending += $taxVal;
+            }
+
+            $collectedAmount = (float) $invoice->collectedAmount();
+            $invoiceTotal = (float) $invoice->total;
+
+            $isCollectedFully = $invoiceTotal > 0
+                && $collectedAmount >= $invoiceTotal;
+
+            $otherTaxPercent = (float) ($invoice->other_tax ?? 0);
+            $otherTaxVal = (float) ($invoice->other_tax_val ?? 0);
+            $taxVal = (float) ($invoice->tax ?? 0);
+
+            // الضريبة الصافية بدون الضرائب الأخرى
+            $netTaxVal = $taxVal - $otherTaxVal;
+
+            if ($isCollectedFully) {
+
+                // الفواتير المحصلة بالكامل
+
+                if ($otherTaxPercent == 1) {
+                    $otherTax1Collected += $otherTaxVal;
+                } elseif ($otherTaxPercent == 3) {
+                    $otherTax3Collected += $otherTaxVal;
+                }
+
+                $netTaxCollected += $netTaxVal;
+
+            } else {
+
+                // الفواتير غير المحصلة أو المحصلة جزئياً
+
+                if ($otherTaxPercent == 1) {
+                    $otherTax1Pending += $otherTaxVal;
+                } elseif ($otherTaxPercent == 3) {
+                    $otherTax3Pending += $otherTaxVal;
+                }
+
+                $netTaxPending += $netTaxVal;
+            }
+        }
+
         //dd($totalCollectedTax);
 
         $customers = \App\Models\Customer::select('id', 'name', 'phone', 'company_name', 'address')->get();
@@ -524,8 +610,19 @@ class ReportController extends Controller
                 'OtherTaxAmount' => number_format((float) $OtherTaxAmount, 2, '.', ','),
                 'totalCollectedTax' => number_format((float) $totalCollectedTax, 2, '.', ','),
                 'totalCollectedOtherTax' => number_format((float) $totalCollectedOtherTax, 2, '.', ','),
+
+                // Tax breakdown fields for report footer
+                'otherTax1Collected' => number_format((float) $otherTax1Collected, 2, '.', ','),
+                'otherTax3Collected' => number_format((float) $otherTax3Collected, 2, '.', ','),
+                'otherTax1Pending' => number_format((float) $otherTax1Pending, 2, '.', ','),
+                'otherTax3Pending' => number_format((float) $otherTax3Pending, 2, '.', ','),
+                'netTaxCollected' => number_format((float) $netTaxCollected, 2, '.', ','),
+                'netTaxPending' => number_format((float) $netTaxPending, 2, '.', ','),
+                'vat14Collected' => number_format((float) $vat14Collected, 2, '.', ','),
+                'vat14Pending' => number_format((float) $vat14Pending, 2, '.', ','),
             ]
         ]);
     }
 
 }
+

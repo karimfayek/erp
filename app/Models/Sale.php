@@ -79,7 +79,7 @@ class Sale extends Model
     }
     public function setPostponedAttribute($value)
     {
-        $this->attributes['postponed'] = $this->total - $this->collected;
+        $this->attributes['postponed'] = $value;
     }
     public function getPostponedFormattedAttribute($value)
     {
@@ -122,13 +122,100 @@ class Sale extends Model
         return $this->collections()->sum('amount');
     }
 
+    /**
+     * The amount still owed on this sale.
+     *
+     * Never negative: an over-collected sale has nothing left to postpone.
+     */
     public function getRemainingAmountAttribute()
     {
-        return $this->total - $this->collected_amount;
+        return max(0, (float) $this->total - (float) $this->collected_amount);
     }
+
     public function collectedAmount(): float
     {
-        return $this->collections()->sum('amount');
+        return (float) $this->collections()->sum('amount');
+    }
+
+    /**
+     * Recompute the money columns of the sale and keep them consistent.
+     *
+     * - other_tax_val is derived from (subtotal - discount) * other_tax / 100
+     * - total is derived from the subtotal, discount, tax and other tax
+     * - collected is the sum of the rows in the collections table
+     * - postponed is whatever is left to collect
+     */
+    public function recalculateAmounts(bool $syncCollected = true): self
+    {
+        $subtotal = (float) $this->subtotal;
+        $discountPercentage = (float) ($this->discount_percentage ?? 0);
+        $afterDiscount = $subtotal - ($subtotal * $discountPercentage / 100);
+
+        $otherTaxValue = round($afterDiscount * (float) ($this->other_tax ?? 0) / 100, 2);
+        $taxValue = round((float) $this->tax, 2);
+
+        $this->other_tax_val = $otherTaxValue;
+        $this->total = round($afterDiscount - $otherTaxValue + $taxValue, 2);
+
+        if ($syncCollected) {
+            $this->collected = $this->collectedAmount();
+        }
+
+        $this->postponed = max(0, (float) $this->total - (float) $this->collected);
+
+        return $this;
+    }
+
+    /**
+     * Sync the stored collected/postponed columns with the collections table.
+     */
+    public function syncCollectionTotals(): self
+    {
+        $this->collected = $this->collectedAmount();
+        $this->postponed = max(0, (float) $this->total - (float) $this->collected);
+
+        return $this;
+    }
+
+    /**
+     * Set the collected amount of the sale by adjusting the collection rows.
+     *
+     * Existing rows keep their date and notes: a bigger amount adds a new row,
+     * a smaller one trims the most recent rows first.
+     */
+    public function applyCollectedAmount(float $amount): self
+    {
+        $amount = round($amount, 2);
+        $difference = round($amount - $this->collectedAmount(), 2);
+
+        if ($difference > 0) {
+            $this->collections()->create([
+                'amount' => $difference,
+                'collection_date' => now(),
+                'created_by' => auth()->id(),
+            ]);
+        } elseif ($difference < 0) {
+            $remaining = abs($difference);
+
+            foreach ($this->collections()->orderByDesc('id')->get() as $collection) {
+                if ($remaining <= 0.001) {
+                    break;
+                }
+
+                $collectionAmount = (float) $collection->amount;
+
+                if ($collectionAmount <= $remaining + 0.001) {
+                    $remaining -= $collectionAmount;
+                    $collection->delete();
+                } else {
+                    $collection->amount = round($collectionAmount - $remaining, 2);
+                    $collection->save();
+                    $remaining = 0;
+                }
+            }
+        }
+
+        return $this->syncCollectionTotals();
     }
 
     public function isCollected(): bool

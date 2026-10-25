@@ -10,13 +10,14 @@ import { LoaderCircle } from 'lucide-react';
 import { useForm } from '@inertiajs/react';
 import { can } from '@/utils/permissions';
 export default function NewUser({ onSuccess, warehouses, maintainance, roles }) {
-      if(!can('Users view') && !can('Maintenance users')){
-            
-            return null
-        }
+    if (!can('Users view') && !can('Maintenance users')) {
+
+        return null
+    }
     const { data, setData, post, processing, errors, reset } = useForm<Required<RegisterForm>>({
         name: '',
         email: '',
+        phone: '',
         warehouse_id: '',
         salary: 0.00,
         role: '',
@@ -37,28 +38,28 @@ export default function NewUser({ onSuccess, warehouses, maintainance, roles }) 
             onFinish: () => reset('password', 'password_confirmation'),
         });
     };
-const handleNameAndEmail = (value: string) => {
-    setData('name', value);
-    if (maintainance) {
-        // Generate email for maintainance users and handle spaces and arabic characters
-        
-        const emailValue = value
-            .toLowerCase()
-            .replace(/[\u0600-\u06FF]/g, (char) => {
-                const arabicToEnglishMap = {
-                    'ا': 'a', 'ب': 'b', 'ت': 't', 'ث': 'th', 'ج': 'j', 'ح': 'h', 'خ': 'kh',
-                    'د': 'd', 'ذ': 'dh', 'ر': 'r', 'ز': 'z', 'س': 's', 'ش': 'sh', 'ص': 's',
-                    'ض': 'd', 'ط': 't', 'ظ': 'z', 'ع': 'a', 'غ': 'gh', 'ف': 'f', 'ق': 'q',
-                    'ك': 'k', 'ل': 'l', 'م': 'm', 'ن': 'n', 'ه': 'h', 'و': 'w', 'ي': 'y','ى': 'y',
-                    'ئ': 'y', 'ء': 'a', 'ؤ': 'w','ة': 'h','إ': 'a','أ': 'a','آ': 'a'
-                };
-                return arabicToEnglishMap[char] || char;
-            })
-             .trim()
-            .replace(/\s+/g, '.') + '@maintainance.local';
-        setData('email', emailValue);
+    const handleNameAndEmail = (value: string) => {
+        setData('name', value);
+        if (maintainance) {
+            // Generate email for maintainance users and handle spaces and arabic characters
+
+            const emailValue = value
+                .toLowerCase()
+                .replace(/[\u0600-\u06FF]/g, (char) => {
+                    const arabicToEnglishMap = {
+                        'ا': 'a', 'ب': 'b', 'ت': 't', 'ث': 'th', 'ج': 'j', 'ح': 'h', 'خ': 'kh',
+                        'د': 'd', 'ذ': 'dh', 'ر': 'r', 'ز': 'z', 'س': 's', 'ش': 'sh', 'ص': 's',
+                        'ض': 'd', 'ط': 't', 'ظ': 'z', 'ع': 'a', 'غ': 'gh', 'ف': 'f', 'ق': 'q',
+                        'ك': 'k', 'ل': 'l', 'م': 'm', 'ن': 'n', 'ه': 'h', 'و': 'w', 'ي': 'y', 'ى': 'y',
+                        'ئ': 'y', 'ء': 'a', 'ؤ': 'w', 'ة': 'h', 'إ': 'a', 'أ': 'a', 'آ': 'a'
+                    };
+                    return arabicToEnglishMap[char] || char;
+                })
+                .trim()
+                .replace(/\s+/g, '.') + '@maintainance.local';
+            setData('email', emailValue);
+        }
     }
-}
     return (
         <form method="POST" className="flex flex-col gap-6 p-6" onSubmit={submit}>
             <div className="grid gap-6">
@@ -77,6 +78,20 @@ const handleNameAndEmail = (value: string) => {
                         placeholder="Full name"
                     />
                     <InputError message={errors.name} className="mt-2" />
+                </div>
+                <div className="grid gap-2">
+                    <Label htmlFor="phone">Phone Number</Label>
+                    <Input
+                        id="phone"
+                        type="text"
+                        required
+                        tabIndex={3}
+                        autoComplete="phone"
+                        value={data.phone}
+                        onChange={(e) => setData('phone', e.target.value)}
+                        disabled={processing}
+                        placeholder="01xxxxxxxx" />
+                    <InputError message={errors.phone} />
                 </div>
                 {!maintainance &&
                     <>
@@ -111,33 +126,33 @@ const handleNameAndEmail = (value: string) => {
                     </Select>
                 </div>
                 {maintainance
-                &&
-                 <div className="grid gap-2">
-                            <Label htmlFor="salary">المرتب</Label>
-                            <Input
-                                id="salary"
-                                type="number"
-                                step ="0.01"
-                                tabIndex={3}
-                                autoComplete="salary"
-                                value={data.salary}
-                                onChange={(e) => setData('salary', e.target.value)}
-                                disabled={processing}
-                                placeholder="salary@example.com"
-                            />
-                            <InputError message={errors.salary} />
-                        </div>
+                    &&
+                    <div className="grid gap-2">
+                        <Label htmlFor="salary">المرتب</Label>
+                        <Input
+                            id="salary"
+                            type="number"
+                            step="0.01"
+                            tabIndex={3}
+                            autoComplete="salary"
+                            value={data.salary}
+                            onChange={(e) => setData('salary', e.target.value)}
+                            disabled={processing}
+                            placeholder="salary@example.com"
+                        />
+                        <InputError message={errors.salary} />
+                    </div>
                 }
                 {!maintainance &&
                     <>
-                     <Select value={String(data.role || "")} onValueChange={(e) => setData('role', e)} required={true}>
-                        <SelectTrigger className="w-full"><SelectValue placeholder="اختر الدور " /></SelectTrigger>
-                        <SelectContent>
-                            {roles.map((role) => (
-                                <SelectItem key={role.id} value={String(role.id)}>{role.name}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                        <Select value={String(data.role || "")} onValueChange={(e) => setData('role', e)} required={true}>
+                            <SelectTrigger className="w-full"><SelectValue placeholder="اختر الدور " /></SelectTrigger>
+                            <SelectContent>
+                                {roles.map((role) => (
+                                    <SelectItem key={role.id} value={String(role.id)}>{role.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                         <div className="grid gap-2">
                             <Label htmlFor="password">كلمة المرور</Label>
                             <Input
@@ -174,7 +189,7 @@ const handleNameAndEmail = (value: string) => {
 
                 <Button type="submit" className="mt-2 w-full" tabIndex={5} disabled={processing}>
                     {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
-                    إنشاء 
+                    إنشاء
                 </Button>
             </div>
 

@@ -67,15 +67,18 @@ export default function InvoiceShow({ invoice }) {
             display: none !important;
           }
           /* Stack header vertically and center for thermal */
-          html[data-print-mode="thermal"] .invoice-header {
+          html[data-print-mode="thermal"] .invoice-header,
+          html[data-print-mode="thermal"] .invoice-header > div {
             flex-direction: column !important;
             align-items: center !important;
             text-align: center !important;
             gap: 4px !important;
           }
-          html[data-print-mode="thermal"] .invoice-header-meta {
+          html[data-print-mode="thermal"] .invoice-header > div > div {
+            min-width: unset !important;
             text-align: center !important;
           }
+
           html[data-print-mode="thermal"] .invoice-wrapper .grid {
             display: block !important;
           }
@@ -112,28 +115,46 @@ export default function InvoiceShow({ invoice }) {
       {/* ===== Invoice Body ===== */}
       <div className="invoice-wrapper max-w-4xl mx-auto p-8 space-y-6 shadow-xl rounded-2xl border mb-10" dir="rtl">
 
-        {/* Header */}
-        <div className="invoice-header flex justify-between items-start border-b pb-4">
-          <div className="text-center">
-            <Link href="/invoices">
-              <p className="text-2xl font-bold">رافكو</p>
-            </Link>
-            <h1 className="text-2xl font-bold">
-              {invoice.is_invoice ? <span>فاتورة</span> : <span>بيان اسعار</span>}
-            </h1>
-            <p className="text-sm text-gray-600">#{invoice.invoice_number}</p>
-          </div>
-          <div className="invoice-header-meta text-right space-y-1 text-sm">
-            <p>التاريخ: {new Date(invoice.date).toLocaleDateString("ar-EG")}</p>
-            <p>مسؤول المبيعات : <span className="font-semibold">{invoice.user?.name || "غير محدد"}</span></p>
-            <p>الفرع: <span className="font-semibold">{invoice.user?.warehouse?.branch?.name || "غير محدد"}</span></p>
-            <p> تليفون : <span className="font-semibold"> 01001448447</span></p>
-            {invoice.maintainance == "1" &&
-              <p>
-                {invoice.technicians?.length === 1 ? "الفني" : "الفنيين"}: <span className="font-semibold">
-                  {invoice.technicians?.map(tech => tech.name).join(", ") || "غير محدد"}
-                </span></p>
-            }
+        {/* ===== Header ===== */}
+        <div className="invoice-header border-b pb-4">
+
+          {/* Top row: company info | invoice title | transaction meta */}
+          <div className="flex justify-between items-start gap-4">
+
+            {/* Right: Company Info */}
+            <div className="text-right space-y-0.5 min-w-[130px]">
+              <Link href="/invoices">
+                <p className="text-xl font-extrabold tracking-wide">رافكو للتوريدات</p>
+              </Link>
+              <p className="text-xs text-gray-500">العنوان: القاهرة، مصر</p>
+              <p className="text-xs text-gray-500">للشكاوى : 01001448447</p>
+            </div>
+
+            {/* Center: Invoice Type & Number */}
+            <div className="text-center flex-1">
+              <h1 className="text-2xl font-bold">
+                {invoice.is_invoice ? "فاتورة" : "بيان أسعار"}
+              </h1>
+              <p className="text-sm text-gray-500 mt-0.5">#{invoice.invoice_number}</p>
+            </div>
+
+            {/* Left: Transaction Meta */}
+            <div className="text-left space-y-0.5 text-sm min-w-[160px]">
+              <p>التاريخ: <span className="font-semibold">{new Date(invoice.date).toLocaleDateString("ar-EG")}</span></p>
+              <p>مسؤول المبيعات: <span className="font-semibold">{invoice.user?.name || "غير محدد"}</span></p>
+              <p>الفرع: <span className="font-semibold">{invoice.user?.warehouse?.branch?.name || "غير محدد"}</span></p>
+              {invoice.user?.phone != null &&
+                <p>تليفون المسؤول: <span className="font-semibold">{invoice.user.phone}</span></p>
+              }
+              {invoice.maintainance == "1" &&
+                <p>
+                  {invoice.technicians?.length === 1 ? "الفني" : "الفنيين"}: <span className="font-semibold">
+                    {invoice.technicians?.map(tech => tech.name).join("، ") || "غير محدد"}
+                  </span>
+                </p>
+              }
+            </div>
+
           </div>
         </div>
 
@@ -146,9 +167,15 @@ export default function InvoiceShow({ invoice }) {
             {invoice.customer?.company_name != null &&
               <p><span className="font-semibold">اسم الشركه:</span> {invoice.customer?.company_name}</p>
             }
-            <p><span className="font-semibold">اسم العميل:</span> {invoice.customer?.name}</p>
-            <p><span className="font-semibold">الهاتف:</span> {invoice.customer?.phone}</p>
-            <p><span className="font-semibold">العنوان:</span> {invoice.customer?.address}</p>
+            {invoice.customer?.name != null &&
+              <p><span className="font-semibold">اسم العميل:</span> {invoice.customer?.name}</p>
+            }
+            {invoice.customer?.phone != null &&
+              <p><span className="font-semibold">الهاتف:</span> {invoice.customer?.phone}</p>
+            }
+            {invoice.customer?.address != null &&
+              <p><span className="font-semibold">العنوان:</span> {invoice.customer?.address}</p>
+            }
           </CardContent>
         </Card>
 
@@ -246,7 +273,7 @@ export default function InvoiceShow({ invoice }) {
         {/* Footer */}
         <div className="border-t pt-4 text-center text-xs text-gray-500 space-y-1">
           <p>شكراً لتعاملكم معنا</p>
-          <p>رافكو للتجارة والتوزيع</p>
+          <p>رافكو للتورديات </p>
         </div>
       </div>
     </>

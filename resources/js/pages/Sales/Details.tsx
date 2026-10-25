@@ -68,17 +68,7 @@ export default function InvoicePreview({ invoice }) {
       toast.error("حدث خطأ أثناء تحديث الحالة");
     }
   };
-  const handleMarkDraft = async () => {
-    try {
-      setMarkDraft(!markDraft);
-      await axios.post(`/invoices/${invoice.id}/toggle-mark-draft`, {
-        marked_to_draft: !markDraft,
-      });
-      toast.success("تم تحديث حالة المسودة");
-    } catch (err) {
-      toast.error("حدث خطأ أثناء تحديث الحالة");
-    }
-  };
+
 
   const handleSaveCollection = async () => {
     try {
@@ -115,13 +105,7 @@ export default function InvoicePreview({ invoice }) {
                 <Switch id="delivered" checked={isDelivered} onCheckedChange={handleToggleDelivery} className="data-[state=checked]:bg-green-500" />
                 <Label className="text-sm">{inv.is_delivered ? 'تم التسليم' : 'لم يتم التسليم'}</Label>
               </div>
-              {inv.eta_status !== 'sent' &&
 
-                <div className="flex items-center gap-2" dir="ltr">
-                  <Switch id="draft" checked={markDraft} onCheckedChange={handleMarkDraft} className="data-[state=checked]:bg-green-500" />
-                  <Label className="text-sm">{inv.marked_to_draft || markDraft ? 'تم وضعه في المسودة' : 'لم يتم وضعه في المسودة'}</Label>
-                </div>
-              }
 
               {inv.eta_status === 'sent' &&
 

@@ -45,11 +45,11 @@ type RegisterForm = {
 };
 
 export default function Users() {
-    if(!can('Users view') && !can('Maintenance users')){
-        
+    if (!can('Users view') && !can('Maintenance users')) {
+
         return null
     }
-    const { users, warehouses, flash, errors ,maintainance , roles} = usePage().props;
+    const { users, warehouses, flash, errors, maintainance, roles } = usePage().props;
     const [open, setOpen] = useState(false);
     const { delete: destroy, processing } = useForm()
 
@@ -57,7 +57,7 @@ export default function Users() {
         destroy(route("users.destroy", id))
     }
 
-const title = maintainance ? 'الفنيين' : 'المستخدمين';
+    const title = maintainance ? 'الفنيين' : 'المستخدمين';
     return (
 
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -71,7 +71,7 @@ const title = maintainance ? 'الفنيين' : 'المستخدمين';
 
             <div className="mt-6  p-4 rounded shadow">
                 <div className='mb-4'>
-                    {(can('Users create') || can('Maintenance users') )&&(    
+                    {(can('Users create') || can('Maintenance users')) && (
 
                         <Button variant="outline" size="sm">
                             <Plus />
@@ -85,10 +85,10 @@ const title = maintainance ? 'الفنيين' : 'المستخدمين';
                         <TableRow className="text-right">
                             <TableHead className="text-right">الاسم</TableHead>
                             {!maintainance &&
-                            
-                            <>
-                            <TableHead className="text-right">الايميل</TableHead>
-                            <TableHead className="text-right">مخزن</TableHead></>
+
+                                <>
+                                    <TableHead className="text-right">الايميل</TableHead>
+                                    <TableHead className="text-right">مخزن</TableHead></>
                             }
                             <TableHead className="text-right">-</TableHead>
                         </TableRow>
@@ -97,10 +97,10 @@ const title = maintainance ? 'الفنيين' : 'المستخدمين';
                         {users?.data.map(user => (
                             <TableRow key={user.id}>
                                 <TableCell>{user.name}</TableCell>
-                                  {!maintainance &&
-                                <><TableCell>{user.email}</TableCell>
-                                <TableCell>{user.warehouse?.name}</TableCell></>
-                                  }
+                                {!maintainance &&
+                                    <><TableCell>{user.email}</TableCell>
+                                        <TableCell>{user.warehouse?.name}</TableCell></>
+                                }
 
                                 {/* عمود الأكشنز */}
                                 <TableCell className="text-right">
@@ -114,41 +114,41 @@ const title = maintainance ? 'الفنيين' : 'المستخدمين';
 
                                         <DropdownMenuContent align="end">
                                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                             {(can("Users edit") || can("Maintenance users")) && (
+                                            {(can("Users edit") || can("Maintenance users")) && (
                                                 <DropdownMenuItem asChild>
                                                     <Link href={route("users.edit", user.id)}>
                                                         تعديل
                                                     </Link>
                                                 </DropdownMenuItem>
                                             )}
-                                             {!maintainance &&
-                                             <>
-                                             
-                                            <DropdownMenuItem asChild>
-                                                <Link href={route("users.show", user.id)}>
-                                                    عرض فواتير المستخدم
-                                                </Link>
-                                            </DropdownMenuItem>
-                                            
-                                           
-                                            
-                                            {can("super") && (
-                                                <DropdownMenuItem asChild>
-                                                    <Link href={route("user.login.activity", user.id)}>
-                                                        تقارير الدخول للسيستم
-                                                    </Link>
-                                                </DropdownMenuItem>
-                                            )}
-                                            {can('Reports view') &&
+                                            {!maintainance &&
+                                                <>
 
-                                                <DropdownMenuItem asChild>
-                                                    <Link href={route("reports.user", user.id)}>
-                                                         مبيعات
-                                                    </Link>
-                                                </DropdownMenuItem>
+                                                    <DropdownMenuItem asChild>
+                                                        <Link href={route("users.show", user.id)}>
+                                                            عرض فواتير المستخدم
+                                                        </Link>
+                                                    </DropdownMenuItem>
+
+
+
+                                                    {can("super") && (
+                                                        <DropdownMenuItem asChild>
+                                                            <Link href={route("user.login.activity", user.id)}>
+                                                                تقارير الدخول للسيستم
+                                                            </Link>
+                                                        </DropdownMenuItem>
+                                                    )}
+                                                    {can('Reports view') &&
+
+                                                        <DropdownMenuItem asChild>
+                                                            <Link href={route("reports.user", user.id)}>
+                                                                مبيعات
+                                                            </Link>
+                                                        </DropdownMenuItem>
+                                                    }
+                                                </>
                                             }
-                                             </>
-}
 
                                             <DropdownMenuSeparator />
                                             {can("Users delete") && (
@@ -185,8 +185,8 @@ const title = maintainance ? 'الفنيين' : 'المستخدمين';
                 </Table>
             </div>
 
-            <Dialog open={open} onOpenChange={setOpen}>
-                <DialogContent>
+            <Dialog open={open} onOpenChange={setOpen} >
+                <DialogContent className='overflow-y-auto max-h-screen'>
                     <DialogHeader>
                         <DialogTitle>إضافة مستخدم جديد</DialogTitle>
                     </DialogHeader>

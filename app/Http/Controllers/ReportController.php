@@ -412,6 +412,9 @@ class ReportController extends Controller
                     $q->where('branch_id', $branchId);
                 });
         }
+        if ($request->filled('payment') && $request->payment !== 'all') {
+            $query->where('payment_method', $request->payment);
+        }
         // $query->withSum('collections', 'amount');
         //dd($query->collections_sum_amount);
         // فلتر التسليم
@@ -422,6 +425,7 @@ class ReportController extends Controller
                 $query->where('is_delivered', 0);
             }
         }
+
 
         // فلتر التحصيل
         if ($request->filled('collection') && $request->collection !== 'all') {

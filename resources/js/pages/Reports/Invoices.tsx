@@ -28,6 +28,7 @@ export default function InvoiceReports({ invoices, reps, branches, customers, in
 
     const [filters, setFilters] = useState({
         delivery: "",
+        payment: "",
         collection: "",
         rep: "",
         invoice_q: "",
@@ -40,6 +41,7 @@ export default function InvoiceReports({ invoices, reps, branches, customers, in
     const resetFilter = () => {
         setFilters({
             delivery: "",
+            payment: "",
             collection: "",
             rep: "all",
             invoice_q: "all",
@@ -51,6 +53,7 @@ export default function InvoiceReports({ invoices, reps, branches, customers, in
         })
         router.get(route("reports.invoices"), {
             delivery: "",
+            payment: "",
             collection: "",
             invoice_q: "",
             rep: "all",
@@ -99,6 +102,20 @@ export default function InvoiceReports({ invoices, reps, branches, customers, in
                                 <SelectItem value="collected">تم التحصيل بالكامل</SelectItem>
                                 <SelectItem value="partial">تحصيل جزئى  </SelectItem>
                                 <SelectItem value="uncollected"> غير محصل نهائيا  </SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <Select onValueChange={(val) => handleFilterChange("payment", val)} value={filters.payment}>
+                            <SelectTrigger>
+                                <SelectValue placeholder=" طريقه الدفع" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value={'all'}>{'الدفع - الكل'}</SelectItem>
+                                <SelectItem value="C">  كاش</SelectItem>
+                                <SelectItem value="CC">فيزا   </SelectItem>
+                                <SelectItem value="INSTA">انستا باى   </SelectItem>
+                                <SelectItem value="T">تحويل بنكى   </SelectItem>
+                                <SelectItem value="CH">شيك   </SelectItem>
+                                <SelectItem value="O">أخرى   </SelectItem>
                             </SelectContent>
                         </Select>
                         <Select onValueChange={(val) => handleFilterChange("invoice_q", val)} value={filters.invoice_q}>

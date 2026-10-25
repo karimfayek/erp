@@ -30,15 +30,16 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        
-       // dd($role);
+
+        // dd($role);
         $request->validate([
             'name' => 'required|string|max:255',
             'warehouse_id' => 'required|exists:warehouses,id',
+            'phone' => 'nullable|string|max:15',
             'salary' => 'nullable|numeric',
-            'role'=>'nullable|exists:roles,id',
-            'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
-            'password' => ['required',  Rules\Password::defaults()],
+            'role' => 'nullable|exists:roles,id',
+            'email' => 'required|string|lowercase|email|max:255|unique:' . User::class,
+            'password' => ['required', Rules\Password::defaults()],
         ]);
 
         $user = User::create([
@@ -46,10 +47,11 @@ class RegisteredUserController extends Controller
             'warehouse_id' => $request->warehouse_id,
             'type' => $request->type ?? 'user',
             'email' => $request->email,
+            'phone' => $request->phone,
             'salary' => $request->salary,
             'password' => Hash::make($request->password),
         ]);
-       $roleR = $request->role ?? null;
+        $roleR = $request->role ?? null;
 
         if ($roleR) {
             // لو أُرسل role (مفرد أو نص مفصول بفواصل)
@@ -62,8 +64,8 @@ class RegisteredUserController extends Controller
         $user->roles()->sync($role);
         event(new Registered($user));
 
-       // Auth::login($user);
-        return redirect()->back()->with(['message' , 'تم انشاء المستخدم']);
+        // Auth::login($user);
+        return redirect()->back()->with(['message', 'تم انشاء المستخدم']);
         //return redirect()->intended(route('dashboard', absolute: false));
     }
 }

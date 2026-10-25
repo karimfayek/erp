@@ -275,18 +275,7 @@ export const invoiceColumns: ColumnDef<Invoice>[] = [
                 تفاصيل الفاتورة {invoice.marked_to_draft === '0' && 'sdfsdf'}
               </Link>
             </DropdownMenuItem>
-            {(can('invoice.mark.draft') && (invoice.marked_to_draft === null || invoice.marked_to_draft === 0)) &&
-              <DropdownMenuItem>
-                <Link href={route('draft.mark.status', invoice.id)} method="post" data={{ marked_to_draft: 1 }}>
-                  تعليم كمتاح درافت
-                </Link>
-              </DropdownMenuItem>
-            }
-            <DropdownMenuItem>
-              <Link href={route('invoice.draft', invoice.id)}>
-                تفاصيل كـ مسودة
-              </Link>
-            </DropdownMenuItem>
+
 
             {!row.original.is_delivered &&
               <DropdownMenuItem>

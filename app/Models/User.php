@@ -14,6 +14,7 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        'phone',
         'password',
         'warehouse_id',
         'type',
@@ -31,14 +32,14 @@ class User extends Authenticatable
         'password' => 'hashed',
         'salary' => 'decimal:2',
     ];
-   public function customers()
-        {
-         return $this->hasMany(Customer::class , 'user_id');
-        }
-        public function customersBy()
-        {
-         return $this->hasMany(Customer::class , 'created_by');
-        }
+    public function customers()
+    {
+        return $this->hasMany(Customer::class, 'user_id');
+    }
+    public function customersBy()
+    {
+        return $this->hasMany(Customer::class, 'created_by');
+    }
     // علاقات رول وصلاحيات
     public function roles()
     {
@@ -105,7 +106,7 @@ class User extends Authenticatable
 
         return $this->roles()->where(function ($q) use ($slug, $normalized) {
             $q->where('slug', $slug)
-              ->orWhereRaw('LOWER(name) = ?', [$normalized]);
+                ->orWhereRaw('LOWER(name) = ?', [$normalized]);
         })->exists();
     }
 
@@ -117,22 +118,23 @@ class User extends Authenticatable
         }
 
         $normalized = strtolower($slug);
-//dd($slug);
+        //dd($slug);
         // تحقق في الصلاحيات المباشرة أولاً
         $directHas = $this->permissions()->where(function ($q) use ($slug, $normalized) {
             $q->where('slug', $slug)
-              ->orWhereRaw('LOWER(name) = ?', [$normalized]);
+                ->orWhereRaw('LOWER(name) = ?', [$normalized]);
         })->exists();
-       // dd($this->permissions()->get());
+        // dd($this->permissions()->get());
 
-        if ($directHas) return true;
+        if ($directHas)
+            return true;
 
         // ثم تحقق عبر الرولات - وجود رول لديه هذه الصلاحية
         $roleHas = $this->roles()->whereHas('permissions', function ($q) use ($slug, $normalized) {
             $q->where('slug', $slug)
-              ->orWhereRaw('LOWER(name) = ?', [$normalized]);
+                ->orWhereRaw('LOWER(name) = ?', [$normalized]);
         })->exists();
-       
+
 
         return $roleHas;
     }
@@ -150,21 +152,22 @@ class User extends Authenticatable
     public function warehouses()
     {
         return $this->belongsToMany(\App\Models\Warehouse::class, 'user_warehouses')
-                    ->withPivot('role')
-                    ->withTimestamps();
+            ->withPivot('role')
+            ->withTimestamps();
     }
 
     public function warehouseIds(): array
     {
         // يُعيد مصفوفة أعداد صحيحة
-        return $this->warehouses()->pluck('warehouses.id')->map(fn($v) => (int)$v)->toArray();
+        return $this->warehouses()->pluck('warehouses.id')->map(fn($v) => (int) $v)->toArray();
     }
 
     public function hasAccessToWarehouse($warehouseId): bool
     {
-        if ($this->hasRole('Super Admin')) return true;
+        if ($this->hasRole('Super Admin'))
+            return true;
 
-        return in_array((int)$warehouseId, $this->warehouseIds(), true);
+        return in_array((int) $warehouseId, $this->warehouseIds(), true);
     }
 
     // علاقة فواتير-فنيين (تأكد من أسماء الأعمدة في pivot table)
@@ -174,7 +177,7 @@ class User extends Authenticatable
         // عمود هذا اليوزر في الجدول: technician_id
         // عمود الفاتورة في الجدول: invoice_id
         return $this->belongsToMany(Sale::class, 'invoice_technicians', 'technician_id', 'invoice_id')
-                    ->withPivot('commission_percent', 'commission_amount')
-                    ->withTimestamps();
+            ->withPivot('commission_percent', 'commission_amount')
+            ->withTimestamps();
     }
 }

@@ -78,6 +78,13 @@ export default function InvoiceShow({ invoice }) {
             min-width: unset !important;
             text-align: center !important;
           }
+          /* Logo size in thermal */
+          html[data-print-mode="thermal"] .invoice-logo {
+            height: 36px !important;
+            width: auto !important;
+            display: block !important;
+            margin: 0 auto 2px auto !important;
+          }
 
           html[data-print-mode="thermal"] .invoice-wrapper .grid {
             display: block !important;
@@ -124,9 +131,9 @@ export default function InvoiceShow({ invoice }) {
             {/* Right: Company Info */}
             <div className="text-right space-y-0.5 min-w-[130px]">
               <Link href="/invoices">
+                <img src="/logonew.png" alt="رافكو" className="invoice-logo h-14 w-auto mr-auto mb-1 inline-block" />
                 <p className="text-xl font-extrabold tracking-wide">رافكو للتوريدات</p>
               </Link>
-              <p className="text-xs text-gray-500">العنوان: القاهرة، مصر</p>
               <p className="text-xs text-gray-500">للشكاوى : 01001448447</p>
             </div>
 
@@ -212,16 +219,18 @@ export default function InvoiceShow({ invoice }) {
 
         {/* Totals */}
         <div className="grid grid-cols-2 gap-6">
-          <div className="thermal-hide">
-            <Card>
-              <CardHeader>
-                <CardTitle>ملاحظات</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p>{invoice.notes || "لا توجد ملاحظات"}</p>
-              </CardContent>
-            </Card>
-          </div>
+          {invoice.notes &&
+            <div className="thermal-hide">
+              <Card>
+                <CardHeader>
+                  <CardTitle>ملاحظات</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p>{invoice.notes || "لا توجد ملاحظات"}</p>
+                </CardContent>
+              </Card>
+            </div>
+          }
           <div>
             <Card>
               <CardHeader>
@@ -256,7 +265,8 @@ export default function InvoiceShow({ invoice }) {
                 {invoice.remaining_amount > 0 &&
 
                   <><div className="flex justify-between"><span>تم تحصيل:</span>
-                    <span>{invoice.collected_amount}</span></div><div className="flex justify-between"><span>المؤجل:</span> <span>{invoice.remaining_amount}</span></div></>
+                    <span>{invoice.collected_amount}</span></div><div className="flex justify-between"><span>المؤجل:</span> <span>{invoice.remaining_amount}</span></div>
+                  </>
                 }
               </CardContent>
             </Card>

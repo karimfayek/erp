@@ -25,7 +25,12 @@ export default function NewUser({ onSuccess, warehouses, maintainance, roles }) 
         password: maintainance ? 'MmErtE$58+vbrT' : '',
         password_confirmation: maintainance ? 'MmErtE$58+vbrT' : '',
     });
-
+    const handlePhoneChange = (e) => {
+        const inputValue = e.target.value;
+        // إزالة جميع المسافات من النص المدخل
+        const cleanValue = inputValue.replace(/\s/g, '');
+        setData('phone', cleanValue);
+    };
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
         post(route('register'), {
@@ -88,7 +93,7 @@ export default function NewUser({ onSuccess, warehouses, maintainance, roles }) 
                         tabIndex={3}
                         autoComplete="phone"
                         value={data.phone}
-                        onChange={(e) => setData('phone', e.target.value)}
+                        onChange={(e) => handlePhoneChange(e)}
                         disabled={processing}
                         placeholder="01xxxxxxxx" />
                     <InputError message={errors.phone} />

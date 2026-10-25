@@ -46,7 +46,14 @@ export default function EditUser({ user, warehouses, assigned }) {
         password: '',
         salary: user.salary || '',
     });
+    const [phone, setPhone] = useState('');
 
+    const handlePhoneChange = (e) => {
+        const inputValue = e.target.value;
+        // إزالة جميع المسافات من النص المدخل
+        const cleanValue = inputValue.replace(/\s/g, '');
+        setData('phone', cleanValue);
+    };
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
         put(route('users.update', user.id), {
@@ -114,7 +121,7 @@ export default function EditUser({ user, warehouses, assigned }) {
                                     tabIndex={3}
                                     autoComplete="phone"
                                     value={data.phone}
-                                    onChange={(e) => setData('phone', e.target.value)}
+                                    onChange={(e) => handlePhoneChange(e)}
                                     disabled={processing}
                                     placeholder="01xxxxxxxx" />
                                 <InputError message={errors.phone} />

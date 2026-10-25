@@ -78,7 +78,10 @@ export default function InvoiceShow({ invoice }) {
             min-width: unset !important;
             text-align: center !important;
           }
-          /* Logo size in thermal */
+          /* Logo: move to top in thermal, resize */
+          html[data-print-mode="thermal"] .thermal-logo-section {
+            order: -1 !important;
+          }
           html[data-print-mode="thermal"] .invoice-logo {
             height: 36px !important;
             width: auto !important;
@@ -128,21 +131,21 @@ export default function InvoiceShow({ invoice }) {
           {/* Top row: company info | invoice title | transaction meta */}
           <div className="flex justify-between items-start gap-4">
 
-            {/* Right: Company Info */}
-            <div className="text-right space-y-0.5 min-w-[130px]">
-              <Link href="/invoices">
-                <img src="/logonew.png" alt="رافكو" className="invoice-logo h-14 w-auto mr-auto mb-1 inline-block" />
-                <p className="text-xl font-extrabold tracking-wide">رافكو للتوريدات</p>
-              </Link>
-              <p className="text-xs text-gray-500">للشكاوى : 01001448447</p>
-            </div>
+
 
             {/* Center: Invoice Type & Number */}
-            <div className="text-center flex-1">
+            <div className="text-center">
               <h1 className="text-2xl font-bold">
                 {invoice.is_invoice ? "فاتورة" : "بيان أسعار"}
               </h1>
               <p className="text-sm text-gray-500 mt-0.5">#{invoice.invoice_number}</p>
+            </div>
+            {/* Right: Company Info */}
+            <div className="thermal-logo-section text-right space-y-0.5 min-w-[130px]">
+              <Link href="/invoices">
+                <img src="/logofull.jpeg" alt="رافكو" className="invoice-logo h-16 w-auto mr-auto mb-1 inline-block" />
+              </Link>
+              <p className="text-xs text-gray-500">للشكاوى : 01001448447</p>
             </div>
 
             {/* Left: Transaction Meta */}
@@ -283,7 +286,7 @@ export default function InvoiceShow({ invoice }) {
         {/* Footer */}
         <div className="border-t pt-4 text-center text-xs text-gray-500 space-y-1">
           <p>شكراً لتعاملكم معنا</p>
-          <p>رافكو للتورديات </p>
+          <p className="text-xs text-gray-500">للشكاوى : 01001448447</p>
         </div>
       </div>
     </>

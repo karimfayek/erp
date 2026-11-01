@@ -36,9 +36,8 @@ export default function InvoicePreview({ invoice }) {
   const eta_status = inv.eta_status; // 'draft', 'sent'
   const [isSent, setIsSent] = useState(eta_status)
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [collectedAmount, setCollectedAmount] = useState(invoice.expenses || 0)
-  const [postponedAmount, setPostponedAmount] = useState(invoice.postponed || 0)
-  const [newCollected, setNewCollected] = useState(collectedAmount)
+  const [expenseAmount, setExpenseAmount] = useState(invoice.expenses || 0)
+  const [newExpense, setNewExpense] = useState(expenseAmount)
 
   const handleToggleDelivery = async () => {
     try {
@@ -70,17 +69,17 @@ export default function InvoicePreview({ invoice }) {
   };
 
 
-  const handleSaveCollection = async () => {
+  const handleSaveExpense = async () => {
     try {
-      await axios.post(`/invoices/${invoice.id}/update-collection`, {
-        collected_amount: newCollected,
+      await axios.post(`/invoices/${invoice.id}/update-expense`, {
+        expenses: newExpense,
       }).then((data) => {
-        setPostponedAmount(data.data.postponed)
+        setExpenseAmount(data.data.expenses)
       }
       );
-      setCollectedAmount(Number(newCollected));
+      setExpenseAmount(Number(newExpense));
       setIsModalOpen(false);
-      setCollected(newCollected)
+      setCollected(newExpense)
       toast.success("تم تحديث المصروفات بنجاح");
     } catch (err) {
       toast.error("حدث خطأ أثناء تحديث المصروفات");
@@ -167,7 +166,7 @@ export default function InvoicePreview({ invoice }) {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
                 <div className="text-sm">المصروفات: <span className="font-medium">{Number(collected).toFixed(2)}</span></div>
-                <Button onClick={() => setIsModalOpen(true)}>تعديل المصروفات</Button>
+                <Button onClick={() => { setNewExpense(expenseAmount); setIsModalOpen(true); }}>تعديل المصروفات</Button>
               </div>
 
             </div>
@@ -250,13 +249,13 @@ export default function InvoicePreview({ invoice }) {
             <Label>المبلغ الجديد</Label>
             <Input
               type="number"
-              value={newCollected}
-              onChange={(e) => setNewCollected(e.target.value)}
+              value={newExpense}
+              onChange={(e) => setNewExpense(e.target.value)}
             />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsModalOpen(false)}>إلغاء</Button>
-            <Button onClick={handleSaveCollection}>حفظ</Button>
+            <Button onClick={handleSaveExpense}>حفظ</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

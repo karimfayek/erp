@@ -759,6 +759,62 @@ class SalesController extends Controller
             'remaining_amount' => (float) $invoice->remaining_amount,
         ]);
     }
+
+    // ✅ لتحديث المصروفات
+    public function updateExpenses(Request $request, Sale $invoice)
+    {
+        // Accept a few common field names for the new expenses value.
+        $request->validate([
+            'expenses' => 'nullable|numeric|min:0',
+            'expense' => 'nullable|numeric|min:0',
+            'expense_amount' => 'nullable|numeric|min:0',
+            'expenses_amount' => 'nullable|numeric|min:0',
+            'amount' => 'nullable|numeric|min:0',
+            'value' => 'nullable|numeric|min:0',
+            'new_expenses' => 'nullable|numeric|min:0',
+        ]);
+
+        $amount = $request->input('expenses');
+        if ($amount === null) {
+            $amount = $request->input('expense');
+        }
+        if ($amount === null) {
+            $amount = $request->input('expense_amount');
+        }
+        if ($amount === null) {
+            $amount = $request->input('expenses_amount');
+        }
+        if ($amount === null) {
+            $amount = $request->input('amount');
+        }
+        if ($amount === null) {
+            $amount = $request->input('value');
+        }
+        if ($amount === null) {
+            $amount = $request->input('new_expenses');
+        }
+        if ($amount === null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'المبلغ مطلوب',
+            ], 422);
+        }
+
+        $amount = round((float) $amount, 2);
+
+        DB::transaction(function () use ($invoice, $amount) {
+            $invoice->expenses = $amount;
+            $invoice->save();
+        });
+
+        $invoice->refresh();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'تم تحديث المصروفات بنجاح',
+            'expenses' => (float) $invoice->expenses,
+        ]);
+    }
     private function lockWarehouseQuantity(
         int $productId,
         int $warehouseId

@@ -49,6 +49,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/invoices/{invoice}/toggle-draft', [SalesController::class, 'toggleDraft'])->name('draft.status');
     Route::post('/invoices/{invoice}/toggle-mark-draft', [SalesController::class, 'toggleMarkDraft'])->name('draft.mark.status');
     Route::post('/invoices/{invoice}/update-collection', [SalesController::class, 'updateCollection']);
+    Route::post('/invoices/{invoice}/update-expense', [SalesController::class, 'updateExpenses']);
 
     Route::resource('inventory-transfers', InventoryTransferController::class);
     Route::resource('warehouses', WarehouseController::class);

@@ -191,11 +191,6 @@ export const invoiceColumns: ColumnDef<Invoice>[] = [
     cell: ({ row }) => <div>{row.getValue("tax")} EGP</div>,
   },
   {
-    accessorKey: "expenses",
-    header: "مصاريف",
-    cell: ({ row }) => <div>{row.getValue("expenses")} EGP</div>,
-  },
-  {
     accessorKey: "collected_amount",
     header: "محصل",
     cell: ({ row }) => <div>{row.getValue("collected_amount")} EGP</div>,

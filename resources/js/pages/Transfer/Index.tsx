@@ -66,12 +66,12 @@ export default function TransferForm({ products, warehouses, movements }) {
           <div colSpan={2} className="col-span-2">
             <Label htmlFor="product" className='block mb-3'>المنتج</Label>
             <ProductCombobox
-            className="w-full"
-                products={products}
-                selectedId={data.product_id}
-                onSelect={(e) => setData('product_id', Number(e))}
-              />
-           
+              className="w-full"
+              products={products}
+              selectedId={data.product_id}
+              onSelect={(e) => setData('product_id', Number(e))}
+            />
+
           </div>
 
           <div>
@@ -183,7 +183,15 @@ export default function TransferForm({ products, warehouses, movements }) {
                     }
                   </TableCell>
                   <TableCell>{translate[movement?.type]}</TableCell>
-                  <TableCell>{translate[movement?.movement_type]}</TableCell>
+                  <TableCell>
+                    {
+                      movement?.notes?.includes('لم يتم التسليم')
+                        ? 'بيع-غير مسلم'
+                        : movement?.notes?.includes('تم التسليم لاحقًا')
+                          ? 'بيع - مسلم'
+                          : translate[movement?.movement_type]
+                    }
+                  </TableCell>
 
                   <TableCell>{movement?.updated_at ? formatDateTime(movement?.updated_at) : formatDateTime(movement?.created_at)}</TableCell>
                   <TableCell> {movement?.user?.name}</TableCell>
@@ -192,24 +200,23 @@ export default function TransferForm({ products, warehouses, movements }) {
               ))}
             </TableBody>
           </Table>
-            <div className="flex justify-center gap-2 pt-4 flex-wrap">
-        {movements.links.map((link, index) => (
-          <Button
-            key={index}
-            variant={link.active ? "default" : "outline"}
-            disabled={!link.url}
-            onClick={() => handlePageChange(link.url)}
-            className={`min-w-[40px] ${
-              link.active ? "bg-primary text-white" : ""
-            }`}
-          >
-            {link.label
-              .replace("&laquo;", "«")
-              .replace("&raquo;", "»")
-              .replace("&nbsp;", "")}
-          </Button>
-        ))}
-      </div>
+          <div className="flex justify-center gap-2 pt-4 flex-wrap">
+            {movements.links.map((link, index) => (
+              <Button
+                key={index}
+                variant={link.active ? "default" : "outline"}
+                disabled={!link.url}
+                onClick={() => handlePageChange(link.url)}
+                className={`min-w-[40px] ${link.active ? "bg-primary text-white" : ""
+                  }`}
+              >
+                {link.label
+                  .replace("&laquo;", "«")
+                  .replace("&raquo;", "»")
+                  .replace("&nbsp;", "")}
+              </Button>
+            ))}
+          </div>
         </div>
       }
     </AppLayout>

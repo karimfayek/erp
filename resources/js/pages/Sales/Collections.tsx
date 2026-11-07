@@ -39,29 +39,25 @@ export default function Collections({ sale, collections }) {
     const [open, setOpen] = useState(false)
     const [editOpen, setEditOpen] = useState(false)
     const [editing, setEditing] = useState(null)
-    const { data, setData, post, put, delete: destroy, reset } = useForm({
-        sale_id: sale.id,
-        amount: "",
-        //set collection date to be by default today
-        collection_date: new Date(),
-        notes: "",
-    })
+    const { delete: destroy } = useForm({})
 
     const form = useForm({
         sale_id: sale.id,
         amount: "",
-        collection_date: new Date(),
+        collection_date: format(new Date(), "yyyy-MM-dd"),
         notes: "",
     })
 
     const openEdit = (col) => {
         setEditing(col)
+
         form.setData({
             sale_id: sale.id,
-            amount: col.amount,
-            collection_date: new Date(col.collection_date),
+            amount: String(col.amount),
+            collection_date: col.collection_date.substring(0, 10),
             notes: col.notes ?? "",
         })
+
         setEditOpen(true)
     }
 
@@ -85,15 +81,7 @@ export default function Collections({ sale, collections }) {
             },
         })
     }
-    const submit = (e) => {
-        e.preventDefault()
-        post(route("collections.store"), {
-            onSuccess: () => (
-                reset(),
-                setOpen(false)
-            ),
-        })
-    }
+
 
     const remove = (id) => {
         if (confirm("هل أنت متأكد من الحذف؟")) {
@@ -133,8 +121,14 @@ export default function Collections({ sale, collections }) {
                                 />
 
                                 <DatePicker
-                                    date={form.data.collection_date}
-                                    setDate={(date) => form.setData("collection_date", date)}
+                                    date={
+                                        form.data.collection_date
+                                            ? new Date(form.data.collection_date + "T12:00:00")
+                                            : null
+                                    }
+                                    setDate={(date) =>
+                                        form.setData("collection_date", format(date, "yyyy-MM-dd"))
+                                    }
                                 />
 
                                 <Textarea
@@ -146,8 +140,12 @@ export default function Collections({ sale, collections }) {
                                 <div className="flex justify-end gap-2">
                                     <Button type="button" variant="secondary" onClick={() => setOpen(false)}>
                                         إلغاء
+                                    </Button><Button
+                                        type="submit"
+                                        disabled={form.processing}
+                                    >
+                                        {form.processing ? 'جاري الحفظ...' : 'حفظ'}
                                     </Button>
-                                    <Button type="submit">حفظ</Button>
                                 </div>
                             </form>
                         </DialogContent>
@@ -171,8 +169,18 @@ export default function Collections({ sale, collections }) {
                             />
 
                             <DatePicker
-                                date={form.data.collection_date}
-                                setDate={(date) => form.setData("collection_date", date)}
+                                date={form.data.collection_date
+                                    ? new Date(form.data.collection_date + "T00:00:00")
+                                    : null
+                                }
+                                setDate={(date) => {
+                                    if (!date) return;
+
+                                    form.setData(
+                                        "collection_date",
+                                        format(date, "yyyy-MM-dd")
+                                    );
+                                }}
                             />
 
                             <Textarea
@@ -184,7 +192,12 @@ export default function Collections({ sale, collections }) {
                                 <Button type="button" variant="secondary" onClick={() => setEditOpen(false)}>
                                     إلغاء
                                 </Button>
-                                <Button type="submit">حفظ</Button>
+                                <Button
+                                    type="submit"
+                                    disabled={form.processing}
+                                >
+                                    {form.processing ? 'جاري الحفظ...' : 'حفظ'}
+                                </Button>
                             </div>
                         </form>
                     </DialogContent>

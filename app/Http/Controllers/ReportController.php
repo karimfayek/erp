@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Sale as Invoice;
+use App\Models\Collection;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -497,8 +498,10 @@ class ReportController extends Controller
 
         $invoicesInfo = $query->get();
 
-        $collected = $invoicesInfo
-            ->flatMap(fn($invoice) => $invoice->collections)
+        $saleIds = $invoicesInfo->pluck('id');
+        $collected = Collection::whereIn('sale_id', $saleIds)
+            ->when($from, fn($q) => $q->whereDate('collection_date', '>=', $from))
+            ->when($to, fn($q) => $q->whereDate('collection_date', '<=', $to))
             ->sum('amount');
         //dd($invoicesInfo);
 
@@ -629,4 +632,7 @@ class ReportController extends Controller
     }
 
 }
+
+
+
 

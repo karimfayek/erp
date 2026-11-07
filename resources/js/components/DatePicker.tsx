@@ -9,7 +9,10 @@ import { Calendar } from "@/components/ui/calendar"
 import { format } from "date-fns"
 
 export default function DatePicker({ date, setDate }: { date: Date | null, setDate: (date: Date) => void }) {
-    const selectedDate = date ? new Date(date) : null
+
+    const selectedDate = date instanceof Date
+        ? date
+        : null;
     if (!can('invoices.collections')) return null;
     return (
         <div className="w-full">
@@ -20,18 +23,18 @@ export default function DatePicker({ date, setDate }: { date: Date | null, setDa
                         variant="outline"
                         className="w-full h-10 justify-start text-left font-normal"
                     >
-                        {selectedDate
+                        {selectedDate && !isNaN(selectedDate.getTime())
                             ? format(selectedDate, "yyyy-MM-dd")
                             : "اختر تاريخ التحصيل"}
                     </Button>
                 </PopoverTrigger>
 
                 <PopoverContent
-                    className="w-auto p-0"
+                    className="w-auto p-0  pointer-events-auto"
                     align="start"
                 >
                     <Calendar
-                        className="w-[300px]"
+                        className="w-[300px] "
                         mode="single"
                         selected={selectedDate}
                         onSelect={(d) => setDate(d)}

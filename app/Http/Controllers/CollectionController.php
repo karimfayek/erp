@@ -18,10 +18,11 @@ class CollectionController extends Controller
     }
     public function store(Request $request)
     {
+        // dd($request->all());
         $data = $request->validate([
             'sale_id' => 'required|exists:sales,id',
             'amount' => 'required|numeric|min:0.01',
-            'collection_date' => 'required|date',
+            'collection_date' => 'required|date_format:Y-m-d',
             'notes' => 'nullable|string',
         ]);
 

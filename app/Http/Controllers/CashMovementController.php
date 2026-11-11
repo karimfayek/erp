@@ -10,32 +10,61 @@ use Inertia\Inertia;
 
 class CashMovementController extends Controller
 {
+
     public function index(Request $request)
     {
         $user = auth()->user();
-        $branchId = $request->filled('branch_id') ? (int) $request->branch_id : $user?->warehouse?->branch_id;
 
-        $balance = $branchId ? $this->computeBalance($branchId) : 0.00;
+        // Check permission
+        $canSeeOtherBranchesCash = $user->canDo('can_see_other_branches_cash');
 
-        $movementsQuery = CashMovement::with('user', 'branch')->orderBy('movement_date', 'desc')->orderBy('id', 'desc');
+        // Get user's default branch
+        $userBranchId = $user?->warehouse?->branch_id;
+
+        // Determine selected branch
+        if ($canSeeOtherBranchesCash) {
+            $branchId = $request->filled('branch_id')
+                ? (int) $request->branch_id
+                : $userBranchId;
+        } else {
+            // User can only see their own branch
+            $branchId = $userBranchId;
+        }
+
+        // Calculate balance
+        $balance = $branchId
+            ? $this->computeBalance($branchId)
+            : 0.00;
+
+        // Get cash movements
+        $movementsQuery = CashMovement::with('user', 'branch')
+            ->orderBy('movement_date', 'desc')
+            ->orderBy('id', 'desc');
+
         if ($branchId) {
             $movementsQuery->where('branch_id', $branchId);
         }
+
         $movements = $movementsQuery->paginate(15)->withQueryString();
 
-        $branches = Branch::select('id', 'name')->orderBy('name')->get();
+        // Only users with permission can see all branches
+        $branches = $canSeeOtherBranchesCash
+            ? Branch::select('id', 'name')->orderBy('name')->get()
+            : Branch::where('id', $userBranchId)->select('id', 'name')->get();
 
         return Inertia::render('Cash/Index', [
             'balance' => $balance,
             'branch_id' => $branchId,
             'movements' => $movements,
             'branches' => $branches,
+            'can_see_other_branches_cash' => $canSeeOtherBranchesCash,
         ]);
     }
 
+
     public function handoverPage()
     {
-        if (! auth()->user()->canDo('Cash handover create')) {
+        if (!auth()->user()->canDo('Cash handover create')) {
             abort(403);
         }
 
@@ -52,7 +81,7 @@ class CashMovementController extends Controller
 
     public function transferPage()
     {
-        if (! auth()->user()->canDo('Cash transfer create')) {
+        if (!auth()->user()->canDo('Cash transfer create')) {
             abort(403);
         }
 
@@ -69,7 +98,7 @@ class CashMovementController extends Controller
 
     public function fundingPage()
     {
-        if (! auth()->user()->canDo('Cash personal funding create')) {
+        if (!auth()->user()->canDo('Cash personal funding create')) {
             abort(403);
         }
 
@@ -120,13 +149,13 @@ class CashMovementController extends Controller
         $user = auth()->user();
         $branchId = $user?->warehouse?->branch_id;
 
-        if (! $branchId) {
+        if (!$branchId) {
             return response()->json(['message' => 'المستخدم غير مرتبط بفرع'], 403);
         }
 
         return DB::transaction(function () use ($data, $branchId, $user) {
             $branch = Branch::where('id', $branchId)->lockForUpdate()->first();
-            if (! $branch) {
+            if (!$branch) {
                 return response()->json(['message' => 'الفرع غير موجود'], 404);
             }
 
@@ -188,7 +217,7 @@ class CashMovementController extends Controller
             $fromBranch = $lockedBranches[(int) $data['from_branch_id']];
             $toBranch = $lockedBranches[(int) $data['to_branch_id']];
 
-            if (! $fromBranch || ! $toBranch) {
+            if (!$fromBranch || !$toBranch) {
                 return response()->json(['message' => 'أحد الفرعين غير موجود'], 404);
             }
 
@@ -235,7 +264,7 @@ class CashMovementController extends Controller
     {
         $user = auth()->user();
 
-        if (! $user->canDo('Cash personal funding create')) {
+        if (!$user->canDo('Cash personal funding create')) {
             return response()->json(['message' => 'غير مسموح لك بالتوريد الشخصي'], 403);
         }
 
@@ -248,7 +277,7 @@ class CashMovementController extends Controller
 
         return DB::transaction(function () use ($data, $user) {
             $branch = Branch::where('id', $data['branch_id'])->lockForUpdate()->first();
-            if (! $branch) {
+            if (!$branch) {
                 return response()->json(['message' => 'الفرع غير موجود'], 404);
             }
 

@@ -46,11 +46,6 @@ export function AppSidebar() {
             href: '/inventory-transfers',
             icon: ArrowLeftRight,
         },
-        can('Expenses view') && {
-            title: 'المصاريف',
-            href: '/expenses',
-            icon: BanknoteIcon,
-        },
     ].filter(Boolean) as NavItem[];
 
     const maintenanceNavItems: NavItem[] = [
@@ -233,6 +228,38 @@ export function AppSidebar() {
 
 
             ]
+        },
+        (can('Expenses view') || can('Cash view') || can('Cash handover create') || can('Cash transfer create') || can('Cash personal funding create')) && {
+            title: 'خزينة الفرع',
+            href: '/cash',
+            icon: BanknoteIcon,
+            items: [
+                can('Expenses view') && {
+                    title: "المصاريف",
+                    url: "/expenses",
+                    icon: BanknoteIcon,
+                },
+                can("Cash view") && {
+                    title: "رصيد الخزينة",
+                    url: "/cash",
+                    icon: BanknoteIcon,
+                },
+                can("Cash handover create") && {
+                    title: "تسليم مبالغ",
+                    url: "/cash/handover",
+                    icon: BanknoteIcon,
+                },
+                can("Cash transfer create") && {
+                    title: "تحويل بين الفروع",
+                    url: "/cash/transfer",
+                    icon: BanknoteIcon,
+                },
+                can("Cash personal funding create") && {
+                    title: "توريد شخصي",
+                    url: "/cash/funding",
+                    icon: BanknoteIcon,
+                },
+            ].filter(Boolean)
         },
     ].filter(Boolean) as NavItem[];
 

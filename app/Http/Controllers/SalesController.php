@@ -6,6 +6,7 @@ use App\Models\Customer;
 use App\Models\Product;
 use App\Models\ProductInventory;
 use App\Models\Sale;
+use App\Models\CashMovement;
 use App\Models\SalesItem;
 use App\Models\Warehouse;
 use App\Services\InventoryService;
@@ -503,6 +504,20 @@ class SalesController extends Controller
                     $tech->pivot->save();
                 }
             }
+        }
+        if ($request->collected > 0 && $request->payment_method === 'C') {
+            // dd($request->all());
+            CashMovement::create([
+                'branch_id' => $sale->user->warehouse->branch->id,
+                'type' => 'collection',
+                'amount' => (float) '-' . $request->collected,
+                'movement_date' => $data['date'],
+                'reference' => 'collection_' . $sale->id,
+                'user_id' => $user?->id,
+                'notes' => 'تحصيل من فاتورة كاش',
+            ]);
+        } else {
+
         }
 
         return redirect()->back()->with('success', 'تم  الانشاء');

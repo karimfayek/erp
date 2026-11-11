@@ -2,6 +2,7 @@
 
 use App\Models\Collection;
 use App\Models\Customer;
+use App\Models\Permission;
 use App\Models\Sale;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -10,6 +11,22 @@ uses(RefreshDatabase::class)->in('Feature/Sales');
 
 beforeEach(function () {
     $this->user = User::factory()->create();
+
+    // منح صلاحيات التحصيل للمستخدم التجريبي (لأننا أضفنا middleware للصدقية)
+    $collectionPerms = [
+        'Collections view' => 'collections-view',
+        'Collections create' => 'collections-create',
+        'Collections edit' => 'collections-edit',
+        'Collections delete' => 'collections-delete',
+    ];
+    foreach ($collectionPerms as $permName => $permSlug) {
+        $perm = Permission::firstOrCreate(
+            ['name' => $permName],
+            ['slug' => $permSlug]
+        );
+        $this->user->permissions()->attach($perm->id);
+    }
+
     $this->actingAs($this->user);
 });
 
@@ -44,6 +61,7 @@ it('creates a collection and syncs sale totals', function () {
         'sale_id' => $sale->id,
         'amount' => 200.00,
         'collection_date' => '2026-01-15',
+        'method' => 'cash',
         'notes' => 'Partial payment',
     ]);
 
@@ -93,6 +111,7 @@ it('updates a collection and syncs sale totals', function () {
     $response = $this->put("/collections/{$collection->id}", [
         'amount' => 300.00,
         'collection_date' => '2026-01-16',
+        'method' => 'cash',
         'notes' => 'Updated',
     ]);
 

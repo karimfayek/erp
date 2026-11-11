@@ -3,9 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Branch;
+use App\Models\CashMovement;
+use App\Models\Collection;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class ExpenseController extends Controller
@@ -19,7 +22,8 @@ class ExpenseController extends Controller
     protected function canChooseBranch(): bool
     {
         $user = auth()->user();
-        if (! $user) return false;
+        if (!$user)
+            return false;
         // Super Admin يعدي من canDo، وصلاحية اختيار الفرع منفصلة
         return $user->canDo('Expenses choose branch');
     }
@@ -32,7 +36,7 @@ class ExpenseController extends Controller
         $query = Expense::with(['category:id,name', 'branch:id,name', 'user:id,name']);
 
         // لو ممعهوش صلاحية اختيار الفرع → يشوف فرعه بس
-        if (! $canChoose) {
+        if (!$canChoose) {
             $branchId = $this->userBranchId();
             if ($branchId) {
                 $query->where('branch_id', $branchId);
@@ -88,31 +92,60 @@ class ExpenseController extends Controller
         ]);
 
         // تحديد الفرع: تلقائي من حساب اللي بيضيف، إلا لو معاه صلاحية اختيار الفرع
-        if ($canChoose && ! empty($data['branch_id'])) {
+        if ($canChoose && !empty($data['branch_id'])) {
             $branchId = $data['branch_id'];
         } else {
             $branchId = $this->userBranchId();
-            if (! $branchId && ! empty($data['branch_id'])) {
+            if (!$branchId && !empty($data['branch_id'])) {
                 $branchId = $data['branch_id'];
             }
         }
 
-        Expense::create([
-            'branch_id' => $branchId,
-            'category_id' => $data['category_id'],
-            'user_id' => $user?->id,
-            'amount' => $data['amount'],
-            'note' => $data['note'],
-            'date' => $data['date'],
-        ]);
+        return DB::transaction(function () use ($data, $branchId, $user) {
+            $branch = Branch::where('id', $branchId)->lockForUpdate()->first();
+            if (!$branch) {
+                return redirect()->back()->withErrors(['message' => 'الفرع غير موجود']);
+            }
 
-        return redirect()->back()->with('success', 'تم إضافة المصروف بنجاح');
+            $balance = $this->computeBalance($branchId);
+
+            if ((float) $data['amount'] > (float) $balance) {
+                return redirect()->back()->withErrors([
+                    'message' => "رصيد الفرع غير كافٍ. الرصيد المتاح: " . number_format($balance, 2),
+                    'amount' => 'المبلغ يتجاوز الرصيد المتاح للفرع',
+                ]);
+            }
+
+            $expense = Expense::create([
+                'branch_id' => $branchId,
+                'category_id' => $data['category_id'],
+                'user_id' => $user?->id,
+                'amount' => $data['amount'],
+                'note' => $data['note'],
+                'date' => $data['date'],
+            ]);
+
+            // Create cash movement record for the expense
+            if ($expense) {
+
+                CashMovement::create([
+                    'branch_id' => $branchId,
+                    'type' => 'expense',
+                    'amount' => (float) '-' . $data['amount'],
+                    'movement_date' => $data['date'],
+                    'reference' => 'expense_' . $expense->id,
+                    'user_id' => $user?->id,
+                    'notes' => $data['note'],
+                ]);
+            }
+            return redirect()->back()->with('success', 'تم إضافة المصروف بنجاح');
+        });
     }
 
     public function update(Request $request, Expense $expense)
     {
         // غير السوبر/المخول يعدل مصاريف فرعه فقط
-        if (! $this->canChooseBranch() && $expense->branch_id !== $this->userBranchId()) {
+        if (!$this->canChooseBranch() && $expense->branch_id !== $this->userBranchId()) {
             abort(403, 'غير مسموح لك بتعديل مصاريف فرع آخر');
         }
 
@@ -124,26 +157,111 @@ class ExpenseController extends Controller
             'branch_id' => 'nullable|exists:branches,id',
         ]);
 
-        if ($this->canChooseBranch() && ! empty($data['branch_id'])) {
-            $expense->branch_id = $data['branch_id'];
-        }
-        $expense->amount = $data['amount'];
-        $expense->category_id = $data['category_id'];
-        $expense->note = $data['note'];
-        $expense->date = $data['date'];
-        $expense->save();
+        $oldAmount = (float) $expense->amount;
+        $oldBranchId = (int) $expense->branch_id;
 
-        return redirect()->back()->with('success', 'تم تعديل المصروف بنجاح');
+        $newAmount = (float) $data['amount'];
+        $newBranchId = ($this->canChooseBranch() && !empty($data['branch_id']))
+            ? (int) $data['branch_id']
+            : $oldBranchId;
+
+        if (!$newBranchId) {
+            $newBranchId = $this->userBranchId();
+        }
+
+        $user = auth()->user();
+
+        return DB::transaction(function () use ($data, $expense, $oldAmount, $oldBranchId, $newAmount, $newBranchId, $user) {
+            // قفل الفروع المعنية بترتيب تصاعدي حسب id لتجنب deadlocks
+            $branchIds = array_unique([$oldBranchId, $newBranchId]);
+            sort($branchIds);
+
+            $lockedBranches = [];
+            foreach ($branchIds as $id) {
+                $lockedBranches[$id] = Branch::where('id', $id)->lockForUpdate()->first();
+            }
+
+            if ($oldBranchId === $newBranchId) {
+                // تعديل داخل نفس الفرع: استبعد القديم ثم تحقق من الجديد
+                $balance = $this->computeBalance($oldBranchId);
+                $availableAfterExcludingOld = $balance + $oldAmount;
+
+                if ($newAmount > $availableAfterExcludingOld) {
+                    return redirect()->back()->withErrors([
+                        'message' => "رصيد الفرع غير كافٍ بعد التعديل. الرصيد المتاح: " . number_format($availableAfterExcludingOld - $newAmount, 2) . " (سالب)",
+                        'amount' => 'المبلغ يتجاوز الرصيد المتاح للفرع',
+                    ]);
+                }
+            } else {
+                // نقل المصروف إلى فرع آخر: الفرع المصدر يسترد القديم، الفرع الهدف يتحمل الجديد
+                $sourceBranch = $lockedBranches[$oldBranchId] ?? null;
+                $targetBranch = $lockedBranches[$newBranchId] ?? null;
+
+                if (!$sourceBranch || !$targetBranch) {
+                    return redirect()->back()->withErrors(['message' => 'أحد الفرعين غير موجود']);
+                }
+
+                $sourceBalance = $this->computeBalance($oldBranchId);
+                $targetBalance = $this->computeBalance($newBranchId);
+
+                // المصدر يسترد المبلغ القديم → لا problème على المصدر
+                // الهدف يجب أن يكون لديه رصيد كافٍ للمبلغ الجديد
+                if ($newAmount > $targetBalance) {
+                    return redirect()->back()->withErrors([
+                        'message' => "رصيد الفرع المستهدف غير كافٍ. الرصيد المتاح: " . number_format($targetBalance, 2),
+                        'amount' => 'المبلغ يتجاوز رصيد الفرع المستهدف',
+                    ]);
+                }
+            }
+
+            $expense->branch_id = $newBranchId;
+            $expense->amount = $newAmount;
+            $expense->category_id = $data['category_id'];
+            $expense->note = $data['note'];
+            $expense->date = $data['date'];
+            $expense->save();
+
+            return redirect()->back()->with('success', 'تم تعديل المصروف بنجاح');
+        });
     }
 
     public function destroy(Expense $expense)
     {
-        if (! $this->canChooseBranch() && $expense->branch_id !== $this->userBranchId()) {
+        if (!$this->canChooseBranch() && $expense->branch_id !== $this->userBranchId()) {
             abort(403, 'غير مسموح لك بحذف مصاريف فرع آخر');
         }
 
         $expense->delete();
 
         return redirect()->back()->with('success', 'تم حذف المصروف');
+    }
+
+    private function computeBalance(int $branchId): float
+    {
+        $cashCollections = Collection::join('sales', 'collections.sale_id', '=', 'sales.id')
+            ->join('users', 'sales.user_id', '=', 'users.id')
+            ->join('warehouses', 'users.warehouse_id', '=', 'warehouses.id')
+            ->where('warehouses.branch_id', $branchId)
+            ->where(function ($q) {
+                $q->whereNull('collections.method')
+                    ->where('sales.payment_method', 'C')
+                    ->orWhere('collections.method', 'cash');
+            })
+            ->sum('collections.amount');
+
+        $inflows = CashMovement::where('branch_id', $branchId)
+            ->whereIn('type', ['transfer_in', 'personal_funding'])
+            ->sum('amount');
+
+        $outflows = CashMovement::where('branch_id', $branchId)
+            ->whereIn('type', ['handover', 'transfer_out'])
+            ->sum('amount');
+
+        $expenses = Expense::where('branch_id', $branchId)->sum('amount');
+
+        return (float) round(
+            (float) $cashCollections + (float) $inflows - (float) $outflows - (float) $expenses,
+            2
+        );
     }
 }

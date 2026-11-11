@@ -16,6 +16,7 @@ use App\Http\Controllers\UserPermissionController;
 use App\Http\Controllers\TaxInvoiceController;
 use App\Http\Controllers\TechnicianPayrollController;
 use App\Http\Controllers\BackupController;
+use App\Http\Controllers\CashMovementController;
 use App\Http\Controllers\CollectionController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\ExpenseCategoryController;
@@ -111,11 +112,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/backup/download-db', [BackupController::class, 'downloadDb'])
         ->middleware('permission:super');
 
-    //collections
-    Route::get('/collections/{sale}', [CollectionController::class, 'show'])->name('collections.show');
-    Route::post('/collections', [CollectionController::class, 'store'])->name('collections.store');
-    Route::put('/collections/{collection}', [CollectionController::class, 'update'])->name('collections.update');
-    Route::delete('/collections/{collection}', [CollectionController::class, 'destroy'])->name('collections.destroy');
+    //collections (مع حماية الصلاحيات لأن التحصيل يؤثر على رصيد الكاش)
+    Route::get('/collections/{sale}', [CollectionController::class, 'show'])->name('collections.show')->middleware('permission:Collections view');
+    Route::post('/collections', [CollectionController::class, 'store'])->name('collections.store')->middleware('permission:Collections create');
+    Route::put('/collections/{collection}', [CollectionController::class, 'update'])->name('collections.update')->middleware('permission:Collections edit');
+    Route::delete('/collections/{collection}', [CollectionController::class, 'destroy'])->name('collections.destroy')->middleware('permission:Collections delete');
+
+    // cash management (صفحات Inertia)
+    Route::get('/cash', [CashMovementController::class, 'index'])->name('cash.index')->middleware('permission:Cash view');
+    Route::get('/cash/handover', [CashMovementController::class, 'handoverPage'])->name('cash.handover.page')->middleware('permission:Cash handover create');
+    Route::get('/cash/transfer', [CashMovementController::class, 'transferPage'])->name('cash.transfer.page')->middleware('permission:Cash transfer create');
+    Route::get('/cash/funding', [CashMovementController::class, 'fundingPage'])->name('cash.funding.page')->middleware('permission:Cash personal funding create');
+
+    // cash management (إجراءات POST ترجع Redirect للتحقق من الأخطاء عبر Inertia)
+    Route::post('/cash/handover', [CashMovementController::class, 'handover'])->name('cash.handover')->middleware('permission:Cash handover create');
+    Route::post('/cash/transfer', [CashMovementController::class, 'transfer'])->name('cash.transfer')->middleware('permission:Cash transfer create');
+    Route::post('/cash/funding', [CashMovementController::class, 'funding'])->name('cash.funding')->middleware('permission:Cash personal funding create');
 
 });
 

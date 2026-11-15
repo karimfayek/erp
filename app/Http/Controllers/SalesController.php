@@ -608,8 +608,8 @@ class SalesController extends Controller
                     return $invoice;
                 }
 
-                // عروض الأسعار لا تؤثر على المخزون.
-                if ((bool) $invoice->is_invoice) {
+                // عروض الأسعار  تؤثر على المخزون.
+                if (true) {
                     $invoice->load(['items.product', 'user']);
 
                     foreach ($invoice->items as $item) {

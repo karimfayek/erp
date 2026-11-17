@@ -27,6 +27,8 @@ import {
 import AppLayout from "@/layouts/app-layout"
 import { type BreadcrumbItem } from '@/types';
 import { Wallet } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectValue, SelectTrigger } from "@/components/ui/select"
+
 
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -35,17 +37,19 @@ const breadcrumbs: BreadcrumbItem[] = [
         href: '/sales/collections',
     },
 ];
-export default function Collections({ sale, collections }) {
+export default function Collections({ sale, collections, branches, defaultBranch }) {
     const [open, setOpen] = useState(false)
     const [editOpen, setEditOpen] = useState(false)
     const [editing, setEditing] = useState(null)
     const { delete: destroy } = useForm({})
-
+    console.log('default branc', defaultBranch)
     const form = useForm({
         sale_id: sale.id,
         amount: "",
         collection_date: format(new Date(), "yyyy-MM-dd"),
         notes: "",
+        method: "cash",
+        branch: defaultBranch
     })
 
     const openEdit = (col) => {
@@ -56,6 +60,8 @@ export default function Collections({ sale, collections }) {
             amount: String(col.amount),
             collection_date: col.collection_date.substring(0, 10),
             notes: col.notes ?? "",
+            method: col.method ?? "cash",
+            branch: col.branch.id ?? defaultBranch,
         })
 
         setEditOpen(true)
@@ -111,6 +117,27 @@ export default function Collections({ sale, collections }) {
                             </DialogHeader>
 
                             <form onSubmit={submitCreate} className="space-y-4">
+                                <Select
+                                    value={String(form.data.branch ?? "")}
+                                    onValueChange={(value) =>
+                                        form.setData("branch", value)
+                                    }
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="اختر الفرع" />
+                                    </SelectTrigger>
+
+                                    <SelectContent>
+                                        {branches.map((br) => (
+                                            <SelectItem
+                                                value={String(br.id)}
+                                                key={br.id}
+                                            >
+                                                {br.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                                 <Input
                                     type="number"
                                     step="0.01"
@@ -119,7 +146,25 @@ export default function Collections({ sale, collections }) {
                                     onChange={(e) => form.setData("amount", e.target.value)}
                                     required
                                 />
+                                <Select
+                                    value={form.data.method}
+                                    onValueChange={(value) =>
+                                        form.setData("method", value)
+                                    }
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="اختر طريقة الدفع" />
+                                    </SelectTrigger>
 
+                                    <SelectContent>
+                                        <SelectItem value="cash">كاش</SelectItem>
+                                        <SelectItem value="instapay">انستا باي</SelectItem>
+                                        <SelectItem value="visa">فيزا</SelectItem>
+                                        <SelectItem value="bank_transfer">تحويل بنكي</SelectItem>
+                                        <SelectItem value="cheque">شيك</SelectItem>
+                                        <SelectItem value="other">أخرى</SelectItem>
+                                    </SelectContent>
+                                </Select>
                                 <DatePicker
                                     date={
                                         form.data.collection_date
@@ -160,6 +205,28 @@ export default function Collections({ sale, collections }) {
                         </DialogHeader>
 
                         <form onSubmit={submitUpdate} className="space-y-4">
+
+                            <Select
+                                value={String(form.data.branch ?? "")}
+                                onValueChange={(value) =>
+                                    form.setData("branch", value)
+                                }
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="اختر الفرع" />
+                                </SelectTrigger>
+
+                                <SelectContent>
+                                    {branches.map((br) => (
+                                        <SelectItem
+                                            value={String(br.id)}
+                                            key={br.id}
+                                        >
+                                            {br.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                             <Input
                                 type="number"
                                 step="0.01"
@@ -167,7 +234,25 @@ export default function Collections({ sale, collections }) {
                                 onChange={(e) => form.setData("amount", e.target.value)}
                                 required
                             />
+                            <Select
+                                value={form.data.method}
+                                onValueChange={(value) =>
+                                    form.setData("method", value)
+                                }
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="اختر طريقة الدفع" />
+                                </SelectTrigger>
 
+                                <SelectContent>
+                                    <SelectItem value="cash">كاش</SelectItem>
+                                    <SelectItem value="instapay">انستا باي</SelectItem>
+                                    <SelectItem value="visa">فيزا</SelectItem>
+                                    <SelectItem value="bank_transfer">تحويل بنكي</SelectItem>
+                                    <SelectItem value="cheque">شيك</SelectItem>
+                                    <SelectItem value="other">أخرى</SelectItem>
+                                </SelectContent>
+                            </Select>
                             <DatePicker
                                 date={form.data.collection_date
                                     ? new Date(form.data.collection_date + "T00:00:00")
@@ -209,6 +294,7 @@ export default function Collections({ sale, collections }) {
                         <TableRow>
                             <TableHead className="text-right">التاريخ</TableHead>
                             <TableHead className="text-right">المبلغ</TableHead>
+                            <TableHead className="text-right">الفرع</TableHead>
                             <TableHead className="text-right">ملاحظات</TableHead>
                             <TableHead className="text-right">إجراءات</TableHead>
                         </TableRow>
@@ -219,6 +305,7 @@ export default function Collections({ sale, collections }) {
                             <TableRow key={col.id}>
                                 <TableCell>{format(new Date(col.collection_date), "yyyy-MM-dd")}</TableCell>
                                 <TableCell>{col.amount}</TableCell>
+                                <TableCell>{col.branch?.name}</TableCell>
                                 <TableCell>{col.notes}</TableCell>
                                 <TableCell className="flex gap-2">
                                     <Button size="sm" onClick={() => openEdit(col)}>

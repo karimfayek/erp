@@ -111,16 +111,19 @@ class CashMovementController extends Controller
 
     private function computeBalance(int $branchId): float
     {
-        $cashCollections = \App\Models\Collection::join('sales', 'collections.sale_id', '=', 'sales.id')
+        $cashCollections2 = \App\Models\Collection::join('sales', 'collections.sale_id', '=', 'sales.id')
             ->join('users', 'sales.user_id', '=', 'users.id')
             ->join('warehouses', 'users.warehouse_id', '=', 'warehouses.id')
             ->where('warehouses.branch_id', $branchId)
             ->where(function ($q) {
-                $q->whereNull('collections.method')
-                    ->where('sales.payment_method', 'C')
+                $q->where('sales.payment_method', 'C')
                     ->orWhere('collections.method', 'cash');
             })
             ->sum('collections.amount');
+        $cashCollections = \App\Models\Collection::where('branch_id', $branchId)
+            ->where('method', 'cash')
+            ->sum('collections.amount');
+        //dd($cashCollections);
 
         $inflows = CashMovement::where('branch_id', $branchId)
             ->whereIn('type', ['transfer_in', 'personal_funding'])
@@ -129,7 +132,7 @@ class CashMovementController extends Controller
         $outflows = CashMovement::where('branch_id', $branchId)
             ->whereIn('type', ['handover', 'transfer_out'])
             ->sum('amount');
-
+        //dd($outflows);
         $expenses = \App\Models\Expense::where('branch_id', $branchId)->sum('amount');
 
         return (float) round(

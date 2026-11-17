@@ -412,6 +412,8 @@ class SalesController extends Controller
             if ($request->collected > 0 && (float) $request->collected <= (float) $data['total']) {
                 \App\Models\Collection::create([
                     'sale_id' => $sale->id,
+                    'branch_id' => $sale->user->warehouse->branch->id,
+                    'method' => $sale->payment_method === 'C' ? 'cash' : $sale->payment_method,
                     'amount' => $request->collected,
                     'collection_date' => now(),
                     'created_by' => auth()->id(),

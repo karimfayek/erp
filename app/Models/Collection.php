@@ -17,6 +17,7 @@ class Collection extends Model
         'method',
         'reference_number',
         'created_by',
+        'branch_id'
     ];
 
     protected $casts = [
@@ -32,5 +33,9 @@ class Collection extends Model
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+    public function branch()
+    {
+        return $this->belongsTo(Branch::class);
     }
 }

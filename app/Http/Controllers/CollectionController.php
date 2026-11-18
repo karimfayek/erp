@@ -55,7 +55,7 @@ class CollectionController extends Controller
                 'collection_date' => $data['collection_date'],
                 'method' => $data['method'],
                 'reference_number' => $data['reference_number'] ?? null,
-                'notes' => $data['notes'] + $branchName ?? $branchName,
+                'notes' => $data['notes'] ?? null,
                 'created_by' => auth()->id(),
                 'branch_id' => $branchId,
             ]);

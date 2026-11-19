@@ -68,6 +68,7 @@ class CollectionController extends Controller
                     'amount' => (float) $data['amount'],
                     'movement_date' => $data['collection_date'],
                     'reference' => 'collection_' . $collection->id,
+                    'collection_id' => $collection->id,
                     'user_id' => auth()->id(),
                     'notes' => 'تحصيل نقدي من فاتورة رقم ' . $sale->id,
                 ]);

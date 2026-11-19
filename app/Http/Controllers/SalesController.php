@@ -410,7 +410,7 @@ class SalesController extends Controller
             $sale = Sale::create($data);
 
             if ($request->collected > 0 && (float) $request->collected <= (float) $data['total']) {
-                \App\Models\Collection::create([
+                $collection = \App\Models\Collection::create([
                     'sale_id' => $sale->id,
                     'branch_id' => $sale->user->warehouse->branch->id,
                     'method' => $sale->payment_method === 'C' ? 'cash' : $sale->payment_method,
@@ -419,7 +419,21 @@ class SalesController extends Controller
                     'created_by' => auth()->id(),
                 ]);
             }
+            if ($request->collected > 0 && $request->payment_method === 'C') {
+                $user = \App\Models\User::find($data['user_id']);
+                CashMovement::create([
+                    'branch_id' => $sale->user->warehouse->branch->id,
+                    'type' => 'collection',
+                    'amount' => (float) '-' . $request->collected,
+                    'movement_date' => $data['date'],
+                    'reference' => 'collection_' . $collection->id,
+                    'collection_id' => $collection->id,
+                    'user_id' => $user?->id,
+                    'notes' => 'تحصيل من فاتورة كاش',
+                ]);
+            } else {
 
+            }
             // Keep the stored collected/postponed columns in sync with the
             // collections table instead of trusting the submitted values.
             $sale->syncCollectionTotals()->save();
@@ -507,20 +521,7 @@ class SalesController extends Controller
                 }
             }
         }
-        if ($request->collected > 0 && $request->payment_method === 'C') {
-            // dd($request->all());
-            CashMovement::create([
-                'branch_id' => $sale->user->warehouse->branch->id,
-                'type' => 'collection',
-                'amount' => (float) '-' . $request->collected,
-                'movement_date' => $data['date'],
-                'reference' => 'collection_' . $sale->id,
-                'user_id' => $user?->id,
-                'notes' => 'تحصيل من فاتورة كاش',
-            ]);
-        } else {
 
-        }
 
         return redirect()->back()->with('success', 'تم  الانشاء');
     }

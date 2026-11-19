@@ -17,7 +17,7 @@ class Collection extends Model
         'method',
         'reference_number',
         'created_by',
-        'branch_id'
+        'branch_id',
     ];
 
     protected $casts = [

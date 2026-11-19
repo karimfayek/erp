@@ -17,6 +17,7 @@ class CashMovement extends Model
         'reference_id',
         'user_id',
         'notes',
+        'collection_id'
     ];
 
     protected $casts = [

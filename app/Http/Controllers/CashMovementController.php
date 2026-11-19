@@ -122,17 +122,17 @@ class CashMovementController extends Controller
             ->sum('collections.amount');
         $cashCollections = \App\Models\Collection::where('branch_id', $branchId)
             ->where('method', 'cash')
-            ->sum('collections.amount');
-        //dd($cashCollections);
+            ->sum('amount');
+        //380762.04
 
         $inflows = CashMovement::where('branch_id', $branchId)
             ->whereIn('type', ['transfer_in', 'personal_funding'])
             ->sum('amount');
-
+        //0 
         $outflows = CashMovement::where('branch_id', $branchId)
             ->whereIn('type', ['handover', 'transfer_out'])
             ->sum('amount');
-        //dd($outflows);
+        //dd($outflows); //380635.50
         $expenses = \App\Models\Expense::where('branch_id', $branchId)->sum('amount');
 
         return (float) round(
